@@ -1,0 +1,55 @@
+﻿VisionFlow Presentation Demo Mode
+
+설치 위치
+- 이 ZIP을 C:\VisionFlow-Drone 에 폴더 구조를 유지해 압축 해제합니다.
+- 생성 경로:
+  C:\VisionFlow-Drone\scripts\presentation-demo-mode-kit\
+
+구현 내용
+- 사이드바: "🎬 시연 모드"
+- URL: /demo-mode
+- 스마트폰 실시간 카메라 모드
+- 비상용 로컬 MP4 1회 재생 모드
+- 두 입력의 동시 실행 방지
+- 모드별 source ID 분리
+  presentation-phone-001
+  presentation-dummy-001
+- 스마트폰 프레임이 5초 이상 끊기면 비상 전환 버튼 표시
+- 동일한 /api/ai/ingest/frame 경로 사용
+- 더미영상은 artifacts/presentation-demo 를 프런트엔드 public/demo에 읽기 전용 마운트
+
+적용
+C:\VisionFlow-Drone\scripts\presentation-demo-mode-kit\scripts\apply-presentation-demo-mode.bat
+
+더미영상 직접 지정
+C:\VisionFlow-Drone\scripts\presentation-demo-mode-kit\scripts\apply-presentation-demo-mode.bat --dummy-video "C:\경로\발표영상.mp4"
+
+사이드바 자동 탐지 실패 시 직접 지정
+C:\VisionFlow-Drone\scripts\presentation-demo-mode-kit\scripts\apply-presentation-demo-mode.bat --sidebar-file "src\components\layout\sidebar.tsx"
+
+배포
+C:\VisionFlow-Drone\scripts\run-presentation-demo-mode.bat
+
+코드 검증
+cd /d C:\VisionFlow-Drone\01_frontend\visionflow-web
+npm run lint
+npm run build
+
+접속
+http://localhost:3000/demo-mode
+
+모바일 HTTPS 접속
+C:\VisionFlow-Drone\artifacts\mobile-https\phone\visionflow-mobile-connection.txt
+파일의 URL 뒤에 demo-mode를 붙입니다.
+
+롤백
+C:\VisionFlow-Drone\scripts\presentation-demo-mode-kit\scripts\rollback-presentation-demo-mode.bat
+
+발표 전 점검 순서
+1. run-visionflow-ai-operational-guard.bat --deep
+2. /demo-mode 접속
+3. 더미영상 1회 재생
+4. 이벤트·스냅샷 1건 이상 확인 후 중지
+5. 스마트폰을 노트북 핫스팟에 연결
+6. 스마트폰 실시간 모드 시작
+7. 연결이 끊기면 화면의 비상 더미영상 전환 버튼 사용

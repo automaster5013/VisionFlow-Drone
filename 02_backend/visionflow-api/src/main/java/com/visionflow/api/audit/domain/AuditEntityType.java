@@ -1,0 +1,13 @@
+package com.visionflow.api.audit.domain;
+
+public enum AuditEntityType {
+    FLIGHT_SESSION,
+    FLIGHT_QUALITY_ASSESSMENT,
+    MAINTENANCE_WORK_ORDER,
+    MAINTENANCE_FLIGHT_GATE,
+    GEOFENCE,
+    INCIDENT,
+    DEMO_SCENARIO,
+    OPERATOR_SESSION,
+    AUDIT_LOG
+}

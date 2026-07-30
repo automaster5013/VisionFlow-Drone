@@ -1,0 +1,19 @@
+package com.visionflow.api.incident.dto;
+
+import com.visionflow.api.incident.domain.IncidentStatus;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+public record IncidentStatusUpdateRequest(
+        @NotNull
+        IncidentStatus status,
+
+        @NotBlank
+        @Size(max = 100)
+        String actor,
+
+        @Size(max = 1000)
+        String note
+) {
+}

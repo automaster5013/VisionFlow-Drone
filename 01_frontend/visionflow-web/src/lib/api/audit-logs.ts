@@ -1,0 +1,120 @@
+import "server-only";
+
+import {
+    parseAuditLogPage,
+    type AuditLogPage,
+    type AuditLogQuery,
+} from "@/types/audit-log";
+
+const DEFAULT_API_URL = "http://localhost:8080";
+
+function getApiBaseUrl(): string {
+    return (
+        process.env.SPRING_API_URL ??
+        process.env.BACKEND_API_URL ??
+        process.env.API_BASE_URL ??
+        DEFAULT_API_URL
+    ).replace(/\/$/, "");
+}
+
+function buildSearchParams(query: AuditLogQuery): URLSearchParams {
+    const page = query.page ?? 0;
+    const size = query.size ?? 30;
+
+    if (!Number.isInteger(page) || page < 0) {
+        throw new Error("감사 로그 페이지는 0 이상의 정수여야 합니다.");
+    }
+    if (!Number.isInteger(size) || size < 1 || size > 100) {
+        throw new Error("감사 로그 조회 개수는 1~100이어야 합니다.");
+    }
+    if (query.entityId && query.entityId.trim().length > 100) {
+        throw new Error("감사 대상 ID는 100자 이하여야 합니다.");
+    }
+    if (query.actor && query.actor.trim().length > 100) {
+        throw new Error("감사 처리자는 100자 이하여야 합니다.");
+    }
+    if (query.from && !Number.isFinite(Date.parse(query.from))) {
+        throw new Error("감사 로그 시작 시각이 올바르지 않습니다.");
+    }
+    if (query.to && !Number.isFinite(Date.parse(query.to))) {
+        throw new Error("감사 로그 종료 시각이 올바르지 않습니다.");
+    }
+    if (
+        query.from &&
+        query.to &&
+        Date.parse(query.from) > Date.parse(query.to)
+    ) {
+        throw new Error("감사 로그 시작 시각은 종료 시각보다 늦을 수 없습니다.");
+    }
+
+    const params = new URLSearchParams({
+        page: String(page),
+        size: String(size),
+    });
+    if (query.action) params.set("action", query.action);
+    if (query.entityType) params.set("entityType", query.entityType);
+    if (query.entityId?.trim()) params.set("entityId", query.entityId.trim());
+    if (query.actor?.trim()) params.set("actor", query.actor.trim());
+    if (query.from) params.set("from", query.from);
+    if (query.to) params.set("to", query.to);
+    return params;
+}
+
+async function readFailureMessage(response: Response): Promise<string> {
+    try {
+        const body: unknown = await response.json();
+        if (
+            typeof body === "object" &&
+            body !== null &&
+            "message" in body &&
+            typeof body.message === "string"
+        ) {
+            return body.message;
+        }
+    } catch {
+        // JSON 오류 본문이 아니면 HTTP 상태를 사용합니다.
+    }
+    return `HTTP ${response.status} ${response.statusText}`;
+}
+
+export async function getAuditLogs(
+    query: AuditLogQuery = {},
+): Promise<AuditLogPage> {
+    const params = buildSearchParams(query);
+    let response: Response;
+
+    try {
+        response = await fetch(
+            `${getApiBaseUrl()}/api/audit-logs?${params.toString()}`,
+            {
+                method: "GET",
+                headers: { Accept: "application/json" },
+                cache: "no-store",
+                signal: AbortSignal.timeout(5_000),
+            },
+        );
+    } catch (error) {
+        const message =
+            error instanceof Error ? error.message : "Unknown connection error";
+        throw new Error(`감사 로그 API 연결에 실패했습니다: ${message}`);
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            `감사 로그 API 호출 실패: ${await readFailureMessage(response)}`,
+        );
+    }
+
+    let body: unknown;
+    try {
+        body = await response.json();
+    } catch {
+        throw new Error("감사 로그 API 응답을 JSON으로 변환할 수 없습니다.");
+    }
+
+    const result = parseAuditLogPage(body);
+    if (!result) {
+        throw new Error("감사 로그 API 응답 형식이 올바르지 않습니다.");
+    }
+    return result;
+}

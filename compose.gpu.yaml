@@ -1,0 +1,23 @@
+services:
+  ai-server:
+    build:
+      args:
+        TORCH_VERSION: ${AI_TORCH_VERSION:-2.12.1}
+        TORCHVISION_VERSION: ${AI_TORCHVISION_VERSION:-0.27.1}
+        TORCH_INDEX_URL: ${AI_TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu130}
+    environment:
+      AI_MODEL_PROFILE: ${AI_MODEL_PROFILE:-best-gpu}
+      AI_MODEL_PATH: /app/models/${AI_MODEL_FILE:-best.pt}
+      AI_DEVICE: ${AI_DEVICE:-0}
+      AI_REQUIRE_CUDA: "true"
+      AI_REQUIRE_LOCAL_MODEL: "true"
+      AI_EXPECTED_MODEL_SHA256: ${AI_EXPECTED_MODEL_SHA256:-}
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

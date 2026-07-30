@@ -1,0 +1,403 @@
+<div align="center">
+
+<!-- 저장소 루트에 PyvaOps_Logo.png 파일을 배치합니다. -->
+<img src="PyvaOps_Logo.png" width="800" alt="PyvaOps Team Logo">
+
+</div>
+
+<br>
+
+<div align="left">
+
+## 🎨 Team PyvaOps Logo Concept
+
+팀명 **PyvaOps**는 **Py**thon(AI) + Ja**va**(Backend) + Dev**Ops**(Infra)를 결합한 이름입니다.  
+서로 다른 기술 생태계를 하나의 실시간 파이프라인으로 연결하고, 설계부터 구현·검증·운영까지 직접 완성하는 **1인 올라운더(All-rounder) 프로젝트 팀**의 정체성을 담고 있습니다.
+
+- **인피니티 루프**: AI, 백엔드, 인프라가 단절 없이 연결되는 데이터 흐름과 지속적인 개선을 상징합니다.
+- **기술별 아이콘과 색상**: Python 기반 Vision AI, Java 기반 관제 백엔드, DevOps 기반 실행 환경의 결합을 표현합니다.
+- **네온 네트워크 이미지**: 실시간 영상·텔레메트리·이벤트가 유기적으로 흐르는 지능형 관제 시스템을 시각화합니다.
+
+</div>
+
+---
+
+<div align="center">
+
+# 👁️ VisionFlow-Drone
+
+## 지능형 드론 관제 및 무선 Vision AI 표준 파이프라인
+
+### 가상 드론 검증에서 실제 드론 관제로 성장하는 2차·3차 연계형 프로젝트
+
+[![Project](https://img.shields.io/badge/Project-VisionFlow--Drone-0A66C2?style=for-the-badge&logo=github&logoColor=white)](#)
+[![Team](https://img.shields.io/badge/Team-PyvaOps-6A5ACD?style=for-the-badge)](#)
+[![Phase](https://img.shields.io/badge/Current-Phase%202%20Integration-orange?style=for-the-badge)](#)
+[![Status](https://img.shields.io/badge/Status-Active%20Development-success?style=for-the-badge)](#)
+
+</div>
+
+<br>
+
+## 🌐 Project Overview
+
+**VisionFlow-Drone**은 드론 또는 가상 드론에서 수집한 영상과 텔레메트리를 AI 서버, 관제 백엔드, 웹 대시보드로 연결하는 **실시간 지능형 안전 관제 플랫폼**입니다.
+
+프로젝트명은 다음 두 핵심 개념을 결합합니다.
+
+- **Vision**: YOLO와 OpenCV 기반 영상 분석 및 객체 탐지
+- **Flow**: 영상, 위치, 배터리, 탐지 이벤트, 이력 데이터가 실시간으로 흐르는 통합 파이프라인
+
+현재 2차 프로젝트에서는 **스마트폰·브라우저·더미 영상 기반 가상 드론**을 이용해 전체 관제 파이프라인을 구현하고 검증합니다. 이후 3차 프로젝트에서는 **DJI Mini 4 Pro 실기체 연계**, 무선 영상 입력, 현장 시연 및 운영 안정화로 확장하는 것을 목표로 합니다.
+
+> **핵심 방향**  
+> 특정 드론 기체나 단일 AI 모델에 종속되지 않고, 영상 입력원과 탐지 모델을 교체해도 재사용할 수 있는 **표준화된 Vision AI 관제 파이프라인**을 구축합니다.
+
+---
+
+## 👀 Sneak Peek
+
+> 시연 GIF와 대시보드 캡처 이미지는 기능 검증 완료 후 저장소의 `docs/images/` 경로에 추가할 예정입니다.
+
+<div align="center">
+
+<!-- 예: <img src="docs/images/visionflow-dashboard-demo.gif" width="900" alt="VisionFlow-Drone Dashboard Demo"> -->
+
+**실시간 드론 관제 대시보드 · 텔레메트리 경로 · AI 영상 분석 결과 시연 준비 중**
+
+</div>
+
+---
+
+## 🧭 Project Scope
+
+### 🏁 Phase 2 — 가상 드론 기반 통합 관제 파이프라인
+
+- 브라우저 카메라, 스마트폰 센서, 더미 영상 기반 가상 드론 입력
+- 드론 등록·수정·상태 변경·삭제 및 상세 정보 관리
+- 위도·경도·고도·배터리·접속 시각 텔레메트리 수집
+- WebSocket 기반 실시간 텔레메트리 전달
+- MySQL 텔레메트리 이력 저장 및 과거 비행 경로 조회
+- 실시간 경로와 과거 경로를 연결한 지도 시각화 및 리플레이
+- FastAPI 기반 AI 영상 수집·추론 API
+- Spring Boot, FastAPI, Next.js 간 통합 검증
+
+### 🚀 Phase 3 — 실제 드론 연계 및 현장형 관제 고도화
+
+- DJI Mini 4 Pro 기반 실제 비행·촬영 시나리오 검증
+- 무선 영상 입력 방식 검토 및 RTSP/중계 스트림 연계
+- 실제 드론 텔레메트리 또는 비행 데이터 어댑터 구현
+- 안전모·보호구 탐지 모델 고도화
+- 위험 행동 및 Human Pose Estimation 기능 확장
+- HTTPS, 인증·인가, 이벤트 알림 및 배포 자동화 강화
+- 발표·시연 환경을 위한 복구 절차와 운영 매뉴얼 정립
+
+> DJI Mini 4 Pro의 영상·비행 데이터 연계 범위는 제조사 SDK, 조종기 구성, 네트워크 환경 및 지원 인터페이스를 검증한 뒤 확정합니다.
+
+---
+
+## 🛠 Tech Stack
+
+### 🌐 Frontend
+
+<img src="https://img.shields.io/badge/Next.js%2016.2.10-000000?style=for-the-badge&logo=nextdotjs&logoColor=white"> <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"> <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"> <img src="https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socketdotio&logoColor=white">
+
+### ☕ Backend
+
+<img src="https://img.shields.io/badge/Java%2021-007396?style=for-the-badge&logo=openjdk&logoColor=white"> <img src="https://img.shields.io/badge/Spring%20Boot%204.0.7-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/Spring%20Data%20JPA-6DB33F?style=for-the-badge&logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/Flyway-CC0200?style=for-the-badge&logo=flyway&logoColor=white">
+
+### 🤖 AI Vision Server
+
+<img src="https://img.shields.io/badge/Python%203.11-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white"> <img src="https://img.shields.io/badge/YOLO26-00FFFF?style=for-the-badge&logo=ultralytics&logoColor=black"> <img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white">
+
+### 🗄 Database & Infrastructure
+
+<img src="https://img.shields.io/badge/MySQL%208.x-4479A1?style=for-the-badge&logo=mysql&logoColor=white"> <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"> <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white"> <img src="https://img.shields.io/badge/Windows%2011-0078D4?style=for-the-badge&logo=windows11&logoColor=white"> <img src="https://img.shields.io/badge/Ubuntu-24.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
+
+---
+
+## 🛰️ System Architecture
+
+VisionFlow-Drone은 UI, 관제 비즈니스 로직, AI 추론, 데이터 저장소를 분리한 **하이브리드 서비스 아키텍처**를 사용합니다.
+
+- **Next.js**: 드론 목록, 상세 관제, 지도, 경로 리플레이, AI 스트림 UI
+- **Spring Boot**: 드론·비행 세션·텔레메트리·이력 API와 실시간 이벤트 중계
+- **FastAPI**: 영상 프레임 수집, YOLO/OpenCV 추론 및 분석 결과 생성
+- **MySQL**: 드론 정보, 비행 세션, 텔레메트리 및 관제 이력 저장
+
+```mermaid
+graph LR
+    subgraph Input["Input / Drone Zone"]
+        VirtualDrone["📱 Virtual Drone<br/>Browser · Smartphone · Test Video"]
+        RealDrone["🚁 Real Drone<br/>DJI Mini 4 Pro · Phase 3"]
+    end
+
+    subgraph AI["AI Vision Zone"]
+        FastAPI["⚡ FastAPI AI Server"]
+        YOLO["🔥 YOLO + OpenCV"]
+        FastAPI --> YOLO
+    end
+
+    subgraph Backend["Control Backend Zone"]
+        SpringBoot["☕ Spring Boot API"]
+        WebSocket["🔄 WebSocket Telemetry"]
+        MySQL[("🐬 MySQL")]
+        SpringBoot <--> WebSocket
+        SpringBoot <--> MySQL
+    end
+
+    subgraph Client["Monitoring Client"]
+        Dashboard["🖥️ Next.js Dashboard"]
+        Map["🗺️ Live Map & Track Replay"]
+        Dashboard --> Map
+    end
+
+    VirtualDrone -->|"Video Frame / Telemetry"| FastAPI
+    VirtualDrone -->|"Telemetry / Flight Session"| SpringBoot
+    RealDrone -.->|"Wireless Video / Telemetry Adapter"| FastAPI
+    RealDrone -.->|"Phase 3 Integration"| SpringBoot
+    FastAPI -->|"Detection Result / Event"| SpringBoot
+    SpringBoot <--> Dashboard
+
+    style VirtualDrone fill:#1f2937,stroke:#38bdf8,color:#ffffff
+    style RealDrone fill:#1f2937,stroke:#f59e0b,color:#ffffff
+    style FastAPI fill:#009688,stroke:#ffffff,color:#ffffff
+    style YOLO fill:#374151,stroke:#22d3ee,color:#ffffff
+    style SpringBoot fill:#6DB33F,stroke:#ffffff,color:#ffffff
+    style MySQL fill:#4479A1,stroke:#ffffff,color:#ffffff
+    style Dashboard fill:#111827,stroke:#ffffff,color:#ffffff
+```
+
+점선으로 표시된 실제 드론 입력은 **3차 프로젝트 확장 범위**이며, 현재 2차 프로젝트는 가상 드론과 시험 영상으로 통합 파이프라인을 우선 검증합니다.
+
+---
+
+## 🌊 Data Flow
+
+1. **입력 수집**  
+   브라우저 카메라, 스마트폰, 시험 영상 또는 향후 실제 드론에서 영상과 텔레메트리를 수집합니다.
+
+2. **AI 분석**  
+   FastAPI 서버가 영상 프레임을 수신하고 YOLO·OpenCV 기반 객체 탐지를 수행합니다.
+
+3. **관제 데이터 처리**  
+   Spring Boot 서버가 드론 상태, 비행 세션, 텔레메트리, AI 이벤트를 검증하고 저장합니다.
+
+4. **실시간 전달**  
+   WebSocket을 통해 최신 텔레메트리와 상태 변화를 관제 화면으로 전달합니다.
+
+5. **이력 조회 및 재생**  
+   MySQL에 저장된 과거 텔레메트리 경로를 조회하여 실시간 경로와 연결하고 지도에서 재생합니다.
+
+6. **Phase 3 확장**  
+   실제 드론용 영상·텔레메트리 어댑터를 추가해 기존 서비스 계층을 변경하지 않고 입력원을 확장합니다.
+
+---
+
+<div align="center">
+
+<!-- 저장소 루트 또는 docs/images에 실제 보유 이미지 파일을 배치합니다. -->
+<img src="drone_mini4_pro.jpg" width="517" alt="DJI Mini 4 Pro for Phase 3 demonstration">
+
+<sub>▲ 3차 프로젝트 실제 드론 시연에 사용할 DJI Mini 4 Pro</sub>
+
+</div>
+
+---
+
+## 🎯 Core Features
+
+| 분류 | 기능 | 현재 상태 | 설명 |
+|---|---|---:|---|
+| 🚁 드론 관리 | Drone CRUD & Status Control | ✅ 구현 | 드론 등록, 목록, 상세 조회, 수정, 상태 변경, 삭제 |
+| 📡 텔레메트리 | Real-time Telemetry | ✅ 구현 | 위도, 경도, 고도, 배터리, 최종 접속 시각 수집 및 갱신 |
+| 🔄 실시간 통신 | WebSocket Publishing | ✅ 구현 | 개별 드론 및 함대 텔레메트리 실시간 전달 |
+| 🗺️ 관제 지도 | Live Track & History Replay | ✅ 구현 | 실시간 위치, 과거 경로 조회, 연결 표시 및 리플레이 |
+| 🗄️ 이력 관리 | Telemetry Persistence | ✅ 구현 | MySQL 기반 텔레메트리 이력 저장 및 경로 조회 API |
+| 🎬 비행 세션 | Flight Session Management | 🟡 통합 검증 중 | 가상 드론 촬영·비행 단위 세션 생성 및 상태 관리 |
+| 🤖 AI 수집 | Frame Ingest API | 🟡 통합 검증 중 | 브라우저·시험 영상 프레임을 FastAPI로 전달 |
+| 🛡️ 안전 탐지 | Helmet / PPE Detection | 🟡 모델 고도화 중 | 작업자와 안전모·보호구 착용 여부 분석 |
+| 🧍 위험 행동 | Human Pose Estimation | 🔵 Phase 3 확장 | 쓰러짐 등 위험 행동 탐지 로직 연구 및 적용 |
+| 📶 실기체 연계 | DJI / Wireless Video Adapter | 🔵 Phase 3 확장 | DJI Mini 4 Pro 영상 및 비행 데이터 연계 검증 |
+| 🔐 운영 보안 | HTTPS / Auth / Alerts | 🔵 후속 고도화 | 인증·인가, HTTPS, 긴급 알림, 감사 로그 강화 |
+
+> 상태 표기: ✅ 구현 · 🟡 구현/검증 중 · 🔵 후속 확장
+
+---
+
+## 📂 Repository Structure
+
+```text
+VisionFlow-Drone/
+├── 01_frontend/
+│   └── visionflow-web/            # Next.js 관제 대시보드
+├── 02_backend/
+│   └── visionflow-api/            # Spring Boot 관제 API 및 WebSocket
+├── 03_ai-server/
+│   └── visionflow-ai/             # FastAPI 기반 영상 수집·AI 추론 서버
+├── artifacts/                     # 모델, 결과물, 배포 산출물 관리
+├── backups/                       # 전환·복구용 백업 자료
+├── docs/                          # 아키텍처, API, 시연 및 운영 문서
+├── infrastructure/                # Docker Compose, 네트워크, 배포 설정
+├── scripts/                       # 실행, 점검, 이전 및 복구 자동화 스크립트
+└── README.md
+```
+
+> 실제 디렉터리 구성은 개발 단계에 따라 확장될 수 있으며, 각 하위 프로젝트의 세부 실행 방법은 해당 디렉터리 문서를 따릅니다.
+
+---
+
+## 🚀 Quick Start
+
+현재 개발 환경에서는 프론트엔드, 백엔드, AI 서버, MySQL을 각각 실행해 통합 검증합니다. 전체 서비스의 Docker Compose 일괄 실행은 인프라 구성이 확정된 뒤 공식 실행 방식으로 전환할 예정입니다.
+
+### 1) Clone
+
+```bash
+git clone https://github.com/automaster5013/VisionFlow-Drone.git
+cd VisionFlow-Drone
+```
+
+### 2) MySQL 실행
+
+프로젝트의 Docker Compose 파일 위치에서 실행합니다.
+
+```bash
+docker compose up -d mysql-db
+```
+
+> 서비스명과 Compose 파일 위치는 저장소의 실제 `compose.yaml` 또는 `docker-compose.yml`을 기준으로 확인하십시오.
+
+### 3) Spring Boot 백엔드 실행
+
+```bash
+cd 02_backend/visionflow-api
+
+# Windows
+./gradlew.bat bootRun
+
+# Linux / macOS
+./gradlew bootRun
+```
+
+기본 주소: `http://localhost:8080`
+
+### 4) FastAPI AI 서버 실행
+
+```bash
+cd 03_ai-server/visionflow-ai
+
+# 가상환경 활성화 후
+python -m app.main
+```
+
+기본 주소: `http://127.0.0.1:8000`  
+API 문서: `http://127.0.0.1:8000/docs`
+
+### 5) Next.js 프론트엔드 실행
+
+```bash
+cd 01_frontend/visionflow-web
+npm install
+npm run dev
+```
+
+관제 화면: `http://localhost:3000`
+
+### 6) 기본 품질 검사
+
+```bash
+# Frontend
+npm run lint
+npm run build
+
+# Backend
+./gradlew.bat clean build
+
+# AI Server — 프로젝트 설정에 따라
+python -m pytest
+python -m ruff check .
+```
+
+> `.env`, DB 계정, 포트, 모델 가중치 경로 등은 공개 저장소에 비밀값을 올리지 않고 `.env.example`을 통해 관리합니다.
+
+---
+
+## 🗺️ Development Roadmap
+
+### ✅ 완료 또는 핵심 구현 완료
+
+- [x] 프로젝트 초기 아키텍처 및 모노레포 구조 설계
+- [x] Docker 기반 MySQL 개발 환경 구성
+- [x] 드론 관리 CRUD 및 상태 제어 API
+- [x] Next.js 드론 목록·상세 관제 화면
+- [x] 드론 텔레메트리 갱신 API
+- [x] WebSocket 기반 실시간 텔레메트리 전달
+- [x] 함대 단위 텔레메트리 관제
+- [x] MySQL 텔레메트리 이력 저장
+- [x] 과거 비행 경로 조회 API
+- [x] 지도 기반 실시간·과거 경로 연결 및 리플레이
+- [x] FastAPI 서버 기본 실행 및 프론트엔드 프록시 연동
+- [x] PC 수동 모드 기반 가상 드론 통합 검증
+
+### 🟡 현재 진행 중
+
+- [ ] 비행 세션 API와 가상 드론 촬영 흐름 안정화
+- [ ] 브라우저·스마트폰 영상 프레임 수집 흐름 고도화
+- [ ] 스마트폰 실센서 모드 HTTPS/인증서 환경 재검증
+- [ ] YOLO 기반 안전모·보호구 탐지 파이프라인 통합
+- [ ] 대시보드 오류 처리, 로딩 상태 및 운영 UI 개선
+- [ ] 전환·복구 스크립트와 다중 PC 개발 환경 표준화
+
+### 🔵 Phase 3 예정
+
+- [ ] DJI Mini 4 Pro 실제 촬영 영상 입력 검증
+- [ ] 무선 스트림 또는 중계 입력 어댑터 구현
+- [ ] 실제 비행 데이터와 관제 텔레메트리 연결
+- [ ] Human Pose Estimation 기반 위험 행동 탐지
+- [ ] 이벤트 캡처, 경고 및 관리자 알림 기능
+- [ ] Spring Security 기반 인증·인가 정책 강화
+- [ ] HTTPS/Nginx 및 배포 환경 구성
+- [ ] GitHub Actions 기반 CI 품질 검사와 배포 자동화
+- [ ] 최종 발표용 실시간 통합 시연 시나리오 완성
+
+---
+
+## 🔎 Engineering Principles
+
+- **Separation of Concerns**: 영상 추론, 관제 로직, UI, 데이터 저장소를 분리합니다.
+- **Replaceable Input**: 브라우저, 스마트폰, 시험 영상, 실제 드론 입력을 어댑터 방식으로 교체합니다.
+- **Traceability**: 텔레메트리와 이벤트를 이력으로 저장해 재현성과 감사 가능성을 확보합니다.
+- **Progressive Validation**: 가상 입력으로 안정성을 먼저 검증한 뒤 실제 드론으로 확장합니다.
+- **Recovery First**: 개발 PC 전환, 백업, 복구, 실행 점검 절차를 코드와 문서로 관리합니다.
+- **No Secret in Git**: 비밀번호, 토큰, 인증서, 개인키, 대용량 가중치는 Git 이력에 포함하지 않습니다.
+
+---
+
+## 👤 Developer
+
+**이명휘 · Team PyvaOps**
+
+- VisionFlow-Drone 아키텍처 및 데이터 파이프라인 설계
+- Next.js 관제 대시보드 개발
+- Spring Boot API·WebSocket·텔레메트리 이력 구현
+- FastAPI·YOLO·OpenCV AI 서버 통합
+- Docker 기반 개발 환경과 전환·복구 자동화 구성
+- 2차 가상 드론 검증 및 3차 실제 드론 연계 기획
+
+본 프로젝트는 지능형 공공·산업 안전 분야에서 재사용할 수 있는 **드론 기반 Vision AI 표준 관제 파이프라인**을 지향합니다.
+
+---
+
+## 📄 License & Notice
+
+소스 코드 공개 범위와 라이선스는 최종 배포 전 확정할 예정입니다.  
+외부 데이터셋, 모델 가중치, 이미지 및 제조사 SDK를 사용할 경우 각각의 라이선스와 이용 조건을 준수합니다.
+
+---
+
+<div align="center">
+
+© 2026 Team PyvaOps. All rights reserved.
+
+</div>

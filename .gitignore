@@ -1,0 +1,98 @@
+# ====================================================================
+# PyvaOps - VisionFlow Project Official .gitignore
+# ====================================================================
+
+# [ OS & System Files ]
+# --------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# [ IDE & Editors ]
+# --------------------------------------------------------------------
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+
+# Eclipse
+.classpath
+.project
+.settings/
+*.launch
+
+# Node
+node_modules/
+.next/
+
+# Logs
+*.log
+
+# [ Java / Spring Boot (visionflow-backend) ]
+# --------------------------------------------------------------------
+# 빌드 결과물 및 캐시
+# Java / Gradle
+.gradle/
+build/
+**/build/
+out/
+bin/
+.buildpath
+
+# [ Python / AI Engine (visionflow-ai) ]
+# --------------------------------------------------------------------
+# 컴파일된 바이트코드 및 캐시
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+
+# 가상환경 (Virtual Environments)
+# Python
+.venv/
+venv/
+env/
+ENV/
+
+# YOLO 대형 가중치 파일 및 학습 결과물 (용량이 커서 깃허브 업로드 금지)
+# 필요한 기본 가중치(.pt) 외에 로컬 테스트용 결과물 격리
+runs/
+*.weights
+
+# [ Database & Secret Docs ]
+# --------------------------------------------------------------------
+# 로컬 개발용 비밀문서 및 비밀번호 포함 파일 격리
+#Developer_Document/##developer_secret.txt
+*.local.properties
+.env
+.env.*
+*.env
+.env.local
+**/.env.local
+!*.env.example
+!.env.gpu.example
+
+# Local environment
+**/application-local.yml
+
+# [ DevOps & Containers (visionflow-devops) ]
+# --------------------------------------------------------------------
+# 도커 데이터 볼륨 매핑 시 로컬에 생기는 DB 데이터 파일 백업 방지
+# (Docker Compose로 MySQL 띄울 때 로컬에 데이터 저장용 폴더 지정 시 필수)
+docker_status/
+mysql_data/
+
+# Automated test and benchmark reports
+artifacts/
+backups/
+
+# VisionFlow local mobile HTTPS certificates and metadata
+/artifacts/mobile-https/artifacts/mobile-https/
+artifacts/mobile-https/

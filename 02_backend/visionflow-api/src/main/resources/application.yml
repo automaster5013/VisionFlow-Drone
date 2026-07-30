@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: visionflow-api
+
+  profiles:
+    active: local
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: Asia/Seoul
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+
+  endpoint:
+    health:
+      show-details: always
+
+  health:
+    db:
+      enabled: true
+
+visionflow:
+  security:
+    operator:
+      enabled: ${VISIONFLOW_OPERATOR_SECURITY_ENABLED:false}
+      viewer:
+        name: ${VISIONFLOW_VIEWER_NAME:viewer}
+        key: ${VISIONFLOW_VIEWER_KEY:}
+      operator:
+        name: ${VISIONFLOW_OPERATOR_NAME:operator}
+        key: ${VISIONFLOW_OPERATOR_KEY:}
+      admin:
+        name: ${VISIONFLOW_ADMIN_NAME:admin}
+        key: ${VISIONFLOW_ADMIN_KEY:}
+      session:
+        ttl: ${VISIONFLOW_OPERATOR_SESSION_TTL:PT8H}
+        idle-timeout: ${VISIONFLOW_OPERATOR_SESSION_IDLE_TIMEOUT:PT30M}
+        maximum-active: ${VISIONFLOW_OPERATOR_SESSION_MAXIMUM_ACTIVE:1000}
+      login-guard:
+        maximum-failures: ${VISIONFLOW_OPERATOR_LOGIN_MAXIMUM_FAILURES:5}
+        window: ${VISIONFLOW_OPERATOR_LOGIN_FAILURE_WINDOW:PT10M}
+        lock-duration: ${VISIONFLOW_OPERATOR_LOGIN_LOCK_DURATION:PT15M}
+        maximum-tracked-clients: ${VISIONFLOW_OPERATOR_LOGIN_MAXIMUM_TRACKED_CLIENTS:10000}
+
+  audit:
+    retention:
+      enabled: ${VISIONFLOW_AUDIT_RETENTION_ENABLED:false}
+      archive-confirmed: ${VISIONFLOW_AUDIT_RETENTION_ARCHIVE_CONFIRMED:false}
+      days: ${VISIONFLOW_AUDIT_RETENTION_DAYS:90}
+      batch-size: ${VISIONFLOW_AUDIT_RETENTION_BATCH_SIZE:1000}
+      cron: "${VISIONFLOW_AUDIT_RETENTION_CRON:0 30 3 * * *}"
+
+  incident:
+    sla:
+      enabled: true
+      scan-delay-ms: 15000
+
+  maintenance:
+    flight-gate:
+      mode: ${VISIONFLOW_MAINTENANCE_FLIGHT_GATE_MODE:ADVISORY}
+      incident:
+        enabled: ${VISIONFLOW_MAINTENANCE_FLIGHT_GATE_INCIDENT_ENABLED:true}
+        threshold: ${VISIONFLOW_MAINTENANCE_FLIGHT_GATE_INCIDENT_THRESHOLD:3}
+        window-minutes: ${VISIONFLOW_MAINTENANCE_FLIGHT_GATE_INCIDENT_WINDOW_MINUTES:10}
+        priority: ${VISIONFLOW_MAINTENANCE_FLIGHT_GATE_INCIDENT_PRIORITY:HIGH}

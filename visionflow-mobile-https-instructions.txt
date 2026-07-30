@@ -1,0 +1,35 @@
+VisionFlow Mobile HTTPS Kit
+
+Place the files at:
+
+C:\VisionFlow-Drone\compose.mobile-https.yaml
+C:\VisionFlow-Drone\infrastructure\mobile-https\Caddyfile
+C:\VisionFlow-Drone\scripts\setup-visionflow-mobile-https.ps1
+C:\VisionFlow-Drone\scripts\run-visionflow-mobile-https-setup.bat
+C:\VisionFlow-Drone\scripts\validate-visionflow-mobile-https.ps1
+C:\VisionFlow-Drone\scripts\stop-visionflow-mobile-https.bat
+
+Prerequisites:
+- Install mkcert.
+- Use an Administrator terminal.
+- PC and phone must use the same trusted Wi-Fi/LAN.
+- Windows network profile must be Private.
+
+Setup:
+C:\VisionFlow-Drone\scripts\run-visionflow-mobile-https-setup.bat
+
+Optional IP:
+C:\VisionFlow-Drone\scripts\run-visionflow-mobile-https-setup.bat -LanIp 192.168.0.10
+
+Generated phone files:
+C:\VisionFlow-Drone\artifacts\mobile-https\phone\visionflow-rootCA.crt
+C:\VisionFlow-Drone\artifacts\mobile-https\phone\visionflow-mobile-connection.txt
+
+Copy only visionflow-rootCA.crt to the phone.
+Never transfer visionflow-mobile-key.pem.
+
+Validate:
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\VisionFlow-Drone\scripts\validate-visionflow-mobile-https.ps1"
+
+Stop:
+C:\VisionFlow-Drone\scripts\stop-visionflow-mobile-https.bat

@@ -1,0 +1,14 @@
+{
+    auto_https off
+    admin off
+}
+
+:3443 {
+    tls /certs/visionflow-mobile.pem /certs/visionflow-mobile-key.pem
+    encode zstd gzip
+
+    reverse_proxy visionflow-frontend:3000 {
+        lb_try_duration 10s
+        lb_try_interval 500ms
+    }
+}

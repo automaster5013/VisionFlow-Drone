@@ -1,0 +1,7 @@
+services:
+  frontend-web:
+    volumes:
+      - type: bind
+        source: ./artifacts/presentation-demo
+        target: /app/public/demo
+        read_only: true

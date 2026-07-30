@@ -1,0 +1,4081 @@
+{
+  "schemaVersion": 1,
+  "project": "visionflow",
+  "operation": "PORTABLE_SOURCE_RELEASE",
+  "createdAt": "2026-07-28T04:03:39.086008+00:00",
+  "archiveRoot": "VisionFlow-Drone",
+  "summary": {
+    "includedFiles": 790,
+    "includedBytes": 4594130,
+    "excludedEntries": 27
+  },
+  "files": [
+    {
+      "path": ".env.example",
+      "sizeBytes": 105,
+      "sha256": "faa12cf1f739d106534fb6ab1aeadd7dc57e90ae89c1427dcc67e5ee76e8262f"
+    },
+    {
+      "path": ".gitignore",
+      "sizeBytes": 2222,
+      "sha256": "f7227e9866e66f01234e33c6bc5f795735fbb75e9de354a8648a7784535a0148"
+    },
+    {
+      "path": "01_frontend/visionflow-web/.dockerignore",
+      "sizeBytes": 76,
+      "sha256": "a76c69cbcb206d5239a62a0591e46c1cc78380746231512a3cba04a7465fbd18"
+    },
+    {
+      "path": "01_frontend/visionflow-web/.env.example",
+      "sizeBytes": 86,
+      "sha256": "6ca23aa6ca54159b182381f089807949cb29d26bc4881a42a6212855ad392e98"
+    },
+    {
+      "path": "01_frontend/visionflow-web/.gitignore",
+      "sizeBytes": 493,
+      "sha256": "7ebda5696df141d6cff6fdfa44c91754c79ae32dcbf2290b1e866c74966c57c1"
+    },
+    {
+      "path": "01_frontend/visionflow-web/AGENTS.md",
+      "sizeBytes": 327,
+      "sha256": "e3447d84251880fb34cfae09131cb4c57471529bbfe60976a3245793cf621627"
+    },
+    {
+      "path": "01_frontend/visionflow-web/CLAUDE.md",
+      "sizeBytes": 11,
+      "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
+    },
+    {
+      "path": "01_frontend/visionflow-web/Dockerfile",
+      "sizeBytes": 1006,
+      "sha256": "7be376149a8bf7d33eccadc72588d2d2416b4eae9b6d2ef192daf470a851ac7b"
+    },
+    {
+      "path": "01_frontend/visionflow-web/LAPTOP_CAMERA_VERIFY.md",
+      "sizeBytes": 1947,
+      "sha256": "d07f9e3dbb289a8845f3e1be13aa27ebeeece67f41107a1321a0e8dd452987d9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/README.md",
+      "sizeBytes": 2279,
+      "sha256": "0e7adac6603a69181b38dec65bc5530115a158c64907207e1c77e70fe4bbe536"
+    },
+    {
+      "path": "01_frontend/visionflow-web/eslint.config.mjs",
+      "sizeBytes": 465,
+      "sha256": "870f1adccecf3051cbcd9fd307cef51d7633cf510979c181a81f4b1797273493"
+    },
+    {
+      "path": "01_frontend/visionflow-web/next-env.d.ts",
+      "sizeBytes": 247,
+      "sha256": "7b550dda9686c16f36a17bf9051d5dbf31e98555b30d114ac49fc49a1e712651"
+    },
+    {
+      "path": "01_frontend/visionflow-web/next.config.ts",
+      "sizeBytes": 2216,
+      "sha256": "3130d3e9a58d2b97e49b7232138a14346d4bf197c944fdcbe43bf16fe53af48c"
+    },
+    {
+      "path": "01_frontend/visionflow-web/package-lock.json",
+      "sizeBytes": 236592,
+      "sha256": "87e9beb5e46f1714ba67b5cb8725db841e1d4e832a5c5d37739e7886332403f9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/package.json",
+      "sizeBytes": 659,
+      "sha256": "cbfcfd4d330ac97e215fcce411e7e57cf472a3d7a5ec62ec0bafa9ac96947766"
+    },
+    {
+      "path": "01_frontend/visionflow-web/postcss.config.mjs",
+      "sizeBytes": 94,
+      "sha256": "dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde"
+    },
+    {
+      "path": "01_frontend/visionflow-web/public/file.svg",
+      "sizeBytes": 391,
+      "sha256": "2b67812c325c199a02536cdbeea0c593a72f707d323b72ee3e08dbab06753bd4"
+    },
+    {
+      "path": "01_frontend/visionflow-web/public/globe.svg",
+      "sizeBytes": 1035,
+      "sha256": "b614b9bf183925957661ac851498fe1d8029fd43a62fbfed86f9e2624a57e7cf"
+    },
+    {
+      "path": "01_frontend/visionflow-web/public/next.svg",
+      "sizeBytes": 1375,
+      "sha256": "55995dfad6ecb4945a1e856ddca03c5e16aa5bf13fd21b4df6a74ae79357bcfc"
+    },
+    {
+      "path": "01_frontend/visionflow-web/public/vercel.svg",
+      "sizeBytes": 128,
+      "sha256": "f081337b2fee635b455b63275406a3e7f39d6a014e25ad90dab5a67e62a12ac4"
+    },
+    {
+      "path": "01_frontend/visionflow-web/public/window.svg",
+      "sizeBytes": 385,
+      "sha256": "644768c4aaeb4767bce293344eeb0c125fb804a94d801440424072202d85e3a1"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/ai-preview/page.tsx",
+      "sizeBytes": 551,
+      "sha256": "0337a84175447aff184cddcf5fc6564c26a1d4c822cfc7193dedaff6e3c0dc42"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/alerts/[id]/acknowledge/route.ts",
+      "sizeBytes": 1151,
+      "sha256": "bdf035111fd46bb7f2e6ed334bf7df6cc776cfc868afa2950666941004229b26"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/alerts/[id]/resolve/route.ts",
+      "sizeBytes": 1147,
+      "sha256": "60d9ad8ce9c78213305594cbd4ca0eb1a5c94aeebf822c83b559bf7f40752bca"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/alerts/[id]/route.ts",
+      "sizeBytes": 801,
+      "sha256": "2d210b2dde3bb77b0f5b0c6ba496fbbc86c02363e6a213fa78c3139386920e29"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/alerts/route.ts",
+      "sizeBytes": 3024,
+      "sha256": "44dd4e56982b071b4ec486da033ba66279d95bff759970acbb962e00606055ba"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/events/[id]/snapshot/route.ts",
+      "sizeBytes": 1627,
+      "sha256": "293a8230ab25d650926121e0334587ec28e791184f14b069b91d7695d4522d49"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/events/route.ts",
+      "sizeBytes": 1075,
+      "sha256": "944fdd7046ad5d83bdaddf5dcf53372803495d6d2976332a7d7e5ac6f570934a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/ingest/frame/route.ts",
+      "sizeBytes": 3097,
+      "sha256": "21d950988389774e2509198700102dac57ce41bf6d5f13e192b31c84643eff8f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/ingest/status/route.ts",
+      "sizeBytes": 1000,
+      "sha256": "c4d538c754c7948c1ff46faf88fe712e833b8092ba0db9cbf1c5b74ed674f1b9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/metrics/status/route.ts",
+      "sizeBytes": 987,
+      "sha256": "1f375a84dd37065ec139e136648ad0f2250bdad3810a48006cf3365b4668da6f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/ai/stream/status/route.ts",
+      "sizeBytes": 1037,
+      "sha256": "f827d5c72d6e8fd28c6b6ec586a4a976aed29582705b0b48bbf79cd36c779081"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/audit-logs/export/route.ts",
+      "sizeBytes": 556,
+      "sha256": "8b12840e0b2df5a373786376d84585b32dcc83009a71c79550a7eb0066d14e94"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/audit-logs/retention/cleanup/route.ts",
+      "sizeBytes": 962,
+      "sha256": "a0e6305c3cd40da56bc3b43904f8958def9e95b514553e14f1c10111499d7a2f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/audit-logs/retention/route.ts",
+      "sizeBytes": 158,
+      "sha256": "8aa5f56882eec7d70a05ebf1733c293069a930b3ed3f6de13f6a902c15a74b78"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/audit-logs/route.ts",
+      "sizeBytes": 497,
+      "sha256": "5ed8b69cb9990c35f2dccc5dcaf2303ec7be31904e8b43966ce9ae4a57529920"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/dashboard/operations/route.ts",
+      "sizeBytes": 3362,
+      "sha256": "525516e5be935793a0d5abd0d45df67c34cbbf0a2a010c950c32544dd66df6be"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/demo/scenarios/[id]/[action]/route.ts",
+      "sizeBytes": 1106,
+      "sha256": "c8684d05bcd7d8fc3e745bf3acd6943164096cc0356aa1a39e2642003c17a085"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/demo/scenarios/[id]/route.ts",
+      "sizeBytes": 672,
+      "sha256": "e73b6c5225c3ec7c4c6b92f6af16c1bb804808aef3378a515325771395d87f22"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/demo/scenarios/route.ts",
+      "sizeBytes": 1976,
+      "sha256": "3ebfdc62dd37be8494c757435be8d7d554dbef2c81c4aa247803b6e9cafd06f1"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-quality-assessments/backfill/route.ts",
+      "sizeBytes": 2631,
+      "sha256": "c5e3e8b727dd90bb79b2ccbda89329c8785ca3519c450f254b26a702f94a8aff"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-quality-assessments/route.ts",
+      "sizeBytes": 2525,
+      "sha256": "85bf414c0a1fc6204cddb6fbf0ba611cc7628c87790ded27d4c416476bfe1234"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-sessions/[sessionId]/[action]/route.ts",
+      "sizeBytes": 2398,
+      "sha256": "afa8e5fd404fd9717180e31ba3b7414d37777a6789bd58a46a22ba907e6e5fef"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-sessions/[sessionId]/quality-assessment/route.ts",
+      "sizeBytes": 2778,
+      "sha256": "ee6f6178abd57accdb00b561a1394399f2ddea5ddf1c6a70ddc45e24cdbb8b99"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-sessions/[sessionId]/replay/route.ts",
+      "sizeBytes": 2812,
+      "sha256": "66fc1d79919f7b1ecae83f4c4edd33c1c82f852fa9e4c0ebdb9114b48e4b8900"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-sessions/[sessionId]/route.ts",
+      "sizeBytes": 2630,
+      "sha256": "a5e4d3b4d0241ded80ef665cf8ed22cb341b3e645d28150c944ade8d5f3b8bb3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-sessions/route.ts",
+      "sizeBytes": 4199,
+      "sha256": "c18d11aca9624b6fa1c4ec2f7b35553df1ceccb726c905b145b6723acfb18fa7"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/route.ts",
+      "sizeBytes": 4756,
+      "sha256": "0ae33a01346fddaf0a6acd0f73538d3b535d1a759b6fa9e4dc9ac952921a9df2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/status/route.ts",
+      "sizeBytes": 1926,
+      "sha256": "b8a94ae60855cc4b2c972136c9e6a9c9e10816daec3ab307a34611e2167e5d67"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/telemetry/history/route.ts",
+      "sizeBytes": 1950,
+      "sha256": "e4322f5304cec4c9c40a86c96094348c2d86878a718d630cef9e493388611974"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/[id]/telemetry/route.ts",
+      "sizeBytes": 1421,
+      "sha256": "1421a729a686f885ebffe3b022e845f0641b7bd38fb9daa28f2524275cdae8f4"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/drones/route.ts",
+      "sizeBytes": 3458,
+      "sha256": "fb679abc5f80ddb1519fb758496d67a6ca1a6a7043b391f5dbe27e6a359004b2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/flight-quality/fleet-reliability/incidents/synchronize/route.ts",
+      "sizeBytes": 2246,
+      "sha256": "cbf9c127fa267a7abee9d2eff335e984c4a29765f8e90b9ef4dd1f6005d82241"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/flight-quality/fleet-reliability/route.ts",
+      "sizeBytes": 1876,
+      "sha256": "6646aaf3f99d86ab6bb4833fe5e808259cfe166dadd582b134129839d3a17ac6"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/geofences/[id]/active/route.ts",
+      "sizeBytes": 1718,
+      "sha256": "603577c72a4537432ee4508510843332651a0438dfdf27fc8633aee739864a6b"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/geofences/[id]/route.ts",
+      "sizeBytes": 2444,
+      "sha256": "3f328ca5919b9f7b6b387e3b5c9fe59d48ecea4f2027be52315fa23963e398d7"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/geofences/events/route.ts",
+      "sizeBytes": 1088,
+      "sha256": "d1d3b74d2b9135aa0ab2d838f8907bc88af16ff4bc8d5506b203faac6a3ed798"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/geofences/route.ts",
+      "sizeBytes": 1630,
+      "sha256": "ce5ffd8905990a9127e9f62633c7d96aa5887f54d51ce5b2c4d07429add7cc12"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/incidents/[id]/assignee/route.ts",
+      "sizeBytes": 1041,
+      "sha256": "1c2db3b7bab7ca73e462d4a8d40940f9f8114f8cfb23184690792f53db5ed5c7"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/incidents/[id]/notes/route.ts",
+      "sizeBytes": 1033,
+      "sha256": "2f18ceef7288e62560444f467ec43e7cb6c02603f0cc5f3521084fb9e3756140"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/incidents/[id]/priority/route.ts",
+      "sizeBytes": 1044,
+      "sha256": "f1270d273bfd107c3dfea55604672ccd86980fb6627a4d9bb44fe9cf516d02fd"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/incidents/[id]/report/route.ts",
+      "sizeBytes": 669,
+      "sha256": "ab5148754a5c07ee787613632650e25d65df118fcfa8541aef919cc5497949a3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/incidents/[id]/route.ts",
+      "sizeBytes": 659,
+      "sha256": "572d2f4e7adb90ae21f79cc2cd6cb1f285f988a9e070fa2afe5cd0de6ba6ea62"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/incidents/[id]/status/route.ts",
+      "sizeBytes": 1036,
+      "sha256": "de7f21d731c7b23670b722663e180d2025c4aa25691684f6952b0e8f2b773d2d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/incidents/route.ts",
+      "sizeBytes": 3125,
+      "sha256": "59072e24162e87a23ac5a04d56f2d77305b952cdc6b498e75d0c2e41644539b3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/flight-clearance/[droneId]/route.ts",
+      "sizeBytes": 650,
+      "sha256": "384bf51b027e18a4589c3e0bbef2ffb6b500e9d46a5b7528f1cc1ba8448c71d6"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/flight-clearance/route.ts",
+      "sizeBytes": 317,
+      "sha256": "af3dd9333c5bd2f9940fd5d7d168d863f165e2695c8df36a872423d522e60b40"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/metrics/route.ts",
+      "sizeBytes": 847,
+      "sha256": "2e3b846116d850984c39a1459273404b239001f01ddf2670fd91065532303cb4"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/priorities/route.ts",
+      "sizeBytes": 307,
+      "sha256": "b3cdd1cd358b818e325ff01005d21fe1dcf34ff1b4ec634e4455a1e2999cb239"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/sla/incidents/route.ts",
+      "sizeBytes": 490,
+      "sha256": "43c6ba9a74924d962dc89aa480e3d51568dc6f281bfd946d97b8d8dd8ebd2c4c"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/sla/route.ts",
+      "sizeBytes": 304,
+      "sha256": "a2bfa0d0075519e0bdb1daf3c31804b2bc3887012b19be381a87df5a71e64622"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/work-orders/[id]/complete/route.ts",
+      "sizeBytes": 993,
+      "sha256": "317a709f55fd13b79e87bc1cee348c223bedfec9d5cc829579b4dda8f0c51e42"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/work-orders/[id]/route.ts",
+      "sizeBytes": 654,
+      "sha256": "7d119cbf299478ce5c333b0fd0a32754f7e32adf419df1d8943c491c8f83edd9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/work-orders/[id]/start/route.ts",
+      "sizeBytes": 990,
+      "sha256": "caf799963bf387000c5942261c4eb3324706f3692476659dc0730ebf0a092956"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/maintenance/work-orders/route.ts",
+      "sizeBytes": 1441,
+      "sha256": "bf2c11cc1e25f7f363f48a50ada633a536ba12ab7c5a82b40dc740db80ec0751"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/mobile/evidence/status/route.ts",
+      "sizeBytes": 411,
+      "sha256": "91782f38ca61b7d0d8ab04d85f37de61903b2c82fa2cb0d2d95ed30562b9263d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/operator/session/route.ts",
+      "sizeBytes": 6206,
+      "sha256": "986aa992683b0d914b6dd2d0e208cad7182d1ef214d746fdb53716d55d895e1a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/operator/sessions/[sessionId]/route.ts",
+      "sizeBytes": 1100,
+      "sha256": "59b6d6e47e6811db943a2e465d8b364426049577eb19bf3ce4a93f2139a4ce39"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/operator/sessions/others/route.ts",
+      "sizeBytes": 497,
+      "sha256": "369ae45359c0ab0cf0cb5b0085322c58d54a80c7f1d1da283169ba4acc01003f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/operator/sessions/route.ts",
+      "sizeBytes": 192,
+      "sha256": "d9432cf7aaddc7e3a5e5a2e7540b191aefec522ce0387f87f7c0483e6ae412db"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/api/security/csp-report/route.ts",
+      "sizeBytes": 6678,
+      "sha256": "c3dd76fa1d431f9c3d05237f7029787472cd53b890d9ece314d63122dbb13cd2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/audit-logs/page.tsx",
+      "sizeBytes": 23137,
+      "sha256": "2a657390e3ffab7ab5e58860fdb56bd8fd4546f834d283f4ea4de87f6c12ff63"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/cameras/page.tsx",
+      "sizeBytes": 130,
+      "sha256": "22cfb9f6d01251f3eb69b9e781f75d28a7aa003253330439cd6687ea93034eeb"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/dashboard/error.tsx",
+      "sizeBytes": 1892,
+      "sha256": "8abb0a56187590b8fdc47a7dd300384c8ced9a7e02405425d96c0aee4a39aca5"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/dashboard/loading.tsx",
+      "sizeBytes": 897,
+      "sha256": "a770d0f8d84e50bd5b4190496e6f55e7e4e10ae4eae2abfeda6754f856ea25d2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/dashboard/page.tsx",
+      "sizeBytes": 9908,
+      "sha256": "3e816c91013f2a2025bb6255bb740b003d24763ad9044bd537327409e95630e5"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/demo-scenario/page.tsx",
+      "sizeBytes": 290,
+      "sha256": "68cb0b807c2970939a8a2afb330da25348458436c171bd4f23a480ec34deafe2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/drones/[id]/error.tsx",
+      "sizeBytes": 1692,
+      "sha256": "1a854ffb34c6830cd4c896bd82e41e4e7c84d8f504d792774086dd66bfc711f0"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/drones/[id]/flight-sessions/[sessionId]/report/page.tsx",
+      "sizeBytes": 713,
+      "sha256": "80ac55f6641d495f071ffd3d81f6b278220bed44dab2df63f5d556dd21a84b0a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/drones/[id]/loading.tsx",
+      "sizeBytes": 1056,
+      "sha256": "af3677f76767576551565a942cb9f40314fb37fc30e5792741c5adc2954a46f7"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/drones/[id]/page.tsx",
+      "sizeBytes": 1125,
+      "sha256": "55c5e97abf3c07a6d71bf936afb88814b1287a423be30b8c8d5cbbde1605c95b"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/drones/page.tsx",
+      "sizeBytes": 5918,
+      "sha256": "7b947b82f16a91e032cfab49181fbcea35b835d4a459af1fee0194ff6f098d6e"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/favicon.ico",
+      "sizeBytes": 25931,
+      "sha256": "2b8ad2d33455a8f736fc3a8ebf8f0bdea8848ad4c0db48a2833bd0f9cd775932"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/fleet-reliability/page.tsx",
+      "sizeBytes": 360,
+      "sha256": "c5c0eeb752c28bd2ad2ec2b41a475911f77637ff7bcd9e29933196b5165a20de"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/flight-comparison/page.tsx",
+      "sizeBytes": 1096,
+      "sha256": "89c0883ab24b4b9f97198517587a7fccef95a9e94e486c1a85415dda53830739"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/globals.css",
+      "sizeBytes": 436,
+      "sha256": "a5958ec8a5d9064d7f55566cbcd020449afbe9b0dcc8ec42e182e5c20c67a2c2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/incidents/[id]/report/page.tsx",
+      "sizeBytes": 507,
+      "sha256": "41454c8ce0be0ec00a1f54de6a3a38168a74048fcb8566cf85492ff7dbc4d49f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/layout.tsx",
+      "sizeBytes": 1569,
+      "sha256": "a7dee1125edec71bc6355dddff896b91af840f608df7d7a29d664d568ca9a8e6"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/maintenance/page.tsx",
+      "sizeBytes": 1678,
+      "sha256": "6a6db0ffe3acddcf19d276eee473e55f0665006742df5c3077299cd2fbaa2483"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/mobile-camera/page.tsx",
+      "sizeBytes": 396,
+      "sha256": "076c1642cd11630ec53604e0791fc8fd54ad3dd9bc239323a22df81ee75bf96f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/mobile-control/page.tsx",
+      "sizeBytes": 161,
+      "sha256": "96f1b218d0e0b8c408482ff059a33e730d27e42a595b5cb13533e5c03ff6ccc8"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/mobile-flight/page.tsx",
+      "sizeBytes": 163,
+      "sha256": "9458a4dc7f0e99fe29d4cdbb463d5b2c1b8001e1611229752a85f8c21db6be42"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/operator-login/page.tsx",
+      "sizeBytes": 2205,
+      "sha256": "8f2d145ee01ba901530361810357d927a3793fb2ca6f57a84b592c4b95eaa009"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/operator-sessions/page.tsx",
+      "sizeBytes": 2870,
+      "sha256": "7562e3d6d727a95ee948e7da58b9ff8832b5dd29713c0f7d2044c502e87c5c26"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/page.tsx",
+      "sizeBytes": 109,
+      "sha256": "5a202bf9f67c6fabbea5bfa02aa285e3b2d34778154e9ee45f99fd164545a06f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/app/security-status/page.tsx",
+      "sizeBytes": 7613,
+      "sha256": "986c97c7a1d4cf4f3fdb2e3c8740018a85e0beb10d747101153fe7100bddd67a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/audit/audit-export-link.tsx",
+      "sizeBytes": 1172,
+      "sha256": "a6d25e0d8cb30ade7ca10ae5d99152fc2812dfca175fc0760177d90941cb9f05"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/ai-alert-operations-panel.tsx",
+      "sizeBytes": 36789,
+      "sha256": "ac63e0a61d0fe171c87e6a0aff7dc22a89b8af4e371c7754d153eeaacb314c8d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/ai-alert-realtime-notifier.tsx",
+      "sizeBytes": 13794,
+      "sha256": "8fae7fc184a7aadd808fbcea2a8837cb79d9ef17864f31ad77103da304fbb4a0"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/ai-performance-panel.tsx",
+      "sizeBytes": 12088,
+      "sha256": "97957b91b3ca81207ad9dd8618d62b054c184501355a70b0d00b9c52f7546d5a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/fleet-reliability-attention-panel.tsx",
+      "sizeBytes": 7282,
+      "sha256": "25b80b25935e42cf96ca1fe5ca4aee495e53f473761c8035816ff22a212c487f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/fleet-reliability-dashboard.tsx",
+      "sizeBytes": 23522,
+      "sha256": "9aec48ae50e5f57a27ffe9906be95ae9aba548c3b432bb98dde89a658d93890a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/fleet-reliability-incident-sync-button.tsx",
+      "sizeBytes": 3133,
+      "sha256": "d2547582ca7529f9d321d54af819c174294eeb9d6187d60a94ee53fcac0e7d6a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/flight-performance-trend-panel.tsx",
+      "sizeBytes": 19562,
+      "sha256": "940b89f627b200a673401c6c07478deab98727fd463616961c8cfc496dbb601f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/flight-session-comparison.tsx",
+      "sizeBytes": 38586,
+      "sha256": "45602cd6a19a149f35b7bbdea861bedab8d4cece2b11721092bda6ab8f95d83c"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/health-dashboard.tsx",
+      "sizeBytes": 2614,
+      "sha256": "e04ff6ad63fd14ce5d5a03123aa98276e62ac4f269e96a0f037e2096508918b0"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/incident-operations-panel.tsx",
+      "sizeBytes": 46452,
+      "sha256": "89ae6aebb446a012322f749c57b4a94fd6d4f4a2a350d961e0ba67d6788aeaa7"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/mobile-sensor-evidence-card.tsx",
+      "sizeBytes": 9855,
+      "sha256": "4fec20d9d0e029fb389e0d9396437584ce7ae1c308f4126774d410d0f59f0037"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/operations-dashboard.tsx",
+      "sizeBytes": 26356,
+      "sha256": "143ee2a4902af95e2eaa2b6728ca033e544bc5f904bda72a39c77abd59fc14d1"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/status-badge.tsx",
+      "sizeBytes": 1136,
+      "sha256": "c11ced34ab22de4d004a4423509e6301c241ff5fa831d128a2079f391862a0a6"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/dashboard/status-card.tsx",
+      "sizeBytes": 1031,
+      "sha256": "89079d4b308ff13420febf2f7f88dad91f27b5e205dd0beb316e1e2dccf2917e"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/demo/demo-scenario-console.tsx",
+      "sizeBytes": 34164,
+      "sha256": "ee0cfaa42d9b20b833d7a6eac1ed759ecf55e1ae86b7372d6d9f69a58689f2ac"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/ai-inference-event-panel.tsx",
+      "sizeBytes": 11023,
+      "sha256": "5814ad4be48c2e8b9f7bb51751cdb850a34dbd139515186aaabd3867687fad5a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/ai-live-stream-panel.tsx",
+      "sizeBytes": 8990,
+      "sha256": "23ddde3ec430d9a049fddcc4e6e956c77e10c3c2a28a4c37fcf9a556effcc28f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-actions.tsx",
+      "sizeBytes": 6251,
+      "sha256": "53d65e3287c8110f9d69b5ee08fce6736ad5fed416a79f5ed8b963f832cd1278"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-auto-refresh.tsx",
+      "sizeBytes": 3262,
+      "sha256": "01e4e43c6492970c6bb4a85feb9a1463c44dcee1830d70166e63f6c198268760"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-control-map.tsx",
+      "sizeBytes": 15304,
+      "sha256": "4d7a7bfbdf38f2c2a65a53736a6f04fce7e0ac05bf27cad863637417aeb66193"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-detail.tsx",
+      "sizeBytes": 9529,
+      "sha256": "fd354e0ff9cbb358b12810dd2a6c233e28189794997cbef0c997a24cb4ff04cc"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-fleet-control.tsx",
+      "sizeBytes": 31615,
+      "sha256": "5fc782a17a670afc53388a7a5203df6c802f03b595c7489142ac470d135111f2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-form-modal.tsx",
+      "sizeBytes": 19510,
+      "sha256": "e99ddd404bd422117ac2edd5ad639c67039e856b29ccc84cc2b4fbc4428f31b2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-history-panel.tsx",
+      "sizeBytes": 11091,
+      "sha256": "2a1d5a4f3b8bbfabc43981148efec7f2fbe2a2945d984141424d6362a9134ad6"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-list.tsx",
+      "sizeBytes": 5897,
+      "sha256": "f40a8ed1041838640f1d5dccfb40f155529bcd60bcc0aa5e5023d11a1e446434"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-page-client.tsx",
+      "sizeBytes": 6826,
+      "sha256": "fb8def5a7cc8ce23f1d2024f8df08ba65051621a1d2f39a87f94c1e2397a6f38"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-realtime-detail.tsx",
+      "sizeBytes": 972,
+      "sha256": "d6237529c0d5a25d259dd2d48a70f76e2c3dbd220c3754f7dd711f059133a4c8"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-status-badge.tsx",
+      "sizeBytes": 1582,
+      "sha256": "c896d6b5fc2d870e89b57e6f4c24dce2b9f3baa1d9c376c9121c60e8658f2f71"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-status-filter.tsx",
+      "sizeBytes": 1885,
+      "sha256": "3498d62fb07527be0b6dc4613da27461e2ab0fbf4aa66b5b441efbc22d59801c"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/drone-track-replay-controls.tsx",
+      "sizeBytes": 8175,
+      "sha256": "6e7e59dca94554df7dc9e120251cebb170db6e85cc648d1975ba26d337d855c3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/flight-session-replay-panel.tsx",
+      "sizeBytes": 43392,
+      "sha256": "8f918dfdee052cd2b4fb53c40af579f82c4d5062d3d3690ce9e86aa1f0a3ca97"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/flight-session-report-view.tsx",
+      "sizeBytes": 53473,
+      "sha256": "d134be6609d519429968c91ed381b75f4c0453057e9ba36bc62053e79d0d5c53"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/geofence-management-panel.tsx",
+      "sizeBytes": 14979,
+      "sha256": "92263909fe6105f8b4062d7bf0ca9306c75a804cb98d6a9937b29b3b441e5468"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/map/drone-location-map.tsx",
+      "sizeBytes": 1030,
+      "sha256": "1567913616008f3b78585e9ea936bf873f8604f5d1befb97194a3b6df2bf558d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/map/drone-map-client.tsx",
+      "sizeBytes": 5142,
+      "sha256": "48c873e1e3cb5e987fd9c5374a1c130fdea5f43ad3c96b5ba6721fc598ea8557"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/map/map-position-controller.tsx",
+      "sizeBytes": 822,
+      "sha256": "9cff415fcab4ea4cb2c141d9aab2b599ecac542a1ee61ec9a1d12f1ac8c609f2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/realtime-connection-badge.tsx",
+      "sizeBytes": 2239,
+      "sha256": "969dd26a84f6840171f04b815a95496d522d3dd3375be0d73e67497126f28a75"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/drones/telemetry-update-form.tsx",
+      "sizeBytes": 10144,
+      "sha256": "07db68ff360eeb4051e2830c4dee4a05c1cc1ac12109f16851f9913024ae6486"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/incidents/incident-report-view.tsx",
+      "sizeBytes": 15621,
+      "sha256": "d13147edaeb7ffc19ecbcc1f5931b3ad65a8c539d9a004c6d480ff87b2938ad8"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/layout/app-header.tsx",
+      "sizeBytes": 2885,
+      "sha256": "5280fbd829417bbf0721e85d547bac71fc1d357280b0fbd445211f332b3f265b"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/layout/app-sidebar.tsx",
+      "sizeBytes": 3097,
+      "sha256": "62e8bdc6d51f032c65dfacec7b2e53213ef3ad19f0e4dda6f2c270b8b317b838"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/maintenance/maintenance-metrics-panel.tsx",
+      "sizeBytes": 8809,
+      "sha256": "b710289798b92d8d3d4db67ebfee54b6238acd0dce5e347b8b9cf51697ba4568"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/maintenance/maintenance-priority-panel.tsx",
+      "sizeBytes": 10575,
+      "sha256": "e559fe7228d9e941ea16535950143de2a58f90396c496f0c05bb6308e171b955"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/maintenance/maintenance-sla-incident-tracking-panel.tsx",
+      "sizeBytes": 39928,
+      "sha256": "5d016f2ba03948fc48f8f02ef69cc904064d4f1897a088db5932046a1520a599"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/maintenance/maintenance-work-order-board.tsx",
+      "sizeBytes": 31922,
+      "sha256": "784116dfe28b9e702c41526b555abe38096d22498677b568c2ea310e27281f3e"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/mobile/mobile-ai-inference-preview.tsx",
+      "sizeBytes": 7364,
+      "sha256": "ce43400994b53a4194a02f5cde3713fb65a95e741825ce722a854321931dce37"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/mobile/mobile-camera-streamer.tsx",
+      "sizeBytes": 25383,
+      "sha256": "cfb0b293c393db272199e7e95b5cdb10bd9506e347b8edcfc061bce5acccf466"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/mobile/mobile-drone-control.tsx",
+      "sizeBytes": 16112,
+      "sha256": "9d92fa30840478ed5ab2ee9baea6fcfe55c3c63683b9b37b9bb919b72d2f0085"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/mobile/mobile-flight-control.tsx",
+      "sizeBytes": 43400,
+      "sha256": "6c11c6f5722f7f25502561c33fd23bcaf075568c0c8568920195790215aa67db"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/security/csp-report-monitor.tsx",
+      "sizeBytes": 9127,
+      "sha256": "8530970e498a4fcb7c6fd5000cd4a0aa1ec4cddf2e2e156f54a8f9de5141dea3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/security/operator-access-provider.tsx",
+      "sizeBytes": 2725,
+      "sha256": "70803eba657bebdd308a79b2c956c1baa33f819914235529602f4cb89f3ade63"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/security/operator-login-form.tsx",
+      "sizeBytes": 2881,
+      "sha256": "3b5d3a3f46d37838a48ed7c56a0e202ff948f4f4193d187404d6d1c05be620e0"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/security/operator-session-controls.tsx",
+      "sizeBytes": 1531,
+      "sha256": "63607040eb7fdaa59abccff921370247c081f91aeeb626607e77d90ba1878e2a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/security/operator-session-management-panel.tsx",
+      "sizeBytes": 8953,
+      "sha256": "1c3074444163a0bc1f1882a61256c1803d63aae1804a0b4ef94206e610eac628"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/components/security/security-header-probe.tsx",
+      "sizeBytes": 6498,
+      "sha256": "f189965dbe856a88b491ee6cde9633710254d20b1f806978b20c0db9db4f3bf3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/hooks/use-ai-alert-realtime.ts",
+      "sizeBytes": 3078,
+      "sha256": "f31d6b4554ce9889b866334094a62114df72ad6400093073244d6b5cdfe3fae3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/hooks/use-drone-fleet-telemetry.ts",
+      "sizeBytes": 22910,
+      "sha256": "47b14fbc54482955499aa07ec08b4aff0fbfbdd9e0f6d5cadb76f1a28b419efd"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/hooks/use-drone-telemetry.ts",
+      "sizeBytes": 3534,
+      "sha256": "c85041c25d53bcd20643e4df7b2ec2075a052b3a7e2cf28f8f5600fa2cfbb87c"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/hooks/use-incident-realtime.ts",
+      "sizeBytes": 2982,
+      "sha256": "a97b4f0c3bd7b063a395216d1c2380badc7fe5340d853802b25f9afaeee79799"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/hooks/use-mobile-drone-sensors.ts",
+      "sizeBytes": 7761,
+      "sha256": "9f33a763001e7d0857b754ead6a1f517fe05e014763eaa24ef1eda1a30e20da8"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/ai-alerts.ts",
+      "sizeBytes": 3974,
+      "sha256": "3e82ef13129e69459299135274ee82b5cf63566962451181466e995631d91d98"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/audit-logs.ts",
+      "sizeBytes": 3905,
+      "sha256": "e3d40666d2cd631d89a2b7126f7c183ad169938a6d812de26e57ed459d176ad3"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/audit-retention.ts",
+      "sizeBytes": 2043,
+      "sha256": "309419ea90e87c551f42d92d665a3be1b9d527213754e52fa49f48cfa4518ad9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/drones.ts",
+      "sizeBytes": 2191,
+      "sha256": "6b84fadf8b484f6df8ec877de4633194516421ecce4bc3b4c1d7251b90d6eb21"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/fleet-reliability.ts",
+      "sizeBytes": 1780,
+      "sha256": "0cbfd928363ee0c23087e59867291b8d8b4ba19cd7b06328dba0d0b487a6c5e5"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/health.ts",
+      "sizeBytes": 1618,
+      "sha256": "c46f594b0c0ebebcb941f4f4b44aebbc6c204c73e6b7d25f2b72cdb9bd757e3e"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/incidents.ts",
+      "sizeBytes": 4056,
+      "sha256": "57fca9ed0f6f22e98dfa4edb93599afc0b9f2a8117ea2bb14a89c4fc61e78981"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/api/operations-dashboard.ts",
+      "sizeBytes": 8371,
+      "sha256": "f5cc99f67b9e83ad9f81617bcd31569b20f4afa13a739f4770c8496b40d43e49"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/date.ts",
+      "sizeBytes": 460,
+      "sha256": "4061877bc54f8ec125c349dd5b769d2b0f2b828b06a6619b04950bc19f2e69b1"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/flight-quality-summary.ts",
+      "sizeBytes": 9889,
+      "sha256": "74dfdf9df153b9bcf37ada673e6d20e81c01209203ef3dad6ef35ba6952e5874"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/mobile-evidence.ts",
+      "sizeBytes": 10539,
+      "sha256": "3cada82ca4e9181458b40c8e66bc562b82380eba95d798fde25ef1bf33e302d5"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/ai-alert-proxy.ts",
+      "sizeBytes": 1466,
+      "sha256": "0ba7e03555f4fc9086980dc690ca6a1b5e991f31a528c6baf754558ca68cfbf9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/audit-log-proxy.ts",
+      "sizeBytes": 4157,
+      "sha256": "c02d27288bf7f90bcbf22c74af1f4d1a6aa10156aed8b7efa6d92de463b09908"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/audit-log-query.ts",
+      "sizeBytes": 3797,
+      "sha256": "bed6f26e385a04be1644a760b52eacda66cd8cfef73a8b728bf8e60a5d94e5d9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/demo-scenario-proxy.ts",
+      "sizeBytes": 1836,
+      "sha256": "0080f3ee768d4e27c80ef6bba8c44cfa13429b2aec28568181d572231c5fa459"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/incident-proxy.ts",
+      "sizeBytes": 1648,
+      "sha256": "9b564bf762e4d6015666ff28f6b1159deafaa211a5a1d8c646afbbeba862253f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/maintenance-work-order-proxy.ts",
+      "sizeBytes": 1530,
+      "sha256": "1b5415c256483925a49ba39359d7341efb1ee0a4ef5dc482dbb5248c7cd19d3d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/operator-auth.ts",
+      "sizeBytes": 1295,
+      "sha256": "c6dd10327c2ee5f3c3fe869929b3722525aa18e100961cecb2db4bb7d9f94d17"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/operator-mutation-guard.ts",
+      "sizeBytes": 1255,
+      "sha256": "724a9df67e64c9f06b98b2d8a86e30ba41647ebd7815b91d53827e82d0c0cbfa"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/operator-security.ts",
+      "sizeBytes": 1193,
+      "sha256": "4eb2aded7ea05db03504b50026b49c42293036cf5ad030bfef0feeb0a95b2126"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/operator-session-management.ts",
+      "sizeBytes": 2419,
+      "sha256": "13565672d0e69ddd18bb8ae3eacd30aa0c1ce0f675a02279d12c490ff2a40a6b"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/lib/server/same-origin.ts",
+      "sizeBytes": 1106,
+      "sha256": "ec46aa362156c97a9c2b821ac3e30e566ed45c4ef3f8ce1eb1078bb402f6adf9"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/ai-alert-realtime.ts",
+      "sizeBytes": 1160,
+      "sha256": "c5150765ea424f2f02bfc7ac5c6f1b1342a4dccc93c3baf449205111b608c765"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/ai-alert.ts",
+      "sizeBytes": 5761,
+      "sha256": "57cff693ad92fa9ae0b9a0c7f6d81b3fe0e3f50ff8321a9884668d0e8c9129f5"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/ai-browser-ingest.ts",
+      "sizeBytes": 367,
+      "sha256": "f9b80aeb6c23de1caa865b70659f9986cc8f0be540d9b13746ce8bfaf9551680"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/ai-inference-event.ts",
+      "sizeBytes": 668,
+      "sha256": "67a97842abdc31b217aadcc671942afa747c64d7a7d5d32067e3522b0973c60a"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/ai-stream.ts",
+      "sizeBytes": 352,
+      "sha256": "a704e0ad54aa7fa713e747ea556f4cfd788e1ad53aa99c7978f9ca0fb5460bfa"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/audit-log.ts",
+      "sizeBytes": 4777,
+      "sha256": "f69d05b947900b4d93243a57e9183025d21ed460113976171d588844a8452b23"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/audit-retention.ts",
+      "sizeBytes": 1911,
+      "sha256": "bdbf3e9ca2f32cfbbfdd7fb8f0d69beed6415005f3a19cc2f29de35746d2c919"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/demo-scenario.ts",
+      "sizeBytes": 3125,
+      "sha256": "691f8890b00a6934cbf5a5292ebd805e8b0271dab43c7b1f0cbd3e9be1c6e81d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/drone-telemetry-history.ts",
+      "sizeBytes": 253,
+      "sha256": "b98f1706e92649269118b70ba74e5fef29e5e12c1c691448484c2cae4bfcf54d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/drone.ts",
+      "sizeBytes": 1804,
+      "sha256": "cae2b7883f0cc25f32ba88e9b05e4b196a7034fbaa05be9c9e823e0de474655c"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/fleet-reliability.ts",
+      "sizeBytes": 4586,
+      "sha256": "24e06864fb31f5dfeaf21475a4451ad4244bf7e798ac862c594dcddd99d4a71d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/flight-quality-assessment.ts",
+      "sizeBytes": 5465,
+      "sha256": "630b7374dd3e42ee3d280df2a2dd6ab552c1d66accb51bf51495f8ddb01f7729"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/flight-quality-incident.ts",
+      "sizeBytes": 2611,
+      "sha256": "d4d81a0fa40a48182a5f136b33e82e0d45890b60d459fa5406ad2c2617aa35c5"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/flight-session-management.ts",
+      "sizeBytes": 544,
+      "sha256": "6501b10b80532296ea5ed6833572c36c43514a41cb238489252987341f0359e1"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/flight-session-replay.ts",
+      "sizeBytes": 1466,
+      "sha256": "021247e29a34cf2cb0beed98184b075591d75b825b931552dfabe06eef91d438"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/geofence.ts",
+      "sizeBytes": 859,
+      "sha256": "4f1b3c79a7a0f8eb35d441621e5c79a3814292d3a07da8e1f46a37edfe693281"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/health.ts",
+      "sizeBytes": 312,
+      "sha256": "5e0f331dfc2da90342785d2465396d247bc53155d4f91ea004e56aa22c7e9c40"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/incident-realtime.ts",
+      "sizeBytes": 1440,
+      "sha256": "74ec1f8986cb2547fcbef4b22f91eead719f7b2367dd48b0fbd037ce821a238e"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/incident-replay.ts",
+      "sizeBytes": 262,
+      "sha256": "ad662c655923b8d317156b92a4eb5743d1b85918acc4fcf7531bc52366fbfdc1"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/incident-report.ts",
+      "sizeBytes": 2496,
+      "sha256": "49ce8efac0b03e9f128a357b616bbdb7016576659831211f44b5c2be736da717"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/incident.ts",
+      "sizeBytes": 7321,
+      "sha256": "dcf3b580cdeecccf4b0151172379095afd99ed6b69b6b7df89250a152e6da522"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/maintenance-flight-clearance.ts",
+      "sizeBytes": 3947,
+      "sha256": "09548a7f073ffc336f3bcd4d98478844d2983a716eafc286261b0ae199f2f904"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/maintenance-metrics.ts",
+      "sizeBytes": 3430,
+      "sha256": "06eb865e715f9100c5f9885c1b52f1123be113072d3bea9405a781724aad2ef2"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/maintenance-priority.ts",
+      "sizeBytes": 5772,
+      "sha256": "659e3bc8622368c40044fe79a2979935d902408e0632cf3eb9cc347f22509938"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/maintenance-sla-automation.ts",
+      "sizeBytes": 1277,
+      "sha256": "44b9af83bcfc18ea998ebd421de15e32de01995595734f0f3acfaf74bbcf993f"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/maintenance-sla-incident-tracking.ts",
+      "sizeBytes": 9218,
+      "sha256": "51e1e2e624d52a02cecb2566ea5a12d080b6ff722b652edd7da8a314dadd8c73"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/maintenance-work-order.ts",
+      "sizeBytes": 4404,
+      "sha256": "04490213c9c64923c29fbc64924ffa1db640a826323eb24f9173cdd435719206"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/mobile-evidence-status.ts",
+      "sizeBytes": 1524,
+      "sha256": "4844bb0dd37fd891e72a451dd7610e38b106fd4a9adcb7b391a0b1aa23d80beb"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/mobile-telemetry.ts",
+      "sizeBytes": 788,
+      "sha256": "0885e01739fd909d96417adbc6255a123855c66de807a35e87992758b17a6ff0"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/operations-dashboard.ts",
+      "sizeBytes": 2456,
+      "sha256": "66d1868e715bd0d981482dc27b4b11db6a1a21e784e84cbb50169957c7e438b7"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/operator-security.ts",
+      "sizeBytes": 330,
+      "sha256": "3e44c9c07b12143e88d91776e80d37b87f9ce42308b93d95822feec49b94c3a5"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/operator-session-management.ts",
+      "sizeBytes": 1179,
+      "sha256": "cb759b8b4670bb6c5fc71444254f215e915f5d9c1aa9b06220d01cdeea5cfabe"
+    },
+    {
+      "path": "01_frontend/visionflow-web/src/types/websocket.ts",
+      "sizeBytes": 116,
+      "sha256": "d45b022b5fd383730fd546e8a076abdd3a2c35eb5b3275b753196a94690fc42d"
+    },
+    {
+      "path": "01_frontend/visionflow-web/tsconfig.json",
+      "sizeBytes": 670,
+      "sha256": "5c51df4c59f4510d8c7dadf07a5c32132228826a3b331da5e286207b4df7ef9c"
+    },
+    {
+      "path": "02_backend/README_(발표시연용).md",
+      "sizeBytes": 6712,
+      "sha256": "325a56aa913627dd19f08ceddf294f2f9c0114cab757f080775b969df6cdbbf4"
+    },
+    {
+      "path": "02_backend/README_(자동인수_테스트).md",
+      "sizeBytes": 5672,
+      "sha256": "5860243a6e9a94f541329466810f9a79f974aea8d098d501eff6c9d7a871f9ee"
+    },
+    {
+      "path": "02_backend/visionflow-api/.dockerignore",
+      "sizeBytes": 68,
+      "sha256": "3ab56eed49cd03bc9dd80c0f125cac74d8cfcbbe81ecc89e32ebf0e091c9e4ba"
+    },
+    {
+      "path": "02_backend/visionflow-api/.env.example",
+      "sizeBytes": 98,
+      "sha256": "ab34330ac5f708996e3c738fedb8ecd926ddabf752b12776ab0c380b2df06519"
+    },
+    {
+      "path": "02_backend/visionflow-api/.gitattributes",
+      "sizeBytes": 54,
+      "sha256": "193fbf6c445dea576a6f238c5262320931945a2ea03bae24b161b30856919a09"
+    },
+    {
+      "path": "02_backend/visionflow-api/.gitignore",
+      "sizeBytes": 444,
+      "sha256": "795029e58e368bb91c71cb3adb971491562622d4b1684604f278cdbfb8fec238"
+    },
+    {
+      "path": "02_backend/visionflow-api/Dockerfile",
+      "sizeBytes": 707,
+      "sha256": "9ebfe22c90cc42e6ae97b6d4ff7e695a23d044e2c032c69cda03235c94bf635f"
+    },
+    {
+      "path": "02_backend/visionflow-api/HELP.md",
+      "sizeBytes": 2379,
+      "sha256": "018b260fa69cf76c8db0de35822e527be6de9c8ea4d7d88513fa45b044c102c0"
+    },
+    {
+      "path": "02_backend/visionflow-api/README-APPLY.md",
+      "sizeBytes": 3167,
+      "sha256": "9ca3abfb322c593f3d56cc31c022fe331d7200f2946608aebe1a2e370f25629c"
+    },
+    {
+      "path": "02_backend/visionflow-api/README.md",
+      "sizeBytes": 5558,
+      "sha256": "6f73b1b06ad85de293d4b9081a88f50a5226a13db894e654747c32f2e2955caa"
+    },
+    {
+      "path": "02_backend/visionflow-api/build.gradle",
+      "sizeBytes": 1888,
+      "sha256": "47e8246d5a7a5e1823d741854d52f7bf672a580763265448718a67b358f72213"
+    },
+    {
+      "path": "02_backend/visionflow-api/gradle/wrapper/gradle-wrapper.jar",
+      "sizeBytes": 48462,
+      "sha256": "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7"
+    },
+    {
+      "path": "02_backend/visionflow-api/gradle/wrapper/gradle-wrapper.properties",
+      "sizeBytes": 281,
+      "sha256": "e0846bd420bf1543f500e0c9b35c01d84611b0f1afe01e24a82d0eca53c33ccb"
+    },
+    {
+      "path": "02_backend/visionflow-api/gradlew",
+      "sizeBytes": 8654,
+      "sha256": "ab5c0cad16305af2e619c159c1f58dd68d07fab9c11e36701e109c0277407f7a"
+    },
+    {
+      "path": "02_backend/visionflow-api/gradlew.bat",
+      "sizeBytes": 2846,
+      "sha256": "475c4f08cd57cf2faa819e7f36d72aa93f0ad646ea23a8f7fa3ef54dee1cbc52"
+    },
+    {
+      "path": "02_backend/visionflow-api/settings.gradle",
+      "sizeBytes": 122,
+      "sha256": "0442b93166f8ddde1b3b90df1ee720cd996ce5061f3947812fec2cc69aff65e7"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/VisionflowApiApplication.java",
+      "sizeBytes": 325,
+      "sha256": "4e9322828fddf0355994ff4779f1305b51c0876fc42d4399c4b15a287c96d4b9"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/controller/AiAlertController.java",
+      "sizeBytes": 3333,
+      "sha256": "7721805fd1650e83cb1fa3933b1fd90df5feff690b103d5f77c02d4a8c196bed"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/controller/AiInferenceEventController.java",
+      "sizeBytes": 2469,
+      "sha256": "14a638d07c7923c0ed8d5881da0fa88e007cb4bc4d9ab9c9efb714daae16181f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/domain/AiAlert.java",
+      "sizeBytes": 5861,
+      "sha256": "0f1bc142f90d298760f6a54e4f70b0b4c3a186c31963561c2a418fc9376d9ac3"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/domain/AiAlertSeverity.java",
+      "sizeBytes": 107,
+      "sha256": "f2fb6902fbd6d226cbe103cf1562b43b3928496ba88acfb42ba4763e07f7290c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/domain/AiAlertStatus.java",
+      "sizeBytes": 110,
+      "sha256": "e3cce39ac43104a92882b00d77d28ab9cb025178cb08077372d56ed514121ee6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/domain/AiDetection.java",
+      "sizeBytes": 2616,
+      "sha256": "84f8a4f0cfdafaad01fbba348623a2dc6f21fb352857707c3bebe941f7196844"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/domain/AiInferenceEvent.java",
+      "sizeBytes": 4447,
+      "sha256": "a6e5d8bf73e293c509ce893b45febe5c9d4d33deed073e27b46ef2e0b091477b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/domain/VideoSourceType.java",
+      "sizeBytes": 122,
+      "sha256": "3c5212c7a53152a78d41e9af576bff51b543576efb4d9f0b258631a52daea1ff"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiAlertAcknowledgeRequest.java",
+      "sizeBytes": 243,
+      "sha256": "c2b1d559c11e5857964610f876de2884b88a192c761602b0e08437a49a224dd0"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiAlertDetailResponse.java",
+      "sizeBytes": 149,
+      "sha256": "09faf8b243e68deffcebdd19ec6652426364b45f523831604eca863d250bfeff"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiAlertResolveRequest.java",
+      "sizeBytes": 286,
+      "sha256": "818f5ffe4ecedca8e2a1a9110241d1696a04e4f4653b123e0f2f270ba9f2f54d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiAlertResponse.java",
+      "sizeBytes": 2359,
+      "sha256": "29851aa38ca55ccea4dda05d4dc1e6c579dbf2428a5fea2720580ed3b53447dc"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiDetectionRequest.java",
+      "sizeBytes": 967,
+      "sha256": "8e44d90949213e1dde82898d79b92640dbcbfd8367c04f96d41291c9755fdaf7"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiDetectionResponse.java",
+      "sizeBytes": 787,
+      "sha256": "c690b7eede917cfaf83187daad829bbd8d04f7d884336f8b2a567065a84a9948"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiInferenceEventCreateRequest.java",
+      "sizeBytes": 1203,
+      "sha256": "d9180146893832f77827db2eafee646e870b7a46c1aa2262c02d2ebabe640e58"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/dto/AiInferenceEventResponse.java",
+      "sizeBytes": 1971,
+      "sha256": "5e3eeab7b6bb6202ea23fb5a5dda3c01cd6a4643d8c0cd801c17f32a2f312e92"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/realtime/AiAlertRealtimeAction.java",
+      "sizeBytes": 123,
+      "sha256": "93467bc475063d804da1b6cb9457747e125a31c1c94cb7d14e558f7acc266387"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/realtime/AiAlertRealtimeMessage.java",
+      "sizeBytes": 525,
+      "sha256": "7eb02fd2cb740454e531010020848bdbe11d69a80a2cb90cdb165488b3405623"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/realtime/AiAlertRealtimePublisher.java",
+      "sizeBytes": 2440,
+      "sha256": "721f906b3fed8edec01d929dbeda4c8b9920f0cd998f2d5ccc6ecb308eb0f274"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/realtime/AiRealtimePublisher.java",
+      "sizeBytes": 793,
+      "sha256": "ebfd46b0b6dd50a4bf44f739d6c791c553d0d3f1d9c105f063d50ba89fdccccb"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/repository/AiAlertRepository.java",
+      "sizeBytes": 1919,
+      "sha256": "67e50a54982a65a3c2c503dce56fa7f7e4b115c98a592051a72f5b7083550e48"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/repository/AiDetectionRepository.java",
+      "sizeBytes": 477,
+      "sha256": "3c3506680218f91da4ce4715856efc83b24f456fe2e1e053ec3a385a7ef43257"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/repository/AiInferenceEventRepository.java",
+      "sizeBytes": 5908,
+      "sha256": "3bc6a23fe8f29b6b7c260a856691c1d22ca863289d8cb902a42fe0f1d0be618e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/service/AiAlertRiskEvaluator.java",
+      "sizeBytes": 3102,
+      "sha256": "8c0ffad0c75f5832822edd59a14e13f7ef3b5709b5a74e578cfd6aaf80161ed8"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/service/AiAlertService.java",
+      "sizeBytes": 9125,
+      "sha256": "7793ac052a367ec80303015fa67e0ef317a202896552008383ddea4a11525195"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/service/AiInferenceEventService.java",
+      "sizeBytes": 7099,
+      "sha256": "813690b16a8d5dc53cf0881f30ab33c516b463bc60b8d6471eb48bfcb8fc41cf"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/ai/service/AiSnapshotStorageService.java",
+      "sizeBytes": 4921,
+      "sha256": "664a608ea1b3d494e5519e8b5c3671e6043599848a50c190d3d5d1d949cf2d98"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/config/AuditRetentionProperties.java",
+      "sizeBytes": 1509,
+      "sha256": "d2b70ac5c6ba85902d9d31637821fa0ef5351051c2aca5f9d0bd1c778e5ae806"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/controller/AuditLogController.java",
+      "sizeBytes": 7874,
+      "sha256": "5dc2a54c23c029f186bf6316a808a2873a1a0fa3badd3b95bd7753fe124c74fc"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/domain/AuditAction.java",
+      "sizeBytes": 1145,
+      "sha256": "c987049febdba5282c5a36f661f9b99b2412257ac4233210a3904a56e2935790"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/domain/AuditEntityType.java",
+      "sizeBytes": 265,
+      "sha256": "9b22743a5fda31f39d430f28aac41e228a4b59d48cd3ce52016e8286255a6e56"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/domain/AuditLog.java",
+      "sizeBytes": 3275,
+      "sha256": "5693cd599037b7eda0d21390c6fd930e9bf481c728639753283ad76cfe90f3eb"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/dto/AuditLogExportResult.java",
+      "sizeBytes": 184,
+      "sha256": "7ea547984678fed89d99297276ce00197fbe1035d5c458f44c6c61125c40ee58"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/dto/AuditLogPageResponse.java",
+      "sizeBytes": 715,
+      "sha256": "ed25fb32a83b21c16a31d642c081b9c2f984a6a54a09dfe7904a48f4e80d50c9"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/dto/AuditLogResponse.java",
+      "sizeBytes": 1163,
+      "sha256": "4cd3e01a53c15bfbcc47d07788ef1b34760bf67d8bf9912fd683ff9c507348a8"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/dto/AuditRetentionExecutionResponse.java",
+      "sizeBytes": 332,
+      "sha256": "cb17c0064e34840afe89184064468c816b269389bfb7ce04361bfa1204f261bb"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/dto/AuditRetentionStatusResponse.java",
+      "sizeBytes": 348,
+      "sha256": "775d1c8d2ff34a0236f8e9f5344d6fa7c5f1c270578f931aa9d8d84ea4101ffa"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/repository/AuditLogRepository.java",
+      "sizeBytes": 1920,
+      "sha256": "993b4a29920bb26947e65ef992e9afa3139a7e46011e5a7ae69c7783d8a8f544"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/scheduler/AuditRetentionScheduler.java",
+      "sizeBytes": 2794,
+      "sha256": "f55fd66afc1d0a22c0bff09a52e1466e5e47a73002a670b87b9b344df3b78224"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/service/AuditLogService.java",
+      "sizeBytes": 14763,
+      "sha256": "0e9e246cf14411db804ea0f56a331ed1d39fc01d8387dbe88bdb985991f6cf72"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/audit/service/AuditRetentionService.java",
+      "sizeBytes": 4034,
+      "sha256": "ff128753ecfadd4a389e059cbf4d424d876a20f1122f0cc36e3369b8d2e97a92"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/config/SecurityConfig.java",
+      "sizeBytes": 8568,
+      "sha256": "4222f6ea992b6adb6b76e42829b80d0faf21291dd0f4fb597db89813d430d74b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/config/WebSocketConfig.java",
+      "sizeBytes": 1691,
+      "sha256": "80737d5acd10b743f7d76b1642c752ae76afc64260747cd3aefba4ae6b796562"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/exception/BusinessException.java",
+      "sizeBytes": 577,
+      "sha256": "73b853b3857489294b05d48d4279ab3623a28fd346a17d8967e7c4e33023f36a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/exception/DuplicateResourceException.java",
+      "sizeBytes": 361,
+      "sha256": "80663c7d5609e54ef00f9fa295e1640b7474f1b6802b4e41fb453fa6bebb42c6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/exception/ErrorResponse.java",
+      "sizeBytes": 911,
+      "sha256": "ee70f115c367d5a62e7ef7a37dd682f895a1f486b901d2d350d5eb2655dba07f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/exception/GlobalExceptionHandler.java",
+      "sizeBytes": 5336,
+      "sha256": "c39aa05b9099a10812b3809cea300356c5aef46cd98587abcadccd1b4d5541c2"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/exception/ResourceNotFoundException.java",
+      "sizeBytes": 360,
+      "sha256": "17af1a9e700ded5f22471b08b492a18f38cece7a48a3c155430446b9b373e350"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/response/ApiResponse.java",
+      "sizeBytes": 390,
+      "sha256": "a425785a8cc7f674a329e4dcc4b9c7358d13c4a3f5279d79f0baa1c34a8c9132"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/response/DeleteResponse.java",
+      "sizeBytes": 126,
+      "sha256": "0ceed52a629adff3a64f39a8cd863683c1e6815c9791edec9c9c3f4e5572b3a6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorAuthenticationFilter.java",
+      "sizeBytes": 3963,
+      "sha256": "ce7708d507c0e95cc501aebc655ea027e85892246f37b7a74e57e9459d4692bf"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorBulkSessionRevocationResponse.java",
+      "sizeBytes": 170,
+      "sha256": "010be8fc422af57983641d4f78a711a4847c5a221862a466b5a97b3be72f364d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorCredentialRegistry.java",
+      "sizeBytes": 4882,
+      "sha256": "e2f34ac4c4593d22d120d08bf307a65cf8c6df81a440c8c45c8be8a6f9b1f643"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorLoginAttemptGuard.java",
+      "sizeBytes": 7705,
+      "sha256": "6ca2d49ff4c5ec1c10461f9453b758442d124f4c51288b1d07cb28710248714c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorPrincipal.java",
+      "sizeBytes": 135,
+      "sha256": "76e221bfbaf06717fa37443a324d93d0cfacaa617144bb4275dd146cc8c2193e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorRole.java",
+      "sizeBytes": 183,
+      "sha256": "7561476cf71f87402da17e75a31b35674c9d769f864921cb9f4d2cdb64f12d30"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorSecurityController.java",
+      "sizeBytes": 14363,
+      "sha256": "f77cc1dfa6ad1311db2454ac49bdec2b4e34fbda228b0eb6d71f775bdc63b69e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorSecurityErrorWriter.java",
+      "sizeBytes": 1109,
+      "sha256": "2a791057fe121125b5bb24d9ef414118270394745117b93e992c2d67e7178043"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorSecurityStatusResponse.java",
+      "sizeBytes": 198,
+      "sha256": "31c53a0e7e88bf8ea5c804928e331687df8f6994cd833dab10f088bebfaa647d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorSession.java",
+      "sizeBytes": 267,
+      "sha256": "8bf7bce9e0699e98e7ca56828d3a876e22dd4f7ce0b2eee69d11c9b071174141"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorSessionRegistry.java",
+      "sizeBytes": 11147,
+      "sha256": "4003b978beb35ea7301e9e90c4ea2c47592d38a10adf9c7eb27ad514a2290208"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorSessionResponse.java",
+      "sizeBytes": 660,
+      "sha256": "0f97fda6b360664b3d097add46d326796372b7e17cf7f0faefed8093dbea921d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/common/security/OperatorSessionSummary.java",
+      "sizeBytes": 385,
+      "sha256": "b8049c01fde590825db06b385b6f6c05fad024dd156ce61b07c9ab877522703d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/dashboard/controller/OperationsDashboardController.java",
+      "sizeBytes": 2289,
+      "sha256": "87e57dec977ee5d2aed2e02f118685f3768be95ea35aa359e32de828b8634f48"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/dashboard/dto/OperationsDashboardResponse.java",
+      "sizeBytes": 2048,
+      "sha256": "45851620c983c8909ad070da1b23e77a928bd1a2c94c3a8551c8d683eeb3ecc2"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/dashboard/service/OperationsDashboardService.java",
+      "sizeBytes": 15475,
+      "sha256": "984d262c21138cc79d80f7cf6db3f476f869a6dab285377f0320118181c0e00a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/bootstrap/DemoDroneDataInitializer.java",
+      "sizeBytes": 3107,
+      "sha256": "de9d2cd4bfd8f523039395c0920c53e9c069183d2a71ce548be3bdb6a1e27622"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/controller/DemoScenarioController.java",
+      "sizeBytes": 4418,
+      "sha256": "476626a3047da0d42d9b4d138de66beaca37ed03be499e04efb558d38bd0f966"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/domain/DemoScenario.java",
+      "sizeBytes": 4687,
+      "sha256": "d34af31b72cf883ff4b6b644dc45b32ac94ef626e32e688f25cd4f485294933d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/domain/DemoScenarioStage.java",
+      "sizeBytes": 143,
+      "sha256": "679339a026c584051e9d46505929db67dee8495f397c57d3aef122e171e12385"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/dto/DemoScenarioResponse.java",
+      "sizeBytes": 575,
+      "sha256": "3e30d180f48de0bbf12cb954f02abc640938ab692156bf50929879a7617a54d8"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/dto/DemoScenarioStartRequest.java",
+      "sizeBytes": 577,
+      "sha256": "2a1082541028809b9f02425e07ddee08139166bb6cee2058a4f3fcff10ae130e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/repository/DemoScenarioRepository.java",
+      "sizeBytes": 256,
+      "sha256": "b26c08d1b2b161a8ae0d3190fa4f667f0ed60f94c388bdfdcb1b5dc78039d4df"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/demo/service/DemoScenarioService.java",
+      "sizeBytes": 17680,
+      "sha256": "83232161a0dd17a1d133acacb978710b0c7308564079f808e4f5ffc42326fa83"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/controller/DroneController.java",
+      "sizeBytes": 5826,
+      "sha256": "77f16231a33c45b14c438a6b7610be28c8527b55869c7cd6e891ea31af76f855"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/domain/Drone.java",
+      "sizeBytes": 8835,
+      "sha256": "c8b1bd449cb292652831c955b4652cf6df02f171a8a233c50ce488c9b10cf960"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/domain/DroneStatus.java",
+      "sizeBytes": 158,
+      "sha256": "dfa722eb41d9207cad835f9cabc8544568292677139cda23b1b3ba97c5939fa5"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/domain/DroneTelemetryHistory.java",
+      "sizeBytes": 5373,
+      "sha256": "c1899b680e113623110baa470a026806f2420b4db5d3fb06f5620196034be3f3"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/domain/DroneTelemetrySource.java",
+      "sizeBytes": 137,
+      "sha256": "4cac9208960f994353ea47aee8aee4566f6167e6e3ecc554ae3651ee038c7525"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/dto/DroneCreateRequest.java",
+      "sizeBytes": 2415,
+      "sha256": "4b1df06d9e39d715cb68272f70c96ce75193574b2d17b928c72085c0ab0fcd0f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/dto/DroneResponse.java",
+      "sizeBytes": 1979,
+      "sha256": "a1604bf079abb072d27cabe5e0db7c2cbef327f494f16f9ac5b730624b459777"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/dto/DroneStatusUpdateRequest.java",
+      "sizeBytes": 296,
+      "sha256": "93913e5a292e3e121c961cf7ef08d20589399e81a80d7cb2fc425d8c6f579385"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/dto/DroneTelemetryHistoryResponse.java",
+      "sizeBytes": 1650,
+      "sha256": "286cc385261056d2bf3e67413e622691ddd103be4a19a6451e08fe0bf63d63e8"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/dto/DroneTelemetryUpdateRequest.java",
+      "sizeBytes": 4015,
+      "sha256": "6e8f7d3af94e18f98552ff08ab1ccef2d83285c2dcb61ee58335937fc9921a13"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/dto/DroneUpdateRequest.java",
+      "sizeBytes": 917,
+      "sha256": "c2cd7135d75cf9e6b0788902fb92486600b4dac6335283cf293bf1a05f7a0fcb"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/realtime/DroneRealtimePublisher.java",
+      "sizeBytes": 845,
+      "sha256": "f102b25488fd0515118d45a4489e9b68fa52fc87553c117a56846a26aa7b1e48"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/repository/DroneRepository.java",
+      "sizeBytes": 1200,
+      "sha256": "2d53735d4012db24c1129644bbdae086c8b12d53c9a9c2208885c58ce1a9cc62"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/repository/DroneTelemetryHistoryRepository.java",
+      "sizeBytes": 2679,
+      "sha256": "1486a2fa6336a8a2e01c122ba00b81df2147b746620e5a9d4d561c1a251fb900"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/service/DroneService.java",
+      "sizeBytes": 7999,
+      "sha256": "694aad16319490afe02e96d4c124a6d58436ee66aaf5abf3267bee0f2adc570b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/drone/service/DroneTelemetryHistoryService.java",
+      "sizeBytes": 3659,
+      "sha256": "6ebbc19d8ed4a7e5002af97a1645e3f17a8cd54a406bd585c714043d1e0f8467"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/controller/FlightSessionReplayController.java",
+      "sizeBytes": 9462,
+      "sha256": "06cd9f26e9866fc26040b94d569a6e59545733fcc83aa76df56f5a7f65bc159c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/domain/FlightSession.java",
+      "sizeBytes": 5448,
+      "sha256": "db7447e5932bc5e3dbbec5dee4bda5c96420ec7fbff76bd9e5b4535b19bddd83"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/domain/FlightSessionStatus.java",
+      "sizeBytes": 224,
+      "sha256": "30f9c2c29c6729be97b871bbe9ac3c7f8da65e94c406e5b33ed6321f3ea54740"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/dto/AiFlightSessionSummaryProjection.java",
+      "sizeBytes": 283,
+      "sha256": "40eb63838713b7c5f1e80f3f41aaaf531943720ca01cf3dc8d0183ffac3d5fc1"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/dto/FlightSessionReplayResponse.java",
+      "sizeBytes": 581,
+      "sha256": "af9194a6879a9cfecce5788ffef7ff3f388b0151b9e709a93628d7bd80d263c6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/dto/FlightSessionResponse.java",
+      "sizeBytes": 1873,
+      "sha256": "dfeceddcef29ee9d5a1d2d40792b1c477a53a58e810d901f0e395d7a38e1e9d0"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/dto/FlightSessionStartRequest.java",
+      "sizeBytes": 610,
+      "sha256": "dd41404efb58cc65acdbf09f6aaca79a6ca908df184f2c553d0d19b5216cfff1"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/dto/FlightSessionSummaryResponse.java",
+      "sizeBytes": 518,
+      "sha256": "1f3dc76d0b2bdc726cfbf721e36ace7309a0a74d4906a9219258c0c85c81ff18"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/dto/FlightSessionUpdateRequest.java",
+      "sizeBytes": 448,
+      "sha256": "de17ed782db0560b9cf3c69c26c1a8e567d2ea44e2d0837b195e8077ddf4554a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/dto/TelemetryFlightSessionSummaryProjection.java",
+      "sizeBytes": 261,
+      "sha256": "b2199458476d37ad1fb6b81a1f4c8fdb571c9494d0f66e0ad6977127afc1c570"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/event/FlightSessionClosedEvent.java",
+      "sizeBytes": 233,
+      "sha256": "0ccc16608e7221663529d0dbe33427b619cc3b7322fb56daaf6f4ab98429e19d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/controller/FleetReliabilityController.java",
+      "sizeBytes": 2584,
+      "sha256": "762fbd927e3267461400fcb312d11368193baafb716cddd24ae4c04af04b3e27"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/controller/FlightQualityAssessmentController.java",
+      "sizeBytes": 6235,
+      "sha256": "b334999b2bbd603fef33d617d0abd4a4a5b10842d66f0b3b75917733a81bd791"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/domain/FleetReliabilityStatus.java",
+      "sizeBytes": 123,
+      "sha256": "bfbe2c0671486e8cd8bdadaf813629d911042cc60cf1c3d76840b2d99416fd2b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/domain/FlightQualityAssessment.java",
+      "sizeBytes": 10489,
+      "sha256": "7b4ac2a60e72a1421592ab09c3cd56ebb0f382f942b66abe824a011d01743a1c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/domain/FlightQualityGrade.java",
+      "sizeBytes": 133,
+      "sha256": "26e26d9da8a9e215ab88b7cd29a9b265adb179a6dbab50a7a45ad46b68ad1b27"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/domain/FlightQualityIncidentSyncAction.java",
+      "sizeBytes": 190,
+      "sha256": "8ea53aeafe881824c74dfb2967aa45d91a7abbdb1ce0503aead038f185018032"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/domain/FlightQualityRisk.java",
+      "sizeBytes": 174,
+      "sha256": "ef8debb856eba3e939a1f26088f6dbb51be2b19bb56a6b37af82ef7a0c1c395b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/domain/FlightQualitySeverity.java",
+      "sizeBytes": 115,
+      "sha256": "6722659ab0f635dae79d37aeeb9c9e6542e5f2bd8903134b6ee00da48fe85e11"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/domain/FlightQualitySnapshot.java",
+      "sizeBytes": 868,
+      "sha256": "591e52aeea11f9b9226432d08e63c76917c1ea54f601f66498d7a0d39aeeb3ed"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/DroneReliabilityResponse.java",
+      "sizeBytes": 758,
+      "sha256": "e22d77dd062cf9262acf7e70c3d23847d99f9bfe2ca06837e60c624895f3d9fa"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FleetReliabilityResponse.java",
+      "sizeBytes": 473,
+      "sha256": "f49d3166d6c9614db1cc406f7b509d292efb6297e89eb77acaa5ba285a2743c6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FleetReliabilityTrendPointResponse.java",
+      "sizeBytes": 420,
+      "sha256": "5088bb63beea325ecdbdbbeebf55a5bb384d1e73e62e2ff782edf331c247c5f2"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FlightQualityAssessmentResponse.java",
+      "sizeBytes": 2972,
+      "sha256": "5e072fc0842fbedf3c138b2eb62792d6e2e3ba725af8964c27801cf15c1fb1c1"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FlightQualityBackfillResponse.java",
+      "sizeBytes": 433,
+      "sha256": "46b97b8d90833080a46304a0805d8cacf542ea0c29db35a1c6e8f44b6ca3ac68"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FlightQualityIncidentSyncItemResponse.java",
+      "sizeBytes": 472,
+      "sha256": "7a3115f72b7d09f0c3c540aca566190cc5edcde2eee4d1f847e8c3e7de34d29e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FlightQualityIncidentSyncResponse.java",
+      "sizeBytes": 1624,
+      "sha256": "8d4920d54a665aa7f34037106c897e8693707124c4f0feaa830ba1970dff0f77"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FlightQualityMetricsResponse.java",
+      "sizeBytes": 603,
+      "sha256": "de1c4ff1bdd4d9fbf82dcb07ccdf03943a6c4cddee5bb86fd8f36ffa8f276b87"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/dto/FlightQualityRiskResponse.java",
+      "sizeBytes": 251,
+      "sha256": "b8ae4223f7a4f3c69e0057982b3618bf5dda8cc13165511d2ecf160e5d098da8"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/repository/FlightQualityAssessmentRepository.java",
+      "sizeBytes": 1475,
+      "sha256": "86154fbc5ff77e4beb7ab7094a9cccf9924870ebda43e0c9e6c52b1f88504594"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/service/FleetReliabilityService.java",
+      "sizeBytes": 13497,
+      "sha256": "f1ded6654a41feb489abbac10769103f61ed37b124fbd6eb2e5c2ae7d4c86a07"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/service/FlightQualityAssessmentAutomationService.java",
+      "sizeBytes": 3998,
+      "sha256": "cebfda4d59c66b8454135284b37f77464f762598e0bb39ffff96b6981b181993"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/service/FlightQualityAssessmentService.java",
+      "sizeBytes": 8331,
+      "sha256": "7c2c774bc7673b2862cbef53a6f84c13ff6309ae642ad96f5a301c377263fde0"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/service/FlightQualityBackfillService.java",
+      "sizeBytes": 4999,
+      "sha256": "5aedb15b16b681ea0e4c61e0f60727fc13052566912ab6b362439fb13a632cc3"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/service/FlightQualityCalculator.java",
+      "sizeBytes": 18385,
+      "sha256": "d0fa83c812c5f7b6c8b686182b24da4c29201a5a0b79aed32d517db6720c7513"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/quality/service/FlightQualityIncidentAutomationService.java",
+      "sizeBytes": 17250,
+      "sha256": "216a190ead71aa1ba06ae6ae68766d263949b937906a28e22e8d474407d35e3a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/repository/FlightSessionRepository.java",
+      "sizeBytes": 4485,
+      "sha256": "8ee57c4f09d8a4e1d4d26b9a1f59d4e302d01bfbb636374b072d241f78dd5cd5"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/service/FlightSessionManagementService.java",
+      "sizeBytes": 8444,
+      "sha256": "1bb5dc5c06118b66309b32b5b15b7917792d92493633c0c821e83ddc1e021c9f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/flight/service/FlightSessionReplayService.java",
+      "sizeBytes": 17487,
+      "sha256": "4caba9593352ee32ef33b058237d53cf8465727bf75e7893a74210c4a30ab88d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/controller/GeofenceController.java",
+      "sizeBytes": 3723,
+      "sha256": "cbe8c97dba3a90d768118a5dfbec797c648b926f2030c3c4dceef5795f74c940"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/domain/DroneGeofence.java",
+      "sizeBytes": 3231,
+      "sha256": "f9543f1f42775faa0bafea147cd9a08460c34ba668cbb238a076c1038564bf44"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/domain/DroneGeofenceEvent.java",
+      "sizeBytes": 5384,
+      "sha256": "e4a2992314046c4749421847783449feb740c1b5d58dc32f9f6b9d0114712a0a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/domain/GeofenceEventState.java",
+      "sizeBytes": 109,
+      "sha256": "af158ba6e1db736e65a7b121a4ec8f83a011a7cac1b4e2afbf3e26b2dbda1b9c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/domain/GeofenceRule.java",
+      "sizeBytes": 104,
+      "sha256": "a0a7ae80118ac6932cd1e8327b27fc4598d4e661258bf2137224d057c76ce9b4"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/dto/GeofenceActiveUpdateRequest.java",
+      "sizeBytes": 177,
+      "sha256": "4ec0e4e64c22c014b18b870013b1b48f2d7ac9e2bcffa6cfa997475564413d49"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/dto/GeofenceCreateRequest.java",
+      "sizeBytes": 713,
+      "sha256": "13dd8502e9ea9bbe448a4556f1b6188a39541f1c679348b6a45a4446eaa9043f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/dto/GeofenceEventResponse.java",
+      "sizeBytes": 1524,
+      "sha256": "9ab0f9affb4d91618a901d92151f9b26df9136f784da8b519d1829da891b2e53"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/dto/GeofenceResponse.java",
+      "sizeBytes": 1034,
+      "sha256": "b8b9e7bdcf7fb54cd36d3c41639ff2ba4530e5d422414ab2231da6e73a1785aa"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/dto/GeofenceUpdateRequest.java",
+      "sizeBytes": 686,
+      "sha256": "eb3d495c75d644f46f1a08a6aed8a5ac8fc2fe94ca482fd41c6535a4008fa2a1"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/realtime/GeofenceRealtimePublisher.java",
+      "sizeBytes": 851,
+      "sha256": "656597a3c33bdce5326d67ad25f3f160c02f8bcb802e11f2a6d801a7bbc316f5"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/repository/DroneGeofenceEventRepository.java",
+      "sizeBytes": 871,
+      "sha256": "66713f1ff2ad0288723939593f09d4a49007547890e448558c52e8d7f6b4b3dd"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/repository/DroneGeofenceRepository.java",
+      "sizeBytes": 581,
+      "sha256": "61cb6e2bbc6414857dc124f4132c43c4d3c51fc25a905805c42303d3372e8f82"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/geofence/service/GeofenceService.java",
+      "sizeBytes": 10302,
+      "sha256": "46040005274f31226d76e528b65a5ff6406ae4fc83b01b05716883e148c1eaaa"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/health/controller/HealthController.java",
+      "sizeBytes": 955,
+      "sha256": "2aa7f36c914af6e0a06fef736249f78028f1ec8e9e0e18c735c273cd438d4611"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/health/dto/HealthResponse.java",
+      "sizeBytes": 239,
+      "sha256": "b8eb4d3d2d162464849638e4f968e2d2f442650c5dcc48b30c32d819c674c60c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/health/service/HealthService.java",
+      "sizeBytes": 1115,
+      "sha256": "59ece5b5d289c4578081653e15f94596ab8801ce4e1d08d7a3fc8e5031912c59"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/config/IncidentSchedulingConfig.java",
+      "sizeBytes": 249,
+      "sha256": "602278fdec326f388960955bb23ab01973730b00871f91e6e85664fc89f67906"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/controller/IncidentController.java",
+      "sizeBytes": 7418,
+      "sha256": "af729789dc1195aa5f0718c3bb06a96d873e4c964da6d757d62f0b14790f1c44"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/domain/Incident.java",
+      "sizeBytes": 11536,
+      "sha256": "9218a1927602b67ce2a3d67881636873f29b14b5529cb26dac39e882a94eac4f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/domain/IncidentActionHistory.java",
+      "sizeBytes": 2643,
+      "sha256": "2fc35849ac9c0d472d7cc7603e47ef04a7e606d83096d804146b9a6955e2a5b3"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/domain/IncidentActionType.java",
+      "sizeBytes": 208,
+      "sha256": "d80e1fd5352ce3345b67b36218827dc1fc1adfa36b969d3de22f817d07f73c06"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/domain/IncidentLocationSource.java",
+      "sizeBytes": 143,
+      "sha256": "68d6a90f45294d905cd30ca28e772645872399466e1fd6a091cc152989c1f01d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/domain/IncidentPriority.java",
+      "sizeBytes": 122,
+      "sha256": "00419c4cdb89a09ecd05784ce0fed376977a688710ac94b571e37974c359800f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/domain/IncidentSourceType.java",
+      "sizeBytes": 144,
+      "sha256": "86cbbf85ec3119af9796e6cf57b74c40caee7ab98f1ff7baf0ea7af8efc1fa37"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/domain/IncidentStatus.java",
+      "sizeBytes": 128,
+      "sha256": "2c3aa81c4322a40e43f42e04574bff51efc0170eca3cda429fda28352c9936c7"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentActionHistoryResponse.java",
+      "sizeBytes": 956,
+      "sha256": "d6688a75c202b40042a2e345895e8febe03fbeb75fa1698530d72ef70289ef5b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentAssignRequest.java",
+      "sizeBytes": 311,
+      "sha256": "f50ad26c162b01b5716f13b1463e20c2570c08a50c53df0c04ce440b13760f6f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentContextResponse.java",
+      "sizeBytes": 601,
+      "sha256": "5c866851a653e5d61eac9478fcc9dca391a1d7ebb92f41abbcec93d2daf1a095"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentDetailResponse.java",
+      "sizeBytes": 238,
+      "sha256": "05e2a223b259afc4bc5b1ddeff7f0c77b6d9c4a40602f53b49d6528b0d316e0e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentNoteCreateRequest.java",
+      "sizeBytes": 312,
+      "sha256": "4ae8b8f64bd636595d1d19ff268408c7fed4d5e2361ded58ac0774761346b030"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentPriorityUpdateRequest.java",
+      "sizeBytes": 458,
+      "sha256": "0a921d56a9747edb19cdbfd95679326f050e52914d29678d89fc2541abcc6d63"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentReportMetricsResponse.java",
+      "sizeBytes": 358,
+      "sha256": "b43c5f03bbd839be6d4e8f644babcffddc5657ff8293497a5042eb37ecc0bda4"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentReportResponse.java",
+      "sizeBytes": 340,
+      "sha256": "c37bf30d556a4ec819bcc1c446a16a865ab7f65bab0da9e5e236928e1bb00eb6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentResponse.java",
+      "sizeBytes": 2063,
+      "sha256": "fabe9203891cd08765c196f584334faadb611f3a0a003c3a7d101bbfffe03cbc"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/dto/IncidentStatusUpdateRequest.java",
+      "sizeBytes": 450,
+      "sha256": "a78868a3acc2d6e56aade0aa9baa3dcade2a5fd61c8aa10e18633601ddcaf65b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/realtime/IncidentRealtimeAction.java",
+      "sizeBytes": 214,
+      "sha256": "86bd23606b296aef847e0f73799c5b60a1b052357cf9c6a81b110acd3ccd6aed"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/realtime/IncidentRealtimeMessage.java",
+      "sizeBytes": 616,
+      "sha256": "a7f6c2adaa387434965f0953be2e65f84dcdd108142db5e05c4e0710e6dc11d0"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/realtime/IncidentRealtimePublisher.java",
+      "sizeBytes": 2512,
+      "sha256": "c5f5f968409b3ce7b3d11d2cf4a5733b6b1f2451e641c8b67430fb5cb6cc2ad4"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/repository/IncidentActionHistoryRepository.java",
+      "sizeBytes": 632,
+      "sha256": "852b82d88346fe8951a88756dfb82485fd86d72f3a2bf2f646eb1c973e417a53"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/repository/IncidentRepository.java",
+      "sizeBytes": 2816,
+      "sha256": "a3753a326b8e9d48aa1e588314a534c8bfa5b7176e552cdd198940e43a865cef"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/scheduler/IncidentSlaEscalationScheduler.java",
+      "sizeBytes": 1475,
+      "sha256": "3372cbd7207eb16cc394bc8d861cf083370fd302cc713207f3d101e33074f894"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/service/IncidentContextService.java",
+      "sizeBytes": 11737,
+      "sha256": "0680368d10d6aec21f48630cdcac0a008cf4b50d02dc4b18e3c23405fe88d8c2"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/service/IncidentReportService.java",
+      "sizeBytes": 6647,
+      "sha256": "3340d90f6b0fc1b505282fd33b2872904ec6f6eeabaee8957d59e0e60726fcc0"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/service/IncidentService.java",
+      "sizeBytes": 18167,
+      "sha256": "e1cbc8255d938f1b0c04918cd72774ac2504aaad2008759eddc3d6f36be27f26"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/incident/service/IncidentSlaEscalationService.java",
+      "sizeBytes": 5017,
+      "sha256": "da1719b6ca3a0ebd6ceb82de4b2747b97a6b3fbbc1a2509d8135fd2a4f030548"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/config/MaintenanceFlightGateProperties.java",
+      "sizeBytes": 2299,
+      "sha256": "e9b42d532873c3b606b78374a6a93dc52807ef17f7c43ca01479372e056c8187"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/config/MaintenanceSlaAutomationProperties.java",
+      "sizeBytes": 1430,
+      "sha256": "a3d11b4ea2a5c1121a8040b7509de558662ebc5615c50e48c3fda5247b960950"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/controller/MaintenanceFlightClearanceController.java",
+      "sizeBytes": 1453,
+      "sha256": "2afc2ae00dffc34d6b9637b766caab800cc1393c964b46a693920125e6680b7c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/controller/MaintenanceMetricsController.java",
+      "sizeBytes": 1311,
+      "sha256": "d3da001626ef33af8c150c5bae0510a0387523877c0ec13b4c685bcfe7a07658"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/controller/MaintenancePriorityController.java",
+      "sizeBytes": 854,
+      "sha256": "e51e884e04c40a50a8ef357cb5411716af820ac6549b2881266413f96158da9f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/controller/MaintenanceSlaController.java",
+      "sizeBytes": 1250,
+      "sha256": "a21ae22677285f5684ddda64c549c0e7217a82718b097387982a4119e3659b9f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/controller/MaintenanceSlaIncidentTrackingController.java",
+      "sizeBytes": 1594,
+      "sha256": "790dc7ca27896261e7c79e2bfd5802089c247c6b9c625f6eb3ba0f9057976271"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/controller/MaintenanceWorkOrderController.java",
+      "sizeBytes": 3103,
+      "sha256": "fbc6c2bbede56f0cb08150cd860ebd2e0477dfcc8f19256fe0330cbebbbb3e7a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/FlightClearanceStatus.java",
+      "sizeBytes": 136,
+      "sha256": "a4928c27e1e51c3f2de460f0231ea767301911ccd3dd9560a6678dd659272dab"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceCompletionDecision.java",
+      "sizeBytes": 135,
+      "sha256": "3b77bf8529aa3666233327f983224a9716cdfcc9906595e24b947c7601ef0c03"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceFlightGateMode.java",
+      "sizeBytes": 126,
+      "sha256": "9091329092aa72a419bdad4fff771a6b83800ad54bb094182459957344cf7f03"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenancePriorityLevel.java",
+      "sizeBytes": 133,
+      "sha256": "4e89005fcc64eef89299eafbbdf7eb9f6699d3ffbf907ca822fa2cbccc0d242e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceSlaClosureStatus.java",
+      "sizeBytes": 214,
+      "sha256": "340091779e7c0fa1375313a37d9e30d216a3ae39d7c91a9cae6588b1be13d54f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceSlaResponseStatus.java",
+      "sizeBytes": 189,
+      "sha256": "f3e990dcceabe6e29e2489b7e590de393944f4835c7ff41bfc2be893f207b5ed"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceSlaStatus.java",
+      "sizeBytes": 145,
+      "sha256": "10b701337af072ebcc9c2b69f1b18dbb7cd83dbba5ab0fd2e87618c071471e9d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceWorkOrder.java",
+      "sizeBytes": 7046,
+      "sha256": "8360260d9518e4704285f5de5743c2b89f12da82aeda0b93f94753b1038f8b7b"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceWorkOrderActionType.java",
+      "sizeBytes": 207,
+      "sha256": "9a8cccb03a67114507e42f58ef5254aba534eb623cdd9a6322ef51cc1637262c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceWorkOrderHistory.java",
+      "sizeBytes": 2786,
+      "sha256": "c7fada6e6eb925f80453bbb90483735c31addd620ec42e04ccd75f9e8ccd1d49"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/domain/MaintenanceWorkOrderStatus.java",
+      "sizeBytes": 146,
+      "sha256": "6f9ede221946d31c18fd251d34dbab9afbf7501aa5d270884ed2b710deb5e395"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceFleetFlightClearanceResponse.java",
+      "sizeBytes": 492,
+      "sha256": "41aaf8c2042617bc21f938ef0dbc929ecd24b3373d3d5c9ce20bea08aa89debc"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceFlightClearanceResponse.java",
+      "sizeBytes": 616,
+      "sha256": "a8ffdef38b8fe0d36aed578f1ed93ca6e0fb360ae6877cc32f0cc79457c95f66"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceInspectionCompleteRequest.java",
+      "sizeBytes": 959,
+      "sha256": "548962f6852db2a4125a8caa2e1b0e49d4067bfff8bd7654885d87663bc5527e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceInspectionStartRequest.java",
+      "sizeBytes": 657,
+      "sha256": "5f64f21cf081e1ba0f8f31fd279a91de953c9530b6ec469b1d683a972b15638e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceMetricsResponse.java",
+      "sizeBytes": 770,
+      "sha256": "6b23534ecc67edb0268af6a30687d0c4cba2203b683abf0a1cfc6ac68fc0ceb6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenancePriorityItemResponse.java",
+      "sizeBytes": 927,
+      "sha256": "b596835df6bf372cc48a22f694537499e4bef05afdb364519fbda056a860e9fb"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenancePriorityQueueResponse.java",
+      "sizeBytes": 534,
+      "sha256": "a84a73db4cb741894254c1a939013dc57f087008b1a788e363235f5a087c7576"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceSlaAutomationStatusResponse.java",
+      "sizeBytes": 287,
+      "sha256": "9240abbf162c85b5ed934c0a1cbb82c031ccdab27e795ff657a0e98f452fca62"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceSlaEscalationResultResponse.java",
+      "sizeBytes": 323,
+      "sha256": "1f0d03ca8adf53829d8d4d171bce726df4e36443792223043e2cb4c121878d23"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceSlaIncidentTrackingItemResponse.java",
+      "sizeBytes": 1330,
+      "sha256": "8d06ee4d0b37497b230251436f18d30c605be642e168715fd0d21616025dff81"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceSlaIncidentTrackingResponse.java",
+      "sizeBytes": 719,
+      "sha256": "c86e474be6f857b9bd20815dad94021aeb02df8842b6e182e8d19aec70f0966e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceWorkOrderDetailResponse.java",
+      "sizeBytes": 231,
+      "sha256": "67e64c50d6d081e3283c85fd1fc4eae7516c5cd3b9b108bb2341b236a66e8a73"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceWorkOrderHistoryResponse.java",
+      "sizeBytes": 1058,
+      "sha256": "b0b521898f315956926ed6c888487abe59012bfc7b82d269adc2456e0895a74f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/dto/MaintenanceWorkOrderResponse.java",
+      "sizeBytes": 1676,
+      "sha256": "74185ee6903334cbb775b45b5f982a2bf81e55207ab1fce26f71fdb0abe56706"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/exception/FlightClearanceRequiredException.java",
+      "sizeBytes": 449,
+      "sha256": "b638b5a6eda00c1c88ddf9d2aa5b599c8d11b746652d86b62c0b8f517f08f354"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/repository/MaintenanceWorkOrderHistoryRepository.java",
+      "sizeBytes": 444,
+      "sha256": "1bc021be63531803ffab801714a7e9dfb449ecc162ff92e09805ab9efbff7a6c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/repository/MaintenanceWorkOrderRepository.java",
+      "sizeBytes": 3341,
+      "sha256": "d30b10d71100cedc30339d817738c0365b82477245ee4f833edd8a1a4fb03c0d"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/scheduler/MaintenanceSlaIncidentEscalationScheduler.java",
+      "sizeBytes": 1871,
+      "sha256": "949ee55baa4bfbbd1b78b43f39cbccca40b85afe7046188d4918ea32238db7ba"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/FlightGateIncidentAutomationService.java",
+      "sizeBytes": 13038,
+      "sha256": "abf52b56f8626e94fce7b5b80c230ece61fa6885c777a0d2cbb53b47330679be"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/MaintenanceFlightGateService.java",
+      "sizeBytes": 11076,
+      "sha256": "b15c028bf611764f7c81496db81dea91605e7620e081660684b8cf81354e0f35"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/MaintenanceMetricsService.java",
+      "sizeBytes": 5345,
+      "sha256": "ed52a22d230c058a84701ec0b0064b82282454d8a7aee95b4cf27ebd69ec414a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/MaintenancePriorityService.java",
+      "sizeBytes": 11695,
+      "sha256": "411a7f712d608db2dc35d8544089b3b6eed235880fc58abe1de9e2fddf5348b2"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/MaintenanceSlaIncidentEscalationService.java",
+      "sizeBytes": 8171,
+      "sha256": "8a03b3b99dee50c7eea6093d7e4405ec41d505ac0279fc8efc88ce2cd939f988"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/MaintenanceSlaIncidentTrackingService.java",
+      "sizeBytes": 17392,
+      "sha256": "c197ebacc923edd4b7455a241ad2f0b49f9dc82180455fcad4e33ffdfb45a8a9"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/MaintenanceSlaPolicy.java",
+      "sizeBytes": 2910,
+      "sha256": "3aadba7bff1d26f864a33f1b29f3b3bcdd643b11dd14898ebe007b1e00734ec1"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/java/com/visionflow/api/maintenance/service/MaintenanceWorkOrderService.java",
+      "sizeBytes": 14905,
+      "sha256": "47b6d605cd611b308e190a047d7243147a5202e4b98e1353a526b29931fa4571"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/application-docker.yml",
+      "sizeBytes": 602,
+      "sha256": "82223ad377a7e640c2e04992546415a9fec6cfdc24abab6c951072580feafa1e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/application-local.yml",
+      "sizeBytes": 398,
+      "sha256": "a2d67f4b18700e3eb0bbfc6c8ff786cf5bacce67013977d13f58b3a37bbc27b5"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/application.yml",
+      "sizeBytes": 2418,
+      "sha256": "f9e0a3a971197322b07525318c28791e72bc9cdecb7afb3520a3e6a4b29f1977"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V10__create_ai_alert.sql",
+      "sizeBytes": 4213,
+      "sha256": "ac44511918aaf11c13b4506e4f476ffee03f96f3f94ecaa13779c3d07039646f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V11__create_incident_management.sql",
+      "sizeBytes": 5962,
+      "sha256": "d387a3b0efe51cf75a75d1a9a881a4e7f5d1fc97e2a110694daa2c2703e3f464"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V12__add_incident_evidence_context.sql",
+      "sizeBytes": 2324,
+      "sha256": "c048807446666e3483a5b34328315886f9ddf15b8a6dabbb3aefec25d19aa269"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V13__add_incident_sla_escalation.sql",
+      "sizeBytes": 1339,
+      "sha256": "f8a2741cee536c2c616646760c92185b33723f73a542837822880238f043aa4e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V14__create_demo_scenario.sql",
+      "sizeBytes": 805,
+      "sha256": "39303433b3f11288e111e1de84cd56f24029e32eb373748bb4cee731e0d7ecef"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V15__create_audit_log.sql",
+      "sizeBytes": 840,
+      "sha256": "4aeb4a260006700d886a405d5c18518dde9691f41c2c14e5e2679de40005eed0"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V16__create_flight_quality_assessment.sql",
+      "sizeBytes": 3414,
+      "sha256": "bae366f99cf2b8450bd908fad18075a9a96f80ba9982cd7cca5ade09fbfe4286"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V17__align_flight_quality_numeric_types.sql",
+      "sizeBytes": 676,
+      "sha256": "2f281dbf0a0a400b9fe6ce0a39048290bfd9dfec41b3a115e7d6246a0d2036f6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V18__add_flight_quality_incident_source.sql",
+      "sizeBytes": 456,
+      "sha256": "449ad5fea471f8ed7f94976b6ae05cb68ecb3a63d58c88ff9771f65f37fedd91"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V19__create_maintenance_work_order.sql",
+      "sizeBytes": 4910,
+      "sha256": "25737a1bd4c67595332eaed1f11d04f7a92fb83fe5aea75146606198bd5653a4"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V1__create_system_status_table.sql",
+      "sizeBytes": 603,
+      "sha256": "6ebcf7c5f48ded81a65581ab97d9e81f34cb6aa603640134bc3cc156f7ab4932"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V20__add_flight_gate_incident_source.sql",
+      "sizeBytes": 493,
+      "sha256": "12eea8d9a401bf30cedaef0cfd5a764ed436ebc36e6e278f90cf972c7d13f4e9"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V2__create_drone_table.sql",
+      "sizeBytes": 1861,
+      "sha256": "68ecf6dd1f31111fc5a7c5f82abb84d497fa7ff9d6cb0fb440a45c1d27c97a9e"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V3__create_drone_telemetry_history_table.sql",
+      "sizeBytes": 807,
+      "sha256": "985c18c60d9ea5417833a29982c79dd27c624ba67922f09ff350cd7d4eba875a"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V4__create_drone_geofence_tables.sql",
+      "sizeBytes": 2779,
+      "sha256": "3a8f8424987ad501e8429804086e62d96c28ea93732ed46642942eeda2015dbe"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V5__create_ai_inference_event_tables.sql",
+      "sizeBytes": 2006,
+      "sha256": "74ca84a42cb9601cfad0781a08b91c6278c3cd5188b55fca8fbd41d874b7d0cf"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V6__add_ai_event_snapshot_metadata.sql",
+      "sizeBytes": 526,
+      "sha256": "72c8e6815d25ee66d03751e110878537bd07f0ff6f6fa173d1cb47116046dce9"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V7__add_mobile_sensor_telemetry.sql",
+      "sizeBytes": 3091,
+      "sha256": "eaf0f949b51a492079cedad36f3df98adff324aecb8746ac622a74ea931cf042"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V8__add_flight_session_correlation.sql",
+      "sizeBytes": 439,
+      "sha256": "f79c3a86c1e312f08f0a5e8c7b57a655284e9010dee6526f7e03ea4280fa74ee"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/main/resources/db/migration/V9__create_flight_session.sql",
+      "sizeBytes": 2499,
+      "sha256": "aaabdc6e99bd859051c0134389068323b77e1cf82060c10c3dac16ac85e64b69"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/VisionflowApiApplicationTests.java",
+      "sizeBytes": 217,
+      "sha256": "564805d532881e9c3fac1936dc99fb901ae00cc53d66df82ba80e4e3785caeb6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/common/security/OperatorCredentialRegistryTests.java",
+      "sizeBytes": 2467,
+      "sha256": "24ec95b46d611e2261829b5b08c52a6254deaa1e6fcf4aba5ed9ab359eab9d29"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/common/security/OperatorLoginAttemptGuardTests.java",
+      "sizeBytes": 3795,
+      "sha256": "194ff9158e42aa76f69f4eb95218d8153c1ef17c4b84945c66390d48aca780da"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/common/security/OperatorSessionRegistryTests.java",
+      "sizeBytes": 8460,
+      "sha256": "25bee1f34bba992c41222cc4945fece132c6178468bae88ff4257eb3880adea6"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/flight/quality/service/FleetReliabilityServiceTests.java",
+      "sizeBytes": 9184,
+      "sha256": "ff87f0c3826a9f8eef8f30793083580a12f44a558bd4c30aa5e81a07eb513bf7"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/flight/quality/service/FlightQualityAssessmentAutomationServiceTests.java",
+      "sizeBytes": 4720,
+      "sha256": "7f7b1086e1190dae0b8c0fcda11798a88e6e0e178b0ce6dc2cf57ab07ea51be0"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/flight/quality/service/FlightQualityBackfillServiceTests.java",
+      "sizeBytes": 4720,
+      "sha256": "9ff5e6d4809405c9e66688e4e3c86ff7ba8d8d025154e555c3718a8211c3b075"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/flight/quality/service/FlightQualityCalculatorTests.java",
+      "sizeBytes": 5595,
+      "sha256": "018306e27ec0d6fec3854995efc48566562351b9695844e3e5ca2be006632e24"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/flight/quality/service/FlightQualityIncidentAutomationServiceTests.java",
+      "sizeBytes": 11552,
+      "sha256": "4a7b358b2aca8afda5dc10a1ad5a3158ceb2c7b07fba247c0f6dac970169fdda"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/flight/service/FlightSessionManagementServiceTests.java",
+      "sizeBytes": 4483,
+      "sha256": "0569838acc313b1f2a41b89d02b722cd07268a29a867d0d485cfd304ee72866c"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/maintenance/domain/MaintenanceWorkOrderTests.java",
+      "sizeBytes": 3118,
+      "sha256": "48910ea3dd29adda0b1ebf67451d2fa9c2afd8bbed9a1d28b255b3244c4113da"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/maintenance/service/FlightGateIncidentAutomationServiceTests.java",
+      "sizeBytes": 8348,
+      "sha256": "3fd148a5778e610939df0c5305dc1195d4cba9827b8c1e9765339a1d566ca888"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/maintenance/service/MaintenanceFlightGateServiceTests.java",
+      "sizeBytes": 8876,
+      "sha256": "ebaa8ad7cac9c005c800d83771f60147a768e88c40ec15ed6e236fc5ca3d9c08"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/maintenance/service/MaintenanceMetricsServiceTests.java",
+      "sizeBytes": 6268,
+      "sha256": "8308d927919517736a9275b0e326a840ceb4c9bfc813343359c38503343dd64f"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/maintenance/service/MaintenancePriorityServiceTests.java",
+      "sizeBytes": 8482,
+      "sha256": "f67f300843aa4fa0b5502524a5cc30f9f67eee709927b11c2dd9537c4e999e90"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/maintenance/service/MaintenanceSlaIncidentEscalationServiceTests.java",
+      "sizeBytes": 9895,
+      "sha256": "db1b8ecf798e0d3dda09fd57b662638d6f6b77c44b40cd692e486ec192e20474"
+    },
+    {
+      "path": "02_backend/visionflow-api/src/test/java/com/visionflow/api/maintenance/service/MaintenanceSlaIncidentTrackingServiceTests.java",
+      "sizeBytes": 13795,
+      "sha256": "206e02c647c1ed431238222653cafa84c3af84c4c47a5fdb63d8f1d206d00ead"
+    },
+    {
+      "path": "02_backend/visionflow-api/tools/telemetry_simulator.py",
+      "sizeBytes": 11156,
+      "sha256": "6a517d5f288f485bb6ef6a489e539e7584a1a6adf0e835d4017dc24d595aa78a"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/.dockerignore",
+      "sizeBytes": 252,
+      "sha256": "629b1a67c48f0fd15154b5daa18b54d6e1661351a62b8dc1b4886b36e102d481"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/.env.example",
+      "sizeBytes": 1782,
+      "sha256": "23360503c5440999243b258ce3ec1488744522174db6eb51578ea0dbc05d42cc"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/.gitignore",
+      "sizeBytes": 220,
+      "sha256": "6cb9f6e7e924715fb9104c2ee439e19c0dd1080f83db380bf7031b60f1b9f12c"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/Dockerfile",
+      "sizeBytes": 939,
+      "sha256": "0f23096e20833eeabefb0eb8111ea3b9422d9da172608df53a0c983d770e3c33"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/README.md",
+      "sizeBytes": 5711,
+      "sha256": "f64a81ac71f97e6d9d0e1a217e62910641137f2af127329ad0d9f228043f533b"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/VISIONFLOW_AI_SNAPSHOT_APPLY_GUIDE.md",
+      "sizeBytes": 5278,
+      "sha256": "426671e522dc319fae8ae7346c0747b28b7501964b28941462d149a41925ab6a"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/VISIONFLOW_BROWSER_CAMERA_APPLY_GUIDE.md",
+      "sizeBytes": 4812,
+      "sha256": "81e865a97d9b745e7850f1eeaed38dec4b5579701f415e5e5c6b36092f4e63d2"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/__init__.py",
+      "sizeBytes": 41,
+      "sha256": "ae3806893ebf54d9dc3015ec3605de7c654ae87158d86a32ec2f0ec71ef26b60"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/config.py",
+      "sizeBytes": 13863,
+      "sha256": "174a1b4fd4e345acf9c3fa58d1989248b527e664e0a15139f98b68bf731cd78a"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/domain.py",
+      "sizeBytes": 1990,
+      "sha256": "ced30436b178d39d72659779c006e23fdc1094fc5a4feeed983ae08b2530c745"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/gpu_preflight.py",
+      "sizeBytes": 3091,
+      "sha256": "d8d79e6ce0ca4d5c38904d4c7be076b42019b56b430aa2247750594387ebbe20"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/inference/__init__.py",
+      "sizeBytes": 81,
+      "sha256": "3287d3ac94ad872b6f996d88e8c2ba1053dca29ec14ca12fc5b0e779d9e8c575"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/inference/yolo_detector.py",
+      "sizeBytes": 9342,
+      "sha256": "09c22b4bc6e15e6b83c30ff3678b48b5515a09ec62874f8272865aa2abf21820"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/main.py",
+      "sizeBytes": 5714,
+      "sha256": "7260504ec00d40e3305be5966e293a52e60c0be9b04c56b6ac0ba91f138cc590"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/metrics.py",
+      "sizeBytes": 13096,
+      "sha256": "eb007fa7b17dde6bd429bbd3d9b2d2b4626438f71a3421263a32991895e2eb4d"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/model_evaluation.py",
+      "sizeBytes": 27889,
+      "sha256": "75d0ea50f13570e3d86df6b258e257ef53bf61f1c68ebb3e85720754c64b1c94"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/pipeline.py",
+      "sizeBytes": 5162,
+      "sha256": "1442e93b45e98c99ba7ba143f396984c4e30e43e3c35b5de1677c90b7009cb51"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/reporting.py",
+      "sizeBytes": 4324,
+      "sha256": "225f4ebaa185aa5a011cef8de75996faa69334ccd3255c74f809d22d5aff74aa"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/sources/__init__.py",
+      "sizeBytes": 327,
+      "sha256": "95096c4bf3f6a5ac6f971c00f00a8b9d2d6897212658dccc493ed6f0d1c8806f"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/sources/base.py",
+      "sizeBytes": 804,
+      "sha256": "b68483b4b2c0c172ae02a8490aa806603ae11b39b5ab7ebcca88bfa0a229d158"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/sources/browser_upload.py",
+      "sizeBytes": 6414,
+      "sha256": "29e682e940304ecffba5a1985b03011b39d641a82469643fb56cb5db92ec7eda"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/sources/dummy_video.py",
+      "sizeBytes": 2837,
+      "sha256": "54de70f89fb0af65800347b1806ee9f61cdde3e49ed17c7a11e272a13e088018"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/sources/smartphone_live.py",
+      "sizeBytes": 5403,
+      "sha256": "c9fa43291fa54fb2783eddd6693fd71f88e9b3b09f93b78bf66762a79d7a2ea4"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/streaming.py",
+      "sizeBytes": 12678,
+      "sha256": "24ecb541932d5524a17597eb195222dea0daf8db9ebdea597197b6164bbb4e09"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/datasets/README.md",
+      "sizeBytes": 667,
+      "sha256": "fc446df1c3ac1d0432df173fdd2b2c0489704c83eff54d78ccd6da15ec0f25e9"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/models/README.md",
+      "sizeBytes": 1212,
+      "sha256": "02a56c0560dbd023fef04520678a15ce56ea9e38ef3990fafe4c8ffd73a0e4ff"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/output/README.md",
+      "sizeBytes": 116,
+      "sha256": "96abad7e545b89a9bcd75d35d7b200a834bbc7bc9cb5ea75046e1ab1d1c7e14f"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/pyproject.toml",
+      "sizeBytes": 269,
+      "sha256": "f578910aec723063c77b06777850a8d588d2851794ba7cb08cb36957a851d447"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/requirements.txt",
+      "sizeBytes": 188,
+      "sha256": "4454b747b187be5021bb848d7e113018ef49a75b281fb86a030c3d9510511fba"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/__init__.py",
+      "sizeBytes": 171,
+      "sha256": "50b75a2738be757706caaf00fcc51929d90cdcbe976d47ddb0b8bf23ddef5b8a"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_analysis_streaming.py",
+      "sizeBytes": 4070,
+      "sha256": "3ccbb450d7ed4c5f4d350780ca34d64a291366f4349c519e32eaaceb20359695"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_browser_upload_source.py",
+      "sizeBytes": 4316,
+      "sha256": "0e5da82bab42bdaa0d4d65e144a5e7cb88fc0e57fc49e3155aa99e90d0178ff2"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_dummy_video_source.py",
+      "sizeBytes": 1582,
+      "sha256": "9254fab448d78e6ce857887bfd7745be39a58e748d333097fbeca5a1698a99c4"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_event_reporter.py",
+      "sizeBytes": 2186,
+      "sha256": "3f184fb749cf80f6e916c1e570cdb9b4c27c610b4dc7d4bfa7eca6277982f2cc"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_gpu_preflight.py",
+      "sizeBytes": 1503,
+      "sha256": "d4b9578f4d047e984e8ff12522f7c1c65e079d0f71777c2d49d368a1800503fb"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_inference_packet.py",
+      "sizeBytes": 1363,
+      "sha256": "9903949f2b054b7207a676c4f46aceacf370f54ee87d7fca11439b8441d03ed2"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_model_evaluation.py",
+      "sizeBytes": 6645,
+      "sha256": "478c582ea7cfaba42b8888739e140f32f0893e8859b3c63297f8311783a74dc8"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_performance_metrics.py",
+      "sizeBytes": 5088,
+      "sha256": "da6bef80572334b1e4c92a906da2cef21801887f12ed301da4e2cb34e1f3d721"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_smartphone_live_source.py",
+      "sizeBytes": 1935,
+      "sha256": "58706268899c17e37e27fadadd43c6ad9ef06909a6a94af33457b0f9669a64d5"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/test_yolo_detector_gpu_runtime.py",
+      "sizeBytes": 4519,
+      "sha256": "6be59adc7218b4c72a3b0e944ddfcbe9ed1dd3a8a591d93ce504def40635fe1d"
+    },
+    {
+      "path": "README.md",
+      "sizeBytes": 17809,
+      "sha256": "f949cea10de8398fb08e73e1fd34776ff6fe8798a92f431ba8f6e10df532d2c9"
+    },
+    {
+      "path": "compose.yaml",
+      "sizeBytes": 8213,
+      "sha256": "2938dabc42989a16f61875cb2ac32b4f6a1f11f71d7fbcdcb217ba7be22faf31"
+    },
+    {
+      "path": "docs/ACCEPTANCE_MATRIX.md",
+      "sizeBytes": 2479,
+      "sha256": "9ae3b4ef3d3cff0e535127198660fc926d992d80aebe32f7385273fbe10268aa"
+    },
+    {
+      "path": "docs/BACKUP_RECOVERY.md",
+      "sizeBytes": 5794,
+      "sha256": "84a24eb7be159d168355055b510a3feb46be853062fae7ec84464e480a4c7018"
+    },
+    {
+      "path": "docs/CHECKSUM_RETENTION.md",
+      "sizeBytes": 3644,
+      "sha256": "3cd004d480e95627c3455eb61ab36e8ce1c2324bb3113fd13409ee4f76ba9256"
+    },
+    {
+      "path": "docs/COLD_START_REHEARSAL.md",
+      "sizeBytes": 3787,
+      "sha256": "a920f556378db8893bda14d6a80c12a125b24ff405e0bb1a00f440ce75500225"
+    },
+    {
+      "path": "docs/CSP_OBSERVATION_EVIDENCE.md",
+      "sizeBytes": 2564,
+      "sha256": "b4bab9258443cd14519042834e85dfbb229e0f1616cfbbca92c173bfe31f19dc"
+    },
+    {
+      "path": "docs/EVIDENCE_CATALOG.md",
+      "sizeBytes": 2742,
+      "sha256": "6fecf308bd6aab8c222d2fa17ea8dc63c046d890354c22354010ac26c7c9ed34"
+    },
+    {
+      "path": "docs/GPU_PREFLIGHT_EVIDENCE.md",
+      "sizeBytes": 1643,
+      "sha256": "7ed29a3eb004387488704d1ccae4fa6b3591700a243f515e23567f83176dd041"
+    },
+    {
+      "path": "docs/HP_OMEN_RESTORE.md",
+      "sizeBytes": 12811,
+      "sha256": "47c9b7eab8cb4627816dcec47dd438383e344b65e086b2d55b48627600806c5a"
+    },
+    {
+      "path": "docs/HP_OMEN_TRANSFER_DAY.md",
+      "sizeBytes": 6910,
+      "sha256": "bf06bfc55de64c5484103589323e45de7229505d7a6385fb0501bb67b4accc40"
+    },
+    {
+      "path": "docs/MACHINE_READINESS.md",
+      "sizeBytes": 9893,
+      "sha256": "869db6720a186c481a5500ce80d5b58176304b023080316a11df3ebe22f6427b"
+    },
+    {
+      "path": "docs/MAINTENANCE_KPI_ACCEPTANCE_APPLY.md",
+      "sizeBytes": 2097,
+      "sha256": "20cbf2a0b9237ce061b06c8463a9e7191adb2795862d6aa0aae20406e3b55547"
+    },
+    {
+      "path": "docs/MAINTENANCE_KPI_ACCEPTANCE_PATCH_MANIFEST.md",
+      "sizeBytes": 798,
+      "sha256": "f1d8138d346306c72b07ed9d57f3b006b3b34b02033284861e4996f338d2857c"
+    },
+    {
+      "path": "docs/MAINTENANCE_KPI_APPLY.md",
+      "sizeBytes": 3337,
+      "sha256": "e3c54cd1b97f8235570cfe3d612756625805ea5e8d0de0e7db921b93f46140fc"
+    },
+    {
+      "path": "docs/MAINTENANCE_KPI_PATCH_MANIFEST.md",
+      "sizeBytes": 1796,
+      "sha256": "d8d94fa203ac964fb534e525f9da75a5579b061fdd219f5bd57b03bc3510cfd0"
+    },
+    {
+      "path": "docs/MAINTENANCE_PRIORITY_QUEUE_APPLY.md",
+      "sizeBytes": 3508,
+      "sha256": "f3442eee78818ae49558241dab32b33f05214557b238a135c7c462a4c76b9637"
+    },
+    {
+      "path": "docs/MAINTENANCE_PRIORITY_QUEUE_PATCH_MANIFEST.md",
+      "sizeBytes": 1531,
+      "sha256": "b71eba44b01790007d4add6737bdb0a93ce26628ae130e85bf89fdca84f09be8"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_CLOSURE_CONSISTENCY_APPLY.md",
+      "sizeBytes": 2208,
+      "sha256": "a4e8152beb8a424408d3c17963c040030afd13ce3b7767ecda6f6aebf1a1d418"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_CLOSURE_CONSISTENCY_PATCH_MANIFEST.md",
+      "sizeBytes": 3130,
+      "sha256": "fa7f8324f2378d33b1e6120e8be47189fb1b09b4e176a87fff3cd4a2b3580914"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_COPYRIGHT_APPLY.md",
+      "sizeBytes": 3909,
+      "sha256": "67bcd83027dd472c9f9cfc9dcaba08c064c53ef95ffbab254d9089873fc498e6"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_COPYRIGHT_PATCH_MANIFEST.md",
+      "sizeBytes": 1795,
+      "sha256": "0d28061f0ad13f15a377735b85c668484972f06250f9705e58e954b5be75ff89"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INCIDENT_ESCALATION_APPLY.md",
+      "sizeBytes": 3031,
+      "sha256": "3f5e5e8a2f86cdc78f1adb23a7de2dacf03ee23c205c2858f46e895e506de223"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INCIDENT_ESCALATION_PATCH_MANIFEST.md",
+      "sizeBytes": 2464,
+      "sha256": "674ae0067993979145cf8abf831a8edab1a1fe8d0fe8688bd30cc23328a11bb6"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INCIDENT_TRACKING_APPLY.md",
+      "sizeBytes": 1905,
+      "sha256": "e17e0dea2079d17b4baacd97a46f4923769ad198391d445852d937be1d99c4b4"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INCIDENT_TRACKING_PATCH_MANIFEST.md",
+      "sizeBytes": 2502,
+      "sha256": "2b56747937ca88a819337e8e9456b97bac4cfb70ddae3b78fed9389c440dea39"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INLINE_RESOLUTION_APPLY.md",
+      "sizeBytes": 1845,
+      "sha256": "babcc876d317cc67df2732edd1e633a76284dcd5bbb534d18a1d45de5f407f3c"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INLINE_RESOLUTION_PATCH_MANIFEST.md",
+      "sizeBytes": 1954,
+      "sha256": "b5fdeaefa9b324f4786270a33590c856955b205ffd6793324d97426d91d7e0a5"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INLINE_RESPONSE_APPLY.md",
+      "sizeBytes": 1623,
+      "sha256": "f5242b1c65eed072783ef414c9f7fd3d79d96b7be5afcdd9bc89f642e4545a2f"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_INLINE_RESPONSE_PATCH_MANIFEST.md",
+      "sizeBytes": 1927,
+      "sha256": "b14a1b3d7a54dba5753099c63532b8d09e9a9a829fb47284424e3ab7336f0dbc"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_RESPONSE_QUEUE_APPLY.md",
+      "sizeBytes": 1073,
+      "sha256": "6613e376035b81d040aed8b54e7624f44c67defd0259203dd67c5457bf576e23"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_RESPONSE_QUEUE_PATCH_MANIFEST.md",
+      "sizeBytes": 2383,
+      "sha256": "a2b877a7f30ffb5370cec787594d96e90531ec5805542335e8e254e71973f70b"
+    },
+    {
+      "path": "docs/MAINTENANCE_SLA_TRACKING_SSR_HOTFIX.md",
+      "sizeBytes": 1016,
+      "sha256": "12f20e0cfa51d4e543183ead4892cf4e7c19bddb997b09b658ba8fdfc421d3f5"
+    },
+    {
+      "path": "docs/MIGRATION_HANDOFF.md",
+      "sizeBytes": 5248,
+      "sha256": "eadf280916ddcebef7234b97f06b70e8d30b0647fed0bb02fc9371d6fccb8146"
+    },
+    {
+      "path": "docs/MOBILE-EVIDENCE-DASHBOARD-PATCH.md",
+      "sizeBytes": 1935,
+      "sha256": "c34da7ed2e0d291a1e6ba6c73360e1d41004e2bc6273f85a925cf34820b6c175"
+    },
+    {
+      "path": "docs/MOBILE_EVIDENCE_RELEASE_PROMOTION_APPLY.md",
+      "sizeBytes": 3095,
+      "sha256": "ece9fa4895e6b3deb4debce3027e3827081f27bd5d6784ed5f291bcca6593a8e"
+    },
+    {
+      "path": "docs/MOBILE_EVIDENCE_RELEASE_PROMOTION_MANIFEST.md",
+      "sizeBytes": 758,
+      "sha256": "47ba511c46e05ff0da81c50a687b34e036ce0244ae3c99f3a6a9cb9a2c6f7fb4"
+    },
+    {
+      "path": "docs/MOBILE_HTTPS_LOGIN_HYDRATION_APPLY.md",
+      "sizeBytes": 3224,
+      "sha256": "2a2aaa2437b5ff398ccb730df096b14bc2d3e2a2e0a3c292ea330cac7c1eae3c"
+    },
+    {
+      "path": "docs/MOBILE_HTTPS_LOGIN_HYDRATION_PATCH_MANIFEST.md",
+      "sizeBytes": 1393,
+      "sha256": "772a5d9b6d621914f119ee04a6b64901baa6d020a9aced97d253ef70091c0a75"
+    },
+    {
+      "path": "docs/MOBILE_SENSOR_EVIDENCE_HARDENING_APPLY.md",
+      "sizeBytes": 2000,
+      "sha256": "583c102a42ff2a7152451b9d78fbb7512ab98883d8125406e073e4d0f9bd7464"
+    },
+    {
+      "path": "docs/MOBILE_SENSOR_EVIDENCE_HARDENING_MANIFEST.md",
+      "sizeBytes": 1516,
+      "sha256": "f200b31d056fb094ffd607d04a75f8a63c00da0e52eb09d36e10b99f6a6fda6a"
+    },
+    {
+      "path": "docs/MOBILE_TRANSFER_STATUS_CONSISTENCY_APPLY.md",
+      "sizeBytes": 3154,
+      "sha256": "7d95874524489dd6ae3e609872a0b67dba1dab2d76096f95a61511f6cca48f1e"
+    },
+    {
+      "path": "docs/MOBILE_TRANSFER_STATUS_CONSISTENCY_MANIFEST.md",
+      "sizeBytes": 819,
+      "sha256": "24109abee5a9e81af2de87117b4c8580cd8bffa60bfab0d43887852acf7c003e"
+    },
+    {
+      "path": "docs/MODEL_AB_BENCHMARK.md",
+      "sizeBytes": 3775,
+      "sha256": "6f30ba4dbf2917053d69226612c22ea2e8d7a184662d0f6b4e2b509d32eea9e1"
+    },
+    {
+      "path": "docs/MODEL_ACCURACY_EVALUATION.md",
+      "sizeBytes": 7528,
+      "sha256": "f9a152c3acfb86b3166de75936e97ae401b3507fea6fe09f3dcee1bdb1ed4140"
+    },
+    {
+      "path": "docs/MODEL_POST_RELEASE_SOAK.md",
+      "sizeBytes": 5575,
+      "sha256": "3af4db43954689a0d5d5c770a24cf185ece49b2a30f0a41cca2040e27c42acf7"
+    },
+    {
+      "path": "docs/MODEL_PROMOTION_GATE.md",
+      "sizeBytes": 3033,
+      "sha256": "8d8e302cbc387fb91b04b5da368632ffb1c38972ebe2d74e8a0b671babf815da"
+    },
+    {
+      "path": "docs/MODEL_RELEASE_ROLLBACK.md",
+      "sizeBytes": 6748,
+      "sha256": "973aa5a31893ea4501457070255c93bae69c4909f1ddb60763a078ad7e2750b9"
+    },
+    {
+      "path": "docs/MODEL_RELEASE_SIGNOFF.md",
+      "sizeBytes": 2876,
+      "sha256": "f96c522af4a96b148bbbeec05400ff5b363151053500f098a68438976a5680f8"
+    },
+    {
+      "path": "docs/PORTABLE_SOURCE_RELEASE.md",
+      "sizeBytes": 4903,
+      "sha256": "66ff8fafb22e339cd0e74269cce1572f6e95a6ae2b2181ee86fabc070addfbae"
+    },
+    {
+      "path": "docs/POST_CLOSEOUT_CHANGES.md",
+      "sizeBytes": 2845,
+      "sha256": "5ff2d43bfc03ce923b768422b974cb4729f317ab8c6bea3a8f9548c00cdc6314"
+    },
+    {
+      "path": "docs/PRESENTATION_GATE.md",
+      "sizeBytes": 4491,
+      "sha256": "20d52f1412d692a12ac06e7ef5cd563c773c42b1be72715ccefef896f501803f"
+    },
+    {
+      "path": "docs/PRESENTATION_PERFORMANCE.md",
+      "sizeBytes": 2655,
+      "sha256": "268c2eb3955a047a2ce64a56fca9bd21a5f2b134a49c86dd9d2e537a14f5322d"
+    },
+    {
+      "path": "docs/PRESENTATION_QUICK_CHECK.md",
+      "sizeBytes": 2405,
+      "sha256": "a6c24924f22e2be30a534ac6146d8f2288dbabd24d978d880f3728cc7d06eb84"
+    },
+    {
+      "path": "docs/PRESENTATION_REHEARSAL.md",
+      "sizeBytes": 3528,
+      "sha256": "f86ad0486c62e638feb519c06dfc635181f88288d840c7d591cbd74b09ef1b3b"
+    },
+    {
+      "path": "docs/PRESENTATION_SIGNOFF.md",
+      "sizeBytes": 3444,
+      "sha256": "cf4d10bf097e7107252396b8a61fa0d4a1273c54287709062998b8d90b5d8d19"
+    },
+    {
+      "path": "docs/PRE_TRANSFER_REFRESH.md",
+      "sizeBytes": 5565,
+      "sha256": "6ab32ff68a7d377801b31cafbf9281b6f512b5ffcce8e6d2ffc428f5071b44de"
+    },
+    {
+      "path": "docs/PROJECT_CLOSEOUT.md",
+      "sizeBytes": 2939,
+      "sha256": "e0ed32613861550b1bb6831ee8a9e83b807ca13089e687f3da3996da51f82c4b"
+    },
+    {
+      "path": "docs/RELEASE_EVIDENCE_BUNDLE.md",
+      "sizeBytes": 3828,
+      "sha256": "b9aa58d493f80aff248e3981bad1cec38714642067cfa1bde871b43c5a3b071b"
+    },
+    {
+      "path": "docs/RELEASE_EVIDENCE_V2.md",
+      "sizeBytes": 3686,
+      "sha256": "5524fa53e5db8f957fa8639c99ad734593110498b7db3b64fd396f10ef6b86c1"
+    },
+    {
+      "path": "docs/RELEASE_READINESS_GATE.md",
+      "sizeBytes": 7059,
+      "sha256": "fe87c8933bdc8cce7056b7b0eb136e16b874f28e245a718d0df643e10b006949"
+    },
+    {
+      "path": "docs/RETENTION_QUARANTINE.md",
+      "sizeBytes": 5582,
+      "sha256": "7a29d99e161cd90dd8b3e1d5a270637d035dffdc4c39b1912267f26f7e06518b"
+    },
+    {
+      "path": "docs/RETENTION_RECOVERY_DRILL.md",
+      "sizeBytes": 4501,
+      "sha256": "ec8cc83f8e043a15cff3f8261c51258c60c5efe4639015f70ab81696913cd12b"
+    },
+    {
+      "path": "docs/RUNTIME_MODE_SWITCH.md",
+      "sizeBytes": 2712,
+      "sha256": "939822754be5fbdb8bef8f8b362dd4ce7e5314d213cbb0be17930276a7242a52"
+    },
+    {
+      "path": "docs/STORAGE_AUDIT.md",
+      "sizeBytes": 4958,
+      "sha256": "04457e10b5c6540adba1bc85aeae048fdbb04c9d49b81cdd1429805a5aaa80c8"
+    },
+    {
+      "path": "docs/TRANSFER_DAY_GATE.md",
+      "sizeBytes": 4961,
+      "sha256": "da7a5f770000ed93c1160ccc0f16965e5debb5a1efee44a131f5f300c404d69b"
+    },
+    {
+      "path": "docs/TRANSFER_MEDIA.md",
+      "sizeBytes": 6479,
+      "sha256": "d3a2ceb3052c881cc63bbdce9bbdc343ce1db28a55830a2a248f539d2ac15405"
+    },
+    {
+      "path": "docs/TRANSFER_PACKAGE.md",
+      "sizeBytes": 7011,
+      "sha256": "be8d6dd87ec45394bdd40330915929cdfcfe617b2f23e4fa7a06a8fb5b204a72"
+    },
+    {
+      "path": "docs/TRANSFER_READINESS.md",
+      "sizeBytes": 3656,
+      "sha256": "9ba5932ba2fcd78223557de71eeff218b173c502e2d1c41987c2dccdb5109d6f"
+    },
+    {
+      "path": "docs/TRANSFER_REHEARSAL.md",
+      "sizeBytes": 3552,
+      "sha256": "a383bbcef97751b0c471626804018ecdb4d2944bf1e4d1c7d48070f31e9d3539"
+    },
+    {
+      "path": "docs/performance-baselines/lg-gram-cpu-yolo26n-20260722.json",
+      "sizeBytes": 1333,
+      "sha256": "f5e2505a39dead1181c8dd94fc01772748d425ffb5e230e048d7fe8226c82bf3"
+    },
+    {
+      "path": "scripts/backup-visionflow-data.bat",
+      "sizeBytes": 1042,
+      "sha256": "e98ad07aec923bd5f50349fee2b7994c74bc02bd944f3c6b2c801fa20893c5fa"
+    },
+    {
+      "path": "scripts/collect-visionflow-diagnostics.bat",
+      "sizeBytes": 1673,
+      "sha256": "288f3ad308d5787a8effc0b4fcd38b2095d3f62d3eef793054ac448b12c9f0a1"
+    },
+    {
+      "path": "scripts/compare-visionflow-ai-benchmarks.bat",
+      "sizeBytes": 110,
+      "sha256": "72e781df0806b421dd40f2d87dd889613eaee31f6c8ef186ed5105bb893e977e"
+    },
+    {
+      "path": "scripts/compare_visionflow_ai_benchmarks.py",
+      "sizeBytes": 16138,
+      "sha256": "7c1cad2107805dd67b653b190c6d976389e9598df0e1554274464275a9abc2e1"
+    },
+    {
+      "path": "scripts/logs-visionflow-docker.bat",
+      "sizeBytes": 111,
+      "sha256": "ce2ab5ba4c1eb3a6a8e68d411a3e53b959cbd08eb3685fd65102f530246f7077"
+    },
+    {
+      "path": "scripts/prepare-visionflow-presentation.bat",
+      "sizeBytes": 938,
+      "sha256": "d7b79fecacab45c37dd1e9449faff9c5dee964a717a9a2066f5c456b3b0dad05"
+    },
+    {
+      "path": "scripts/restore-visionflow-data.bat",
+      "sizeBytes": 1135,
+      "sha256": "77bf7292b37d480f9e7b6ca9fe7bfcfef556d4bf2bc3cd243f3875fc7f0ad92d"
+    },
+    {
+      "path": "scripts/run-visionflow-acceptance.bat",
+      "sizeBytes": 162,
+      "sha256": "8c9b55ea516d009f089ba2fee216164f0237c0f0a656823ad186d4046a91ade9"
+    },
+    {
+      "path": "scripts/run-visionflow-ai-benchmark.bat",
+      "sizeBytes": 142,
+      "sha256": "b56e5134eee9811731f03a06b015889545b520ab7485930358140cb0ce70d94c"
+    },
+    {
+      "path": "scripts/run-visionflow-backup-verify.bat",
+      "sizeBytes": 241,
+      "sha256": "62cbc7487ec9b7b692492a580cf3be38e306069c34f6519d986cd09d8430ecd2"
+    },
+    {
+      "path": "scripts/run-visionflow-backup.bat",
+      "sizeBytes": 241,
+      "sha256": "f8fc1ea78a59ecc1d90c4102901255d1f0ba620670642fbebb8d7f7652a7d0bd"
+    },
+    {
+      "path": "scripts/run-visionflow-checksum-retention-restore.bat",
+      "sizeBytes": 267,
+      "sha256": "b190ec5dd40c22f6d7eff5820d3650f3596e95ecce0fa484e1afd8e81981a374"
+    },
+    {
+      "path": "scripts/run-visionflow-checksum-retention.bat",
+      "sizeBytes": 251,
+      "sha256": "4b7fa3f18e0d4684399aec4011df103754364b6c948d3a307154a1f1399d3964"
+    },
+    {
+      "path": "scripts/run-visionflow-cold-start-rehearsal.bat",
+      "sizeBytes": 255,
+      "sha256": "87fbed66fd4b3eb10cbd429cb360bd32658bbcde4eb20eb57050ee4196c6e441"
+    },
+    {
+      "path": "scripts/run-visionflow-csp-evidence.bat",
+      "sizeBytes": 114,
+      "sha256": "0b54613c76912ecc0a6053fdfd572d5b0de46f3743818428387125d1e5091d07"
+    },
+    {
+      "path": "scripts/run-visionflow-csp-report-only-acceptance.bat",
+      "sizeBytes": 123,
+      "sha256": "015677a8cf80635c636202785272813562324203f59d397a18b63e29268449e4"
+    },
+    {
+      "path": "scripts/run-visionflow-csrf-acceptance.bat",
+      "sizeBytes": 135,
+      "sha256": "73c231b572cb9af149fd9f217ae8703e3d0f8e8ee60bdc3c293a484299f5ef3b"
+    },
+    {
+      "path": "scripts/run-visionflow-docker-demo.bat",
+      "sizeBytes": 306,
+      "sha256": "d6dcde841844df06a44ed729f9b75633ee72246ec69fc46c4122d78872f98b3b"
+    },
+    {
+      "path": "scripts/run-visionflow-evidence-catalog.bat",
+      "sizeBytes": 247,
+      "sha256": "627efdbee0933695efc2ec5c7569c79da15311581d62d89536490471e7cd62d6"
+    },
+    {
+      "path": "scripts/run-visionflow-gpu-preflight-verify.bat",
+      "sizeBytes": 273,
+      "sha256": "7935241a5f1792d9280bfa1255cd1b9af52501afbd387c93d0170f8666b982ee"
+    },
+    {
+      "path": "scripts/run-visionflow-gpu-preflight.bat",
+      "sizeBytes": 135,
+      "sha256": "fb34c6ea38047d24d863c5685d3c105662085423c6ad597e750565ef56bd117b"
+    },
+    {
+      "path": "scripts/run-visionflow-gpu.bat",
+      "sizeBytes": 147,
+      "sha256": "d9eb09e7497510dc04e36f587aa2dcf70dadf6c317f3f40014cf8c1fbff97c0e"
+    },
+    {
+      "path": "scripts/run-visionflow-hp-omen-restore-verify.bat",
+      "sizeBytes": 259,
+      "sha256": "b6d26c5e1611e75d58ad783aad52287e686c4875de2739b2d09c563493c287b5"
+    },
+    {
+      "path": "scripts/run-visionflow-hp-omen-restore.bat",
+      "sizeBytes": 245,
+      "sha256": "8b63b4ee907fc010d22d86334b0f7d513e38f884ae4864df0dca913bddde3cba"
+    },
+    {
+      "path": "scripts/run-visionflow-hp-omen-transfer-day.bat",
+      "sizeBytes": 221,
+      "sha256": "bdb6ca95f27eb77d24591f1acc53edb2aa942bced6fd3526b4e8fbf3c01056ed"
+    },
+    {
+      "path": "scripts/run-visionflow-machine-compare.bat",
+      "sizeBytes": 265,
+      "sha256": "49382d8e8c32be5f76f3232424a80456c7a43af63fd4ca1074fe2fe8e1dabf4b"
+    },
+    {
+      "path": "scripts/run-visionflow-machine-profile.bat",
+      "sizeBytes": 265,
+      "sha256": "b8a558b41ace36c5f9a6eb86691d17005231ea6e5a68a44e8da9f977d50f3971"
+    },
+    {
+      "path": "scripts/run-visionflow-maintenance-acceptance.bat",
+      "sizeBytes": 384,
+      "sha256": "e0a0537f0d6946fbb9c7f85580673e9c2bf98812bba313004772cc78eab2f7de"
+    },
+    {
+      "path": "scripts/run-visionflow-maintenance-presentation-gate.bat",
+      "sizeBytes": 447,
+      "sha256": "cbf7dd44336709e374490f53688d89b424031555996a9aa5d6d458fcb86b86a7"
+    },
+    {
+      "path": "scripts/run-visionflow-maintenance-sla-tracking-acceptance.bat",
+      "sizeBytes": 242,
+      "sha256": "5ed8c3c9962ab51a41514bf4c3d2d55b679f6c4cd9474fbfc3f2426c9410d015"
+    },
+    {
+      "path": "scripts/run-visionflow-migration-handoff-verify.bat",
+      "sizeBytes": 263,
+      "sha256": "3066545f79443044afc9f276bb936c78de58ec2e5afff574beced2c757603cd7"
+    },
+    {
+      "path": "scripts/run-visionflow-migration-handoff.bat",
+      "sizeBytes": 263,
+      "sha256": "184611d325bc721fe5df8bbdea6a37b4800125e880827299f84b62999efb55b6"
+    },
+    {
+      "path": "scripts/run-visionflow-mobile-evidence.bat",
+      "sizeBytes": 246,
+      "sha256": "267f5d1f8762cd1b78c246e11adfa5a7381b9ee9c200457eebac29f5b40349f1"
+    },
+    {
+      "path": "scripts/run-visionflow-mobile-https-acceptance.bat",
+      "sizeBytes": 137,
+      "sha256": "1152503748499d029421ee0bac8f9d3f27bd190b7761377593caf118321448ff"
+    },
+    {
+      "path": "scripts/run-visionflow-mobile-https.bat",
+      "sizeBytes": 136,
+      "sha256": "8fb7213dab339013471eb6e8fc414afd405ecb42db8e4cf9716771af6831b784"
+    },
+    {
+      "path": "scripts/run-visionflow-mobile-https.ps1",
+      "sizeBytes": 3054,
+      "sha256": "46bd4ce594272eb9bfbf66988430c8bfd30b958674899e81d5ea6167748579aa"
+    },
+    {
+      "path": "scripts/run-visionflow-model-evaluation.bat",
+      "sizeBytes": 138,
+      "sha256": "4f9dfd7b190fc9f517a7a8bf3913aa8b9dd53f2683d08eb2789f16924ab61afe"
+    },
+    {
+      "path": "scripts/run-visionflow-model-promotion-verify.bat",
+      "sizeBytes": 259,
+      "sha256": "68c08eab9b85491f4b293d083a056fb33b5d91f3b9ecd3c76928c2cb5f186c1d"
+    },
+    {
+      "path": "scripts/run-visionflow-model-promotion.bat",
+      "sizeBytes": 245,
+      "sha256": "6cd9480410e797e5936fb23a6be9c360f1c3154cf04c8a1af0e2b14db952d018"
+    },
+    {
+      "path": "scripts/run-visionflow-model-release-signoff-verify.bat",
+      "sizeBytes": 271,
+      "sha256": "cdf6753c37f3e95ed78f4af2fbf3e4114b61f9eee53413c6e846d0dc0ff892ed"
+    },
+    {
+      "path": "scripts/run-visionflow-model-release-signoff.bat",
+      "sizeBytes": 257,
+      "sha256": "24738715800a7ce4282ef136136f060e76f3f75829aa93edcc283610910da793"
+    },
+    {
+      "path": "scripts/run-visionflow-model-release-verify.bat",
+      "sizeBytes": 255,
+      "sha256": "d65d9e6873b7f726656c25747fde8c6c23daf6f912e410689b3b3eb62d0e0ac7"
+    },
+    {
+      "path": "scripts/run-visionflow-model-release.bat",
+      "sizeBytes": 241,
+      "sha256": "29b78b82f3834ff268dfb7325d7d640b9912b7fcb3011bb3b3fa4ab979cd484f"
+    },
+    {
+      "path": "scripts/run-visionflow-model-soak-decision-verify.bat",
+      "sizeBytes": 267,
+      "sha256": "f0fd7e0009264c5df8740531ee3b95ecc9862623aaa9040f6be1b7ec81724619"
+    },
+    {
+      "path": "scripts/run-visionflow-model-soak-decision.bat",
+      "sizeBytes": 253,
+      "sha256": "f18442a06d93f56020f03cc016ef785767e3b97aae40a0d4f5ef4a44eb88f528"
+    },
+    {
+      "path": "scripts/run-visionflow-model-soak-verify.bat",
+      "sizeBytes": 249,
+      "sha256": "0feb64383bff68a4edf8b2f8178ca675afa81d2d9dab6efbbcd03f072505f5a0"
+    },
+    {
+      "path": "scripts/run-visionflow-model-soak.bat",
+      "sizeBytes": 235,
+      "sha256": "41bfc45d53971701f8904fc04f6db7e51ff33da18fa9438a67fe6a47d4a7c047"
+    },
+    {
+      "path": "scripts/run-visionflow-operator-session-acceptance.bat",
+      "sizeBytes": 135,
+      "sha256": "73c231b572cb9af149fd9f217ae8703e3d0f8e8ee60bdc3c293a484299f5ef3b"
+    },
+    {
+      "path": "scripts/run-visionflow-post-closeout-changes-verify.bat",
+      "sizeBytes": 271,
+      "sha256": "4b7f1ce3c59aa54f77f1fe127c0f28b1ef2f5f3c76577c12bc41090307429a55"
+    },
+    {
+      "path": "scripts/run-visionflow-post-closeout-changes.bat",
+      "sizeBytes": 271,
+      "sha256": "b1f995a1d3482a36a8cee5a02b90d0e27f4e9655396199fabeddb0627159cc6b"
+    },
+    {
+      "path": "scripts/run-visionflow-pre-transfer-refresh-verify.bat",
+      "sizeBytes": 269,
+      "sha256": "ba06fb4dcdfdb19916792daabfa761e7f0efb8a8d80786cd26ba82de03ff9664"
+    },
+    {
+      "path": "scripts/run-visionflow-pre-transfer-refresh.bat",
+      "sizeBytes": 255,
+      "sha256": "8382efbd36a8c0a67b459bfdc5502a6815aebb31a71baeb08891a1998a03b5ed"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-gate-verify.bat",
+      "sizeBytes": 263,
+      "sha256": "2c87afe50179f5a2dfc97bccf360302bb6d70b76cff9faa0a7eadd84fb039fcd"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-gate.bat",
+      "sizeBytes": 267,
+      "sha256": "d37baacbdb7a94abc1d98ae64b8a4f5e8add64bb67a385303a939f4ca2651ba3"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-performance-verify.bat",
+      "sizeBytes": 277,
+      "sha256": "33ff747ca16651048fc710a5395fc2bc4ee4925f22aa3a330baa17c5533d01c8"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-performance.bat",
+      "sizeBytes": 279,
+      "sha256": "085ce898f42f6ee3e78d92b2f108c3e4b7ad2e4c41a0d4e77dfd5c787c261e1c"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-preflight.bat",
+      "sizeBytes": 174,
+      "sha256": "e0147d1ecde25a9e3d6c3f978f0be756db94071b77cb19eef1d40f4aff85ee59"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-quick-check-verify.bat",
+      "sizeBytes": 277,
+      "sha256": "bdc5e354d57061da3c2861a7838020d6c78c8e1bc9ee046486215d57c279b82f"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-quick-check.bat",
+      "sizeBytes": 275,
+      "sha256": "20397468818a41574a0490131a546967ba5c62b5e4b6a8f49e11359f1a2c34aa"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-rehearsal-verify.bat",
+      "sizeBytes": 273,
+      "sha256": "5681a6da63352948f68a5f58f9586974a36241b9331bef2809bd8be2be11eb4c"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-rehearsal.bat",
+      "sizeBytes": 341,
+      "sha256": "76e0b8081b3dc9ca2efe8c6fcbd3f7aca2ae49d1fbc94ef765e54708705b55cd"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-signoff-bundle-verify.bat",
+      "sizeBytes": 283,
+      "sha256": "dbee4dfd77cd86899a57ed57b932a2b07e8c7ac3ef3f8366858b8c44f8b49a5c"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-signoff-verify.bat",
+      "sizeBytes": 269,
+      "sha256": "682063c1ad434db7fce0901da2c466d2b8bae0bda7625441cf57e48a6207cc1e"
+    },
+    {
+      "path": "scripts/run-visionflow-presentation-signoff.bat",
+      "sizeBytes": 269,
+      "sha256": "568ca0d46b39fccd7ea42243bea47629c6864bf6f6ce218f525baa6df91cee90"
+    },
+    {
+      "path": "scripts/run-visionflow-project-closeout-verify.bat",
+      "sizeBytes": 261,
+      "sha256": "83de1f9471d3921f38e9ec68684268f57322fe9db96ae25908cf6ca385e9792b"
+    },
+    {
+      "path": "scripts/run-visionflow-project-closeout.bat",
+      "sizeBytes": 261,
+      "sha256": "a19adaa3e4cf7ca85ea38fd75efb463d26f621e59dfe00bb96290620f1b2c846"
+    },
+    {
+      "path": "scripts/run-visionflow-rbac-acceptance.bat",
+      "sizeBytes": 124,
+      "sha256": "f3672f34fc21b090781759ad9ac06882aa351bcd57e9f2762984bf2028ecc7ed"
+    },
+    {
+      "path": "scripts/run-visionflow-release-evidence.bat",
+      "sizeBytes": 247,
+      "sha256": "27f9283c6c158d2ac4e3937ab07855bfa04d32a8dc2ffe173ee8b36f9343006f"
+    },
+    {
+      "path": "scripts/run-visionflow-release-gate.bat",
+      "sizeBytes": 239,
+      "sha256": "e0f7c98032ae7b9bd1890c077b0cdc8dcd033095e51acb43646fe708608eb557"
+    },
+    {
+      "path": "scripts/run-visionflow-restore.bat",
+      "sizeBytes": 243,
+      "sha256": "50a5df30cee90d6c6adfed314e74491043e23842ce7f519a70712ed81c6bb07e"
+    },
+    {
+      "path": "scripts/run-visionflow-retention-drill.bat",
+      "sizeBytes": 245,
+      "sha256": "9af5720add31d0b4449b1679332ddd7fd53020a803efee8ad06e7a30c42f2e6b"
+    },
+    {
+      "path": "scripts/run-visionflow-retention-restore.bat",
+      "sizeBytes": 249,
+      "sha256": "8bd68c4f6303c26cc5a0470b759445ae3e69d6987b9f563b16eb5cacfccace3f"
+    },
+    {
+      "path": "scripts/run-visionflow-retention.bat",
+      "sizeBytes": 255,
+      "sha256": "1974083fade14c0977cbf7442f688e3291e2179b59ad7bee284657725388daca"
+    },
+    {
+      "path": "scripts/run-visionflow-runtime-mode.bat",
+      "sizeBytes": 239,
+      "sha256": "a73145f9cca8003590e675ca66dd465d895c8c44f870c2e68cf9ec35957be60b"
+    },
+    {
+      "path": "scripts/run-visionflow-security-headers-acceptance.bat",
+      "sizeBytes": 123,
+      "sha256": "015677a8cf80635c636202785272813562324203f59d397a18b63e29268449e4"
+    },
+    {
+      "path": "scripts/run-visionflow-security-posture-acceptance.bat",
+      "sizeBytes": 123,
+      "sha256": "015677a8cf80635c636202785272813562324203f59d397a18b63e29268449e4"
+    },
+    {
+      "path": "scripts/run-visionflow-security-release-gate.bat",
+      "sizeBytes": 555,
+      "sha256": "3585fe47dbe5c3a90412c824d9037acb922a234de340b283ae031b2853b7ea0f"
+    },
+    {
+      "path": "scripts/run-visionflow-session-bulk-revoke-acceptance.bat",
+      "sizeBytes": 132,
+      "sha256": "087bec32816b71e739b16b129d79b4791cece231a838c3443311ad4e9d06bf83"
+    },
+    {
+      "path": "scripts/run-visionflow-source-release.bat",
+      "sizeBytes": 243,
+      "sha256": "c0f1f1021f7616cdfe6cd31ab7ad2c32887f61e4f0eeea7fb44e6fda630059df"
+    },
+    {
+      "path": "scripts/run-visionflow-storage-audit.bat",
+      "sizeBytes": 241,
+      "sha256": "50a79d77290799a5bd07d3a3981b82eddf53294e755cf5a02fb461a4beaf21f5"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-day-gate.bat",
+      "sizeBytes": 249,
+      "sha256": "0d04af76369968b0d53ba1893ae1a74ee7fe0fe669046a6ab1af8489fdbe727f"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-media-verify.bat",
+      "sizeBytes": 257,
+      "sha256": "cd6d9ef153288b42c934e88e152a398eb9d980f4f72584e412782cf3cf250fe4"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-media.bat",
+      "sizeBytes": 243,
+      "sha256": "87da9f7c8e2eb1edd3cccc61978eec9b08908d834f6cd1e24cd385be286ab91e"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-package-verify.bat",
+      "sizeBytes": 261,
+      "sha256": "6e3630af891596ef5dd7ba1d31518eb48d3664c7261434906e7c92d3725d014f"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-package.bat",
+      "sizeBytes": 261,
+      "sha256": "8f865190c6319a12b3f0053f55045cee41822eaaeec2e0de21101cd8157eb057"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-readiness.bat",
+      "sizeBytes": 251,
+      "sha256": "1b017c12b9578345c44a8c07bdda38df1bd2ad22de6a70d7ad2882aae0cb279d"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-rehearsal-verify.bat",
+      "sizeBytes": 265,
+      "sha256": "0d8d09140cbfd8940be4575904e878f15d2284d2f40f562d6c53e83dcf200f70"
+    },
+    {
+      "path": "scripts/run-visionflow-transfer-rehearsal.bat",
+      "sizeBytes": 251,
+      "sha256": "96a21d5d1a8d177468c1b0e48d1bda3ceb3f40649b727870891fb2bd70a03930"
+    },
+    {
+      "path": "scripts/setup-visionflow-mobile-https.bat",
+      "sizeBytes": 138,
+      "sha256": "cbccb25bcbaeca84034b6af40bab504521ed315c4b3c129d2a88cc9cbf61af8d"
+    },
+    {
+      "path": "scripts/setup-visionflow-mobile-https.ps1",
+      "sizeBytes": 7753,
+      "sha256": "437dc29e06beea4ed8e12c86001848b852d50d74c7a08528bd45ea7f1a245372"
+    },
+    {
+      "path": "scripts/start-visionflow-docker.bat",
+      "sizeBytes": 603,
+      "sha256": "ca4d43efa495979a3f7082173dc1ffc786258f06f4adf4fe055155a84e6d87bd"
+    },
+    {
+      "path": "scripts/stop-visionflow-docker.bat",
+      "sizeBytes": 179,
+      "sha256": "c83598a77cd4a8762db73a520e5b9ae253ebe34cadf4e929a9eda1f823bb71a4"
+    },
+    {
+      "path": "scripts/stop-visionflow-gpu.bat",
+      "sizeBytes": 135,
+      "sha256": "3e681359f4d1cae60e52c2b3a240d779da047eaa6e692e3639287199c243b4be"
+    },
+    {
+      "path": "scripts/test-visionflow-mobile-https.ps1",
+      "sizeBytes": 4522,
+      "sha256": "06c7fde5e445bb46e7584e34cc362062c3e56a90e1dcabe9d49c78aca9853e31"
+    },
+    {
+      "path": "scripts/tests/test_compare_visionflow_ai_benchmarks.py",
+      "sizeBytes": 2867,
+      "sha256": "f26e30754092a1c7ca16212378cc4dfca16b790c4a3a606341b6051656e44ca7"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_backup.py",
+      "sizeBytes": 6660,
+      "sha256": "f99a99b304ed6bf683faaf7838c10779dc91be1c68e129d6077afc14942b8fae"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_checksum_retention.py",
+      "sizeBytes": 12088,
+      "sha256": "c143834f31f40b442645e1174d1e2bdabac94116fdb685f1433e79f5402b4afc"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_cold_start_rehearsal.py",
+      "sizeBytes": 8552,
+      "sha256": "3138c78f9be596ed2ead33c771f60f0b3bdee824fac56fd3f457655c1a19b35b"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_csp_evidence.py",
+      "sizeBytes": 3647,
+      "sha256": "f91e148d93b86f8f00b8dead55f55ac1a18cd9e10bf6b150f49b7caf48645a6d"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_evidence_catalog.py",
+      "sizeBytes": 7120,
+      "sha256": "bd84827a2ca0128cd0bfe8746a3120a20f7fc585fdf794d15c83b8cb2b6903e3"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_gpu_preflight_evidence.py",
+      "sizeBytes": 5448,
+      "sha256": "e8a3d7d7c891a346f357d0ab1c9073d3ef97a30757ca2f27c223972295aaa034"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_gpu_runtime.py",
+      "sizeBytes": 3132,
+      "sha256": "2ea7a85928d874c6e08c42ef59216a707515ecc08418400f35242896b384a713"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_hp_omen_restore.py",
+      "sizeBytes": 36675,
+      "sha256": "f77463fb31d3dbd9680a76ecbfbb6cc9e066c5edcb782456c96b55e21ff1c0a2"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_hp_omen_transfer_day.py",
+      "sizeBytes": 7018,
+      "sha256": "7a3a39c95035067fdb695cf676b89094681f6694fe9bdc5f29171e2f4a14cb15"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_machine_readiness.py",
+      "sizeBytes": 13925,
+      "sha256": "87934ba38044aa96a25152b1fd477e080b34fbd058d62ec56cbbf3cdc2cc31ca"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_maintenance_acceptance.py",
+      "sizeBytes": 12892,
+      "sha256": "8945acd9df7cbfd74dd0fc009855f6e472ea80ef6d3ef8d8733ded0a721e8f50"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_maintenance_presentation_gate.py",
+      "sizeBytes": 3982,
+      "sha256": "6cb5305c2ed95ca3b01fe6c2a7fc3c6a5f658d644c2a17275dcf8068876c236a"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_migration_handoff.py",
+      "sizeBytes": 10033,
+      "sha256": "7be89ac21d064802c4daa3e48a512ee9a34d8225ef111b469ddcc523f2ed4b1b"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_mobile_evidence.py",
+      "sizeBytes": 10159,
+      "sha256": "22e61d004ad1ddb0db604f88270c571cc8e6661c2f91384bda4e23bd3783a826"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_model_promotion.py",
+      "sizeBytes": 10186,
+      "sha256": "7b268d85c942c4393b49079da30fba2fdb87cd269e0fbfda4ee17cec04846d14"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_model_release.py",
+      "sizeBytes": 16029,
+      "sha256": "d8a83fc94015d37dcd0ee949341676cf0a84e0608052f932d3c9757d1c6833b2"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_model_release_signoff.py",
+      "sizeBytes": 6012,
+      "sha256": "d8604c260b73573c34ec0d0a1f4ce1f00eb9f05bffcec770b5ef0e5a52efe5ff"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_model_soak.py",
+      "sizeBytes": 9645,
+      "sha256": "f0c484e5f324931310d6d17dda9b3b0b636529127a1999265af26cfd00c0ecc2"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_model_soak_decision.py",
+      "sizeBytes": 8065,
+      "sha256": "30bb9b28b124761a41a1c9be2ed7e4b6265171db825851119e4f529155b6cd58"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_post_closeout_changes.py",
+      "sizeBytes": 13078,
+      "sha256": "e929b11120aea586f6359de8fbd423ad6c2db075bbf034fb36b77d699084d49d"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_pre_transfer_refresh.py",
+      "sizeBytes": 21600,
+      "sha256": "bbb160473adc2618c3f92ae783f15e0d6ac075de25e691f474ca4862ac80f2c4"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_presentation_gate.py",
+      "sizeBytes": 11707,
+      "sha256": "31778a3945dfd9bdd0377299502277766e1b762bb9e6bb4f394cac2b7e89dcc1"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_presentation_performance.py",
+      "sizeBytes": 9374,
+      "sha256": "2066258f67f8001cac0bab0390cc18315cfc9120baac8bb9123d6da13ea81d78"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_presentation_quick_check.py",
+      "sizeBytes": 7920,
+      "sha256": "2a7129513c2853c2a9c8d7906d66ce828e4e7ad5bb99d529b33511756c58a9c6"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_presentation_rehearsal.py",
+      "sizeBytes": 10098,
+      "sha256": "2a068bc2b596a584b16998496d380a56822098d1efe2c7d6b22681f432378d74"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_presentation_signoff.py",
+      "sizeBytes": 17692,
+      "sha256": "b81ae30e284dd31333fc385e851cf486bb818fc836f3f90e0cfa9ff7e914b897"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_project_closeout.py",
+      "sizeBytes": 9083,
+      "sha256": "6b0c0ff4b447d740acb7fe76903e03f3b66ab64bcd70185a9be20aec50a48c46"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_release_evidence.py",
+      "sizeBytes": 19755,
+      "sha256": "b156bfed00bb489df1cc8050f344fa74821dc61822f4ed454e3c48ff1416b5e7"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_release_gate.py",
+      "sizeBytes": 21961,
+      "sha256": "413cefd80bd317fc9736e35ccab4132cfe07e36b7fc05eebc04d15c909111353"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_retention.py",
+      "sizeBytes": 10589,
+      "sha256": "ea0b3b1e542b8827c862325cb6b5da10af3a18a91df9299fb2c0d456f74528b9"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_retention_drill.py",
+      "sizeBytes": 8613,
+      "sha256": "f0bb90207c2d8c13d5531490db1ba277b9c1978d77494209c0bd4926430bb814"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_runtime_mode.py",
+      "sizeBytes": 3127,
+      "sha256": "9d2f5b2be01bfc3671c8ba4dd139ffd8431fdc7f5b03c98249eeeb25ffd89231"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_source_release.py",
+      "sizeBytes": 7247,
+      "sha256": "c02af40d55025ccb9ef4a95297568b6b242052bc53750899f0a9e68464cc3df3"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_storage_audit.py",
+      "sizeBytes": 6257,
+      "sha256": "78555b8922d63a05b51c76462e67be85e503a402a8fe11337146e4dda1f152e1"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_transfer_day_gate.py",
+      "sizeBytes": 13399,
+      "sha256": "dd9e37f4018c1a604bf19f6705b217ee5bf891abd5bb9c4b6bab8bf23775f171"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_transfer_media.py",
+      "sizeBytes": 10126,
+      "sha256": "bbfbbef73ed2fea869514e8b29241246950f8eb3f54d001d389b0f93e3c4743b"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_transfer_package.py",
+      "sizeBytes": 14073,
+      "sha256": "c27922bbb708170d78573ed8d2f420d176e4b40ce08d0518da41a1516c6b2e8c"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_transfer_readiness.py",
+      "sizeBytes": 9795,
+      "sha256": "44f13a34560a632dd653c5d976bc8c8cf36ccc0143c4793b0bd152400d1b8c04"
+    },
+    {
+      "path": "scripts/tests/test_visionflow_transfer_rehearsal.py",
+      "sizeBytes": 9011,
+      "sha256": "52e497cef1900f9d0fdf6b88cba52d1dbeaeb0b3cf1cada2857cf9080ccfbfdb"
+    },
+    {
+      "path": "scripts/visionflow-acceptance.ps1",
+      "sizeBytes": 65141,
+      "sha256": "e0237bb24e3fa325a95c01b351550ec2e6f99111bc0639e72cc1a8fc1c3be237"
+    },
+    {
+      "path": "scripts/visionflow-ai-benchmark.ps1",
+      "sizeBytes": 12261,
+      "sha256": "b59152a9edf30cfff07f6f74017a8da6a41c68990ea2d65e2ec7688f1ca3fea0"
+    },
+    {
+      "path": "scripts/visionflow-gpu-preflight.ps1",
+      "sizeBytes": 8960,
+      "sha256": "2a90b1a454a5c21f2617762c8444056cd4a13a7b4ad614f404084b5ac9f398a3"
+    },
+    {
+      "path": "scripts/visionflow-model-evaluation.ps1",
+      "sizeBytes": 6876,
+      "sha256": "efc154710dbe746a902a40fe36b9b8353edc7b84f104d202aa422b71aa337e5d"
+    },
+    {
+      "path": "scripts/visionflow-presentation-preflight.ps1",
+      "sizeBytes": 5427,
+      "sha256": "c132586f3b8bc331ffc29fbb51fa1e232dc10d1db4065cd2e989df8638082ae7"
+    },
+    {
+      "path": "scripts/visionflow_backup.py",
+      "sizeBytes": 23561,
+      "sha256": "972abf1a97373240344891f653d986009aee3d3db7fac83db7cc505cdf037827"
+    },
+    {
+      "path": "scripts/visionflow_checksum_retention.py",
+      "sizeBytes": 30704,
+      "sha256": "5217c7b35e6f0ef610f185d59b097f08e9273a2c775fdb091ee8a829f7ad3036"
+    },
+    {
+      "path": "scripts/visionflow_cold_start_rehearsal.py",
+      "sizeBytes": 22023,
+      "sha256": "3d50964eac6c2d61023de12e37674852d92266990326eefc1febbaf49386bc19"
+    },
+    {
+      "path": "scripts/visionflow_csp_evidence.py",
+      "sizeBytes": 14230,
+      "sha256": "5ec5c296099d0ae2701d0b0a71878b42b344d7457badc666f860edc6d2dd712e"
+    },
+    {
+      "path": "scripts/visionflow_evidence_catalog.py",
+      "sizeBytes": 18432,
+      "sha256": "c67b35a6e6feba2ba40c5053dca7cb1f04be87c840988af4ee2caf7ec454b491"
+    },
+    {
+      "path": "scripts/visionflow_gpu_preflight_evidence.py",
+      "sizeBytes": 18517,
+      "sha256": "7acd50b16ccb57d743ab3617dfcd38bf46eea22935fca781d316c292b6002ac1"
+    },
+    {
+      "path": "scripts/visionflow_hp_omen_restore.py",
+      "sizeBytes": 105496,
+      "sha256": "5c1fb607a05b6e461313c1295904b21a4bf4031b8d3a0d086d8cbcccc4142cc2"
+    },
+    {
+      "path": "scripts/visionflow_hp_omen_transfer_day.py",
+      "sizeBytes": 32643,
+      "sha256": "98b6705aa85f45c5c877de7509b6c23705a9a30ae44caa861acca75fd2ceaa39"
+    },
+    {
+      "path": "scripts/visionflow_machine_readiness.py",
+      "sizeBytes": 33184,
+      "sha256": "1b2474adb0257d392f953e4fc20cabe399e73d251d48950848a5ab7e59abe6f0"
+    },
+    {
+      "path": "scripts/visionflow_maintenance_acceptance.py",
+      "sizeBytes": 42426,
+      "sha256": "e206c88fe5f30effd965c1b764478b9f8b4debe6df1e1f25ddeacaebaeae0b67"
+    },
+    {
+      "path": "scripts/visionflow_maintenance_presentation_gate.py",
+      "sizeBytes": 12820,
+      "sha256": "4fdd200006f8a77550b6b20c3d1a03304351b45d936eed07ea4afe0a0d04fb04"
+    },
+    {
+      "path": "scripts/visionflow_maintenance_sla_tracking_acceptance.py",
+      "sizeBytes": 13885,
+      "sha256": "c652a8e5f27d4f1aadddc3dfaca406f96531a8aa9cbdb852e2eaa5f967087382"
+    },
+    {
+      "path": "scripts/visionflow_migration_handoff.py",
+      "sizeBytes": 32856,
+      "sha256": "9fbc0504cc46d6796e0d9ca796a93fc8883abbe14f058c77d424cd4766ab8584"
+    },
+    {
+      "path": "scripts/visionflow_mobile_evidence.py",
+      "sizeBytes": 23296,
+      "sha256": "1bb35e633a9163598c038af64bc369c1165f2caf6e603c4b070d0f0325aa8dde"
+    },
+    {
+      "path": "scripts/visionflow_model_promotion.py",
+      "sizeBytes": 40502,
+      "sha256": "af464bb8b1d055c9dced878e9e53a5bd19d70bee82c47e112b2d1774d136ce38"
+    },
+    {
+      "path": "scripts/visionflow_model_release.py",
+      "sizeBytes": 44695,
+      "sha256": "a28b3aa709d7ae6324786623a4d74fe7b76a3482097f48db483cd22ad650bdc9"
+    },
+    {
+      "path": "scripts/visionflow_model_release_signoff.py",
+      "sizeBytes": 26015,
+      "sha256": "db28279e53d32db0ff3cd688bd745ecd7f1ec4a8f2ab4591cf57ce37efe52a7d"
+    },
+    {
+      "path": "scripts/visionflow_model_soak.py",
+      "sizeBytes": 38740,
+      "sha256": "e4d4edd5c146d71ec98e72f986d78f46e681ef1bc40e1c7b343ba67786e11237"
+    },
+    {
+      "path": "scripts/visionflow_model_soak_decision.py",
+      "sizeBytes": 24731,
+      "sha256": "87b02891068411010eeb3cfc7e57a31426bf87171ee29c705e69f126e6b085be"
+    },
+    {
+      "path": "scripts/visionflow_post_closeout_changes.py",
+      "sizeBytes": 37538,
+      "sha256": "4df416312afd66f1788dad67bba9e0f7fef6b21ec3a35ec5fe0f926397cd52b6"
+    },
+    {
+      "path": "scripts/visionflow_pre_transfer_refresh.py",
+      "sizeBytes": 48636,
+      "sha256": "90190a788cfa1d2df6a0f7ec886e9225184ba445b33f3007a446a4b250b278d2"
+    },
+    {
+      "path": "scripts/visionflow_presentation_gate.py",
+      "sizeBytes": 42196,
+      "sha256": "64070a0feb6c5cbbd1556874cd9d461294909b98bff86ea0bd989ec4422eab50"
+    },
+    {
+      "path": "scripts/visionflow_presentation_performance.py",
+      "sizeBytes": 34076,
+      "sha256": "8cd507842b9d4238ad489ef7925245ccae617649198fbfb01b8f6281bd275948"
+    },
+    {
+      "path": "scripts/visionflow_presentation_quick_check.py",
+      "sizeBytes": 37655,
+      "sha256": "88c2fdaff63eac190dcd16af5a71e4f7e6e8f3b7a7b49b7984368347d3e436fe"
+    },
+    {
+      "path": "scripts/visionflow_presentation_rehearsal.py",
+      "sizeBytes": 39898,
+      "sha256": "bc0b538d6acd00012888f3c3ed0efaf3043d5582001f91adde35e862b3643ab4"
+    },
+    {
+      "path": "scripts/visionflow_presentation_signoff.py",
+      "sizeBytes": 52623,
+      "sha256": "461b225321536168b20b918573d4c9cd781a1b723e7485f540b0c36910cd9aaf"
+    },
+    {
+      "path": "scripts/visionflow_project_closeout.py",
+      "sizeBytes": 27690,
+      "sha256": "600d3ed158dce30f803ab8d73fa6a884c3f89b0a4cf5f8b4cedd9ee8d5b19a85"
+    },
+    {
+      "path": "scripts/visionflow_release_evidence.py",
+      "sizeBytes": 32033,
+      "sha256": "018ee92b957eef0656958e946037fff445d262d676a299b92c038380cc02b761"
+    },
+    {
+      "path": "scripts/visionflow_release_gate.py",
+      "sizeBytes": 46016,
+      "sha256": "4393f8cb1bfa2f37ee0421ddcaa8296dadff80ce4c82c36c1314b89cc7267f7a"
+    },
+    {
+      "path": "scripts/visionflow_retention.py",
+      "sizeBytes": 28537,
+      "sha256": "db97b03babd1707699a847d3dd96b3f4042853105e6607730e25d1cfdf0251cc"
+    },
+    {
+      "path": "scripts/visionflow_retention_drill.py",
+      "sizeBytes": 13311,
+      "sha256": "6ecfbb5a72c14f3b281c78f15a3c0f91b8db09951e344eacd26ee371f2b6e9a6"
+    },
+    {
+      "path": "scripts/visionflow_runtime_mode.py",
+      "sizeBytes": 11941,
+      "sha256": "e6bfb8256bc1a7ee49963daa5ea259536ab60a5f66952223d2da609d5c24eabf"
+    },
+    {
+      "path": "scripts/visionflow_source_release.py",
+      "sizeBytes": 18485,
+      "sha256": "85cc353ad33ab5f66c9cbc64fe23399c4303e8ba8dda3990bd63d976af0cd1b9"
+    },
+    {
+      "path": "scripts/visionflow_storage_audit.py",
+      "sizeBytes": 24428,
+      "sha256": "a27060081641cbaf68bfb2174cdecc23167f2a5b827b0c3e891a498cb7ace787"
+    },
+    {
+      "path": "scripts/visionflow_transfer_day_gate.py",
+      "sizeBytes": 32046,
+      "sha256": "c6d500fdbd27eef0c223bf8a0d6d98dad15c006ed5cfb68d0d42a7e262839d1f"
+    },
+    {
+      "path": "scripts/visionflow_transfer_media.py",
+      "sizeBytes": 27471,
+      "sha256": "c1bac3bd7890bf55dd516d1e0503b47e7e85cf0cd970cdd9090b996a4ae1fb43"
+    },
+    {
+      "path": "scripts/visionflow_transfer_package.py",
+      "sizeBytes": 40602,
+      "sha256": "f1611829d82235a31341a272e2d3f9fc4a169646c4abfa17ff0a094ad0b2e803"
+    },
+    {
+      "path": "scripts/visionflow_transfer_readiness.py",
+      "sizeBytes": 22478,
+      "sha256": "8d685f12c6ddb5ca289a8f688e1b34b462362c2b4486b4ac18d9602c22e08538"
+    },
+    {
+      "path": "scripts/visionflow_transfer_rehearsal.py",
+      "sizeBytes": 26259,
+      "sha256": "4856ff87493e8ad1933438a5c2be94ffe818a337656ddd8e2973ddd35cd73bc9"
+    }
+  ],
+  "excluded": [
+    {
+      "path": ".env",
+      "reason": "environment-file"
+    },
+    {
+      "path": ".env.docker",
+      "reason": "environment-file"
+    },
+    {
+      "path": ".env.docker.example",
+      "reason": "environment-file"
+    },
+    {
+      "path": ".env.docker.operator-session.example",
+      "reason": "environment-file"
+    },
+    {
+      "path": ".env.gpu.example",
+      "reason": "environment-file"
+    },
+    {
+      "path": "01_frontend/visionflow-web/.env.local",
+      "reason": "environment-file"
+    },
+    {
+      "path": "01_frontend/visionflow-web/.next",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "01_frontend/visionflow-web/certificates/localhost-key.pem",
+      "reason": "generated-binary-data-or-secret"
+    },
+    {
+      "path": "01_frontend/visionflow-web/certificates/localhost.pem",
+      "reason": "generated-binary-data-or-secret"
+    },
+    {
+      "path": "01_frontend/visionflow-web/node_modules",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "02_backend/visionflow-api/.gradle",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "02_backend/visionflow-api/build",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "02_backend/visionflow-api/data",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/.env",
+      "reason": "environment-file"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/.pytest_cache",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/.ruff_cache",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/.venv",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/__pycache__",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/inference/__pycache__",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/app/sources/__pycache__",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/data",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/models/yolo26n.pt",
+      "reason": "generated-binary-data-or-secret"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/output/annotated.mp4",
+      "reason": "file-too-large"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/tests/__pycache__",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "03_ai-server/visionflow-ai/yolo26n.pt",
+      "reason": "generated-binary-data-or-secret"
+    },
+    {
+      "path": "scripts/__pycache__",
+      "reason": "generated-or-runtime-directory"
+    },
+    {
+      "path": "scripts/tests/__pycache__",
+      "reason": "generated-or-runtime-directory"
+    }
+  ],
+  "safety": {
+    "runtimeEnvironmentFilesIncluded": false,
+    "databaseDumpOrBackupIncluded": false,
+    "modelWeightsIncluded": false,
+    "runtimeMediaIncluded": false,
+    "secretSignatureScan": "HIGH_CONFIDENCE"
+  }
+}

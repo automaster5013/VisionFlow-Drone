@@ -1,0 +1,212 @@
+package com.visionflow.api.ai.service;
+
+import com.visionflow.api.ai.domain.AiDetection;
+import com.visionflow.api.ai.domain.AiInferenceEvent;
+import com.visionflow.api.ai.dto.AiDetectionRequest;
+import com.visionflow.api.ai.dto.AiInferenceEventCreateRequest;
+import com.visionflow.api.ai.dto.AiInferenceEventResponse;
+import com.visionflow.api.ai.realtime.AiRealtimePublisher;
+import com.visionflow.api.ai.repository.AiDetectionRepository;
+import com.visionflow.api.ai.repository.AiInferenceEventRepository;
+import com.visionflow.api.common.exception.ResourceNotFoundException;
+import com.visionflow.api.drone.repository.DroneRepository;
+import org.springframework.core.io.Resource;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+@Service
+public class AiInferenceEventService {
+
+    private final AiInferenceEventRepository eventRepository;
+    private final AiDetectionRepository detectionRepository;
+    private final DroneRepository droneRepository;
+    private final AiRealtimePublisher realtimePublisher;
+    private final AiSnapshotStorageService snapshotStorageService;
+    private final AiAlertService alertService;
+
+    public AiInferenceEventService(
+            AiInferenceEventRepository eventRepository,
+            AiDetectionRepository detectionRepository,
+            DroneRepository droneRepository,
+            AiRealtimePublisher realtimePublisher,
+            AiSnapshotStorageService snapshotStorageService,
+            AiAlertService alertService
+    ) {
+        this.eventRepository = eventRepository;
+        this.detectionRepository = detectionRepository;
+        this.droneRepository = droneRepository;
+        this.realtimePublisher = realtimePublisher;
+        this.snapshotStorageService = snapshotStorageService;
+        this.alertService = alertService;
+    }
+
+    @Transactional
+    public AiInferenceEventResponse create(
+            AiInferenceEventCreateRequest request
+    ) {
+        return eventRepository
+                .findBySourceIdAndSessionIdAndFrameIndex(
+                        request.sourceId(),
+                        request.sessionId(),
+                        request.frameIndex()
+                )
+                .map(this::toResponse)
+                .orElseGet(() -> createNew(request));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AiInferenceEventResponse> findRecent(
+            Long droneId,
+            int limit
+    ) {
+        int safeLimit = Math.max(1, Math.min(limit, 200));
+        PageRequest pageRequest = PageRequest.of(0, safeLimit);
+
+        List<AiInferenceEvent> events = droneId == null
+                ? eventRepository.findAllByOrderByCapturedAtDesc(
+                        pageRequest
+                )
+                : eventRepository.findAllByDroneIdOrderByCapturedAtDesc(
+                        droneId,
+                        pageRequest
+                );
+
+        return events.stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public AiInferenceEventResponse attachSnapshot(
+            Long eventId,
+            MultipartFile file
+    ) {
+        AiInferenceEvent event = findEvent(eventId);
+        AiSnapshotStorageService.StoredSnapshot stored =
+                snapshotStorageService.store(eventId, file);
+
+        event.attachSnapshot(
+                stored.fileName(),
+                stored.contentType(),
+                stored.sizeBytes()
+        );
+
+        event = eventRepository.saveAndFlush(event);
+
+        AiInferenceEventResponse response = toResponse(event);
+        realtimePublisher.publish(response);
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public AiSnapshotDownload findSnapshot(Long eventId) {
+        AiInferenceEvent event = findEvent(eventId);
+
+        if (event.getSnapshotFileName() == null) {
+            throw new ResourceNotFoundException(
+                    "AI 이벤트 스냅샷을 찾을 수 없습니다: " + eventId
+            );
+        }
+
+        Resource resource = snapshotStorageService.load(
+                event.getSnapshotFileName()
+        );
+
+        return new AiSnapshotDownload(
+                event.getSnapshotFileName(),
+                event.getSnapshotContentType(),
+                event.getSnapshotSizeBytes(),
+                resource
+        );
+    }
+
+    private AiInferenceEvent findEvent(Long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "AI 추론 이벤트를 찾을 수 없습니다: " + eventId
+                ));
+    }
+
+    private AiInferenceEventResponse createNew(
+            AiInferenceEventCreateRequest request
+    ) {
+        if (!droneRepository.existsById(request.droneId())) {
+            throw new ResourceNotFoundException(
+                    "드론을 찾을 수 없습니다: " + request.droneId()
+            );
+        }
+
+        AiInferenceEvent event = AiInferenceEvent.create(
+                request.sourceId().trim(),
+                request.sessionId().trim(),
+                request.sourceType(),
+                request.droneId(),
+                request.frameIndex(),
+                request.capturedAt(),
+                request.inferenceMs(),
+                request.detections().size()
+        );
+
+        event = eventRepository.saveAndFlush(event);
+
+        Long eventId = event.getId();
+
+        List<AiDetection> detections = request.detections()
+                .stream()
+                .map(detection -> toEntity(eventId, detection))
+                .toList();
+
+        if (!detections.isEmpty()) {
+            detections = detectionRepository.saveAllAndFlush(
+                    detections
+            );
+
+            alertService.createForEvent(event, detections);
+        }
+
+        AiInferenceEventResponse response =
+                AiInferenceEventResponse.from(event, detections);
+
+        realtimePublisher.publish(response);
+        return response;
+    }
+
+    private AiDetection toEntity(
+            Long eventId,
+            AiDetectionRequest request
+    ) {
+        return AiDetection.create(
+                eventId,
+                request.classId(),
+                request.className().trim(),
+                request.confidence(),
+                request.x1(),
+                request.y1(),
+                request.x2(),
+                request.y2()
+        );
+    }
+
+    private AiInferenceEventResponse toResponse(
+            AiInferenceEvent event
+    ) {
+        List<AiDetection> detections =
+                detectionRepository.findAllByEventIdOrderByIdAsc(
+                        event.getId()
+                );
+
+        return AiInferenceEventResponse.from(event, detections);
+    }
+
+    public record AiSnapshotDownload(
+            String fileName,
+            String contentType,
+            long sizeBytes,
+            Resource resource
+    ) {
+    }
+}

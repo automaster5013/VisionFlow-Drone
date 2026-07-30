@@ -1,0 +1,39 @@
+{
+  "profileId": "lg-gram-cpu-yolo26n-20260722",
+  "capturedAt": "2026-07-22T07:15:09+09:00",
+  "hardware": "LG GRAM",
+  "device": "cpu",
+  "modelName": "yolo26n.pt",
+  "sourceType": "SMARTPHONE_LIVE",
+  "durationSeconds": 60,
+  "sampleCount": 59,
+  "valid": true,
+  "metrics": {
+    "processedFrameDelta": 59,
+    "acceptedFrameDelta": 59,
+    "droppedFrameDelta": 0,
+    "averageInputFps": 1.0,
+    "averageProcessingFps": 1.0,
+    "averageInferenceMs": 106.69,
+    "maximumObservedP95InferenceMs": 189.95,
+    "cumulativeMaximumInferenceMs": 834.18,
+    "maximumQueueDepth": 0
+  },
+  "thresholdProfile": {
+    "warningP95InferenceMs": 250.0,
+    "criticalP95InferenceMs": 500.0,
+    "warningProcessingRatio": 0.9,
+    "criticalProcessingRatio": 0.7,
+    "warningDropRatePct": 1.0,
+    "criticalDropRatePct": 5.0,
+    "warningQueueUtilizationPct": 67.0,
+    "criticalQueueUtilizationPct": 100.0,
+    "staleAfterSeconds": 5.0,
+    "minSampleCount": 5
+  },
+  "limitations": [
+    "The input rate was approximately 1 FPS, so this is a low-load latency baseline rather than a maximum-throughput benchmark.",
+    "The 834.18 ms cumulative maximum occurred before the benchmark window and is treated as a warm-up outlier.",
+    "Detection count was zero for the benchmark scene, so model accuracy is outside this profile's scope."
+  ]
+}
