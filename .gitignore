@@ -96,3 +96,8 @@ backups/
 # VisionFlow local mobile HTTPS certificates and metadata
 /artifacts/mobile-https/artifacts/mobile-https/
 artifacts/mobile-https/
+
+# Local editor and safety backup files
+*.backup-*
+*.bak
+*.orig

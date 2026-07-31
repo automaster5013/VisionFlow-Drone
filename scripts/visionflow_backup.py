@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 import zipfile
 from datetime import datetime, timezone
@@ -21,6 +22,11 @@ from typing import Any, Iterable
 SCHEMA_VERSION = 1
 PROJECT_NAME = "visionflow"
 APP_SERVICES = ("backend-api", "ai-server", "frontend-web")
+DEFAULT_COMPOSE_FILE_NAMES = (
+    "compose.yaml",
+    "compose.gpu.yaml",
+    "compose.mobile-https.yaml",
+)
 ARTIFACT_DIRECTORIES = {
     "backend-data": Path("artifacts/backend-data"),
     "ai-output": Path("artifacts/ai-output"),
@@ -77,20 +83,48 @@ def run_command(
     return (result.stdout or "").strip()
 
 
-def compose_arguments(root: Path, environment_file: Path) -> list[str]:
-    compose_file = root / "compose.yaml"
-    if not compose_file.is_file():
-        raise BackupError(f"Compose 파일을 찾을 수 없습니다: {compose_file}")
+def resolve_compose_files(root: Path, values: list[str] | None) -> list[Path]:
+    if values:
+        compose_files = [resolve_under_root(root, value) for value in values]
+    else:
+        compose_files = [
+            root / name
+            for name in DEFAULT_COMPOSE_FILE_NAMES
+            if (root / name).is_file()
+        ]
+    base_compose = root / "compose.yaml"
+    if base_compose not in compose_files:
+        raise BackupError(f"기본 Compose 파일이 필요합니다: {base_compose}")
+    missing = [path for path in compose_files if not path.is_file()]
+    if missing:
+        raise BackupError(
+            "Compose 파일을 찾을 수 없습니다: "
+            + ", ".join(str(path) for path in missing)
+        )
+    if len(compose_files) != len(set(compose_files)):
+        raise BackupError("중복된 Compose 파일이 지정되었습니다.")
+    return compose_files
+
+
+def compose_arguments(
+    environment_file: Path,
+    compose_files: list[Path],
+) -> list[str]:
     if not environment_file.is_file():
         raise BackupError(f"환경 파일을 찾을 수 없습니다: {environment_file}")
-    return [
+    arguments = [
         "docker",
         "compose",
         "--env-file",
         str(environment_file),
-        "-f",
-        str(compose_file),
     ]
+    for compose_file in compose_files:
+        arguments.extend(("-f", str(compose_file)))
+    return arguments
+
+
+def validate_compose(compose: list[str], root: Path) -> None:
+    run_command([*compose, "config", "--quiet"], cwd=root)
 
 
 def ensure_mysql_container(compose: list[str], root: Path) -> str:
@@ -127,9 +161,73 @@ def stop_services(compose: list[str], root: Path, services: list[str]) -> None:
         run_command([*compose, "stop", *services], cwd=root)
 
 
-def start_services(compose: list[str], root: Path, services: list[str]) -> None:
-    if services:
-        run_command([*compose, "up", "-d", "--wait", *services], cwd=root)
+def service_container_id(compose: list[str], root: Path, service: str) -> str:
+    output = run_command(
+        [*compose, "ps", "--all", "-q", service],
+        cwd=root,
+        capture=True,
+    )
+    if not output:
+        raise BackupError(f"기존 서비스 컨테이너를 찾을 수 없습니다: {service}")
+    return output.splitlines()[0].strip()
+
+
+def wait_container_ready(
+    container_id: str,
+    root: Path,
+    *,
+    timeout_seconds: int = 180,
+) -> str:
+    deadline = time.monotonic() + timeout_seconds
+    latest = "unknown"
+    while time.monotonic() < deadline:
+        completed = subprocess.run(
+            [
+                "docker",
+                "inspect",
+                "--format={{if .State.Health}}{{.State.Health.Status}}"
+                "{{else}}{{.State.Status}}{{end}}",
+                container_id,
+            ],
+            cwd=root,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if completed.returncode == 0:
+            latest = completed.stdout.strip()
+            if latest in {"healthy", "running"}:
+                return latest
+            if latest in {"dead", "exited", "removing"}:
+                break
+        time.sleep(2)
+    raise BackupError(
+        f"서비스 컨테이너가 준비되지 않았습니다: {container_id} ({latest})"
+    )
+
+
+def start_services(
+    compose: list[str],
+    root: Path,
+    services: list[str],
+    expected_containers: dict[str, str] | None = None,
+) -> None:
+    expected_containers = expected_containers or {}
+    for service in services:
+        container_id = service_container_id(compose, root, service)
+        expected_id = expected_containers.get(service)
+        if expected_id is not None and container_id != expected_id:
+            raise BackupError(
+                f"서비스 컨테이너가 일시 중지 전과 다릅니다: {service} "
+                f"({expected_id} -> {container_id})"
+            )
+        print(f"[RESUME] Existing service container: {service}")
+        run_command([*compose, "start", service], cwd=root)
+        status = wait_container_ready(container_id, root)
+        print(f"[READY] {service}: {status}")
+        if expected_id is not None:
+            print(f"[PRESERVED] {service}: container identity unchanged")
 
 
 def container_database_name(container_id: str, root: Path) -> str:
@@ -235,6 +333,8 @@ def create_manifest(
     mysql_image: str | None,
     git_commit: str | None,
     consistent: bool,
+    compose_files: list[Path],
+    root: Path,
 ) -> dict[str, Any]:
     files = []
     for path in list_payload_files(staging):
@@ -259,6 +359,15 @@ def create_manifest(
         "consistency": {
             "database": "single-transaction",
             "applicationServicesPaused": consistent,
+            "composeFiles": [
+                (
+                    path.relative_to(root).as_posix()
+                    if path.is_relative_to(root)
+                    else str(path)
+                )
+                for path in compose_files
+            ],
+            "resumeMode": "start-existing-containers",
         },
         "gitCommit": git_commit,
         "files": files,
@@ -296,13 +405,22 @@ def create_backup(
     output_directory: Path,
     *,
     consistent: bool,
+    compose_files: list[Path],
 ) -> Path:
-    compose = compose_arguments(root, environment_file)
+    compose = compose_arguments(environment_file, compose_files)
+    print("[COMPOSE] " + ", ".join(str(path) for path in compose_files))
+    validate_compose(compose, root)
     previously_running = running_app_services(compose, root)
+    previous_containers = {
+        service: service_container_id(compose, root, service)
+        for service in previously_running
+    }
     if consistent:
         print(f"[PAUSE] Application services: {', '.join(previously_running) or 'none'}")
         stop_services(compose, root, previously_running)
 
+    destination: Path | None = None
+    operation_error: BaseException | None = None
     try:
         container_id = ensure_mysql_container(compose, root)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -336,6 +454,8 @@ def create_backup(
                 mysql_image=container_image(container_id, root),
                 git_commit=optional_git_commit(root),
                 consistent=consistent,
+                compose_files=compose_files,
+                root=root,
             )
             (staging / "manifest.json").write_text(
                 json.dumps(manifest, ensure_ascii=False, indent=2),
@@ -344,11 +464,38 @@ def create_backup(
             print("[BACKUP] ZIP package and SHA-256 manifest")
             write_archive(staging, destination)
         verify_archive(destination)
-        return destination
-    finally:
-        if consistent:
-            print("[RESUME] Previously running application services")
-            start_services(compose, root, previously_running)
+    except BaseException as error:
+        operation_error = error
+
+    resume_error: BaseException | None = None
+    if consistent:
+        print("[RESUME] Previously running application services")
+        try:
+            start_services(
+                compose,
+                root,
+                previously_running,
+                previous_containers,
+            )
+        except BaseException as error:
+            resume_error = error
+
+    if operation_error is not None:
+        if resume_error is not None:
+            print(
+                f"[WARN] 백업 실패 후 서비스 재개도 실패했습니다: {resume_error}",
+                file=sys.stderr,
+            )
+        raise operation_error
+    if resume_error is not None:
+        backup_detail = str(destination) if destination is not None else "unknown"
+        raise BackupError(
+            "백업 ZIP 생성과 무결성 검증은 완료됐지만 서비스 재개에 실패했습니다.\n"
+            f"Backup: {backup_detail}\nResume error: {resume_error}"
+        ) from resume_error
+    if destination is None:
+        raise BackupError("백업 결과 경로를 확인할 수 없습니다.")
+    return destination
 
 
 def safe_archive_names(archive: zipfile.ZipFile) -> list[str]:
@@ -514,6 +661,7 @@ def restore_backup(
     environment_file: Path,
     backup_file: Path,
     confirmation: str,
+    compose_files: list[Path],
 ) -> tuple[Path, Path]:
     if confirmation != "RESTORE":
         raise BackupError(
@@ -521,8 +669,14 @@ def restore_backup(
             "--confirm RESTORE가 필요합니다."
         )
     verification = verify_archive(backup_file)
-    compose = compose_arguments(root, environment_file)
+    compose = compose_arguments(environment_file, compose_files)
+    print("[COMPOSE] " + ", ".join(str(path) for path in compose_files))
+    validate_compose(compose, root)
     previously_running = running_app_services(compose, root)
+    previous_containers = {
+        service: service_container_id(compose, root, service)
+        for service in previously_running
+    }
     stop_services(compose, root, previously_running)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     safety_directory = root / "backups" / "pre-restore"
@@ -544,6 +698,7 @@ def restore_backup(
             environment_file,
             safety_directory,
             consistent=True,
+            compose_files=compose_files,
         )
         with tempfile.TemporaryDirectory(
             prefix=".visionflow-restore-",
@@ -564,7 +719,12 @@ def restore_backup(
     finally:
         if restore_succeeded:
             print("[RESUME] Previously running application services")
-            start_services(compose, root, previously_running)
+            start_services(
+                compose,
+                root,
+                previously_running,
+                previous_containers,
+            )
         else:
             print(
                 "[SAFE] Restore did not complete; application services remain stopped.",
@@ -580,6 +740,15 @@ def build_parser(default_root: Path) -> argparse.ArgumentParser:
     backup = subparsers.add_parser("backup", help="MySQL과 영속 증적 백업")
     backup.add_argument("--environment-file", default=".env.docker")
     backup.add_argument("--output-directory", default="backups")
+    backup.add_argument(
+        "--compose-file",
+        action="append",
+        dest="compose_files",
+        help=(
+            "사용할 Compose 파일(반복 가능). 생략하면 compose.yaml과 존재하는 "
+            "compose.gpu.yaml, compose.mobile-https.yaml을 사용합니다."
+        ),
+    )
     backup.add_argument("--consistent", action="store_true")
 
     verify = subparsers.add_parser("verify", help="백업 ZIP 무결성 검증")
@@ -587,6 +756,15 @@ def build_parser(default_root: Path) -> argparse.ArgumentParser:
 
     restore = subparsers.add_parser("restore", help="검증된 백업 복구")
     restore.add_argument("--environment-file", default=".env.docker")
+    restore.add_argument(
+        "--compose-file",
+        action="append",
+        dest="compose_files",
+        help=(
+            "사용할 Compose 파일(반복 가능). 생략하면 compose.yaml과 존재하는 "
+            "compose.gpu.yaml, compose.mobile-https.yaml을 사용합니다."
+        ),
+    )
     restore.add_argument("--backup", required=True)
     restore.add_argument("--confirm", default="")
     return parser
@@ -600,11 +778,13 @@ def main(arguments: Iterable[str] | None = None) -> int:
         if args.command == "backup":
             environment_file = resolve_under_root(root, args.environment_file)
             output_directory = resolve_under_root(root, args.output_directory)
+            compose_files = resolve_compose_files(root, args.compose_files)
             destination = create_backup(
                 root,
                 environment_file,
                 output_directory,
                 consistent=args.consistent,
+                compose_files=compose_files,
             )
             print("\n[PASS] VisionFlow backup completed")
             print(f"Backup: {destination}")
@@ -617,11 +797,13 @@ def main(arguments: Iterable[str] | None = None) -> int:
         elif args.command == "restore":
             environment_file = resolve_under_root(root, args.environment_file)
             backup_file = resolve_under_root(root, args.backup)
+            compose_files = resolve_compose_files(root, args.compose_files)
             safety_backup, displaced = restore_backup(
                 root,
                 environment_file,
                 backup_file,
                 args.confirm,
+                compose_files,
             )
             print("\n[PASS] VisionFlow restore completed")
             print(f"Pre-restore safety backup: {safety_backup}")

@@ -1,3 +1,4 @@
+<!-- README conflict resolved for the Phase 2 closeout and Phase 3 preparation baseline. -->
 <div align="center">
 
 <!-- 저장소 루트에 PyvaOps_Logo.png 파일을 배치합니다. -->
@@ -11,7 +12,7 @@
 
 ## 🎨 Team PyvaOps Logo Concept
 
-팀명 **PyvaOps**는 **Py**thon(AI) + Ja**va**(Backend) + Dev**Ops**(Infra)를 결합한 이름입니다.  
+팀명 **PyvaOps**는 **Py**thon(AI) + Ja**va**(Backend) + Dev**Ops**(Infra)를 결합한 이름입니다.<br>
 서로 다른 기술 생태계를 하나의 실시간 파이프라인으로 연결하고, 설계부터 구현·검증·운영까지 직접 완성하는 **1인 올라운더(All-rounder) 프로젝트 팀**의 정체성을 담고 있습니다.
 
 - **인피니티 루프**: AI, 백엔드, 인프라가 단절 없이 연결되는 데이터 흐름과 지속적인 개선을 상징합니다.
@@ -32,8 +33,8 @@
 
 [![Project](https://img.shields.io/badge/Project-VisionFlow--Drone-0A66C2?style=for-the-badge&logo=github&logoColor=white)](#)
 [![Team](https://img.shields.io/badge/Team-PyvaOps-6A5ACD?style=for-the-badge)](#)
-[![Phase](https://img.shields.io/badge/Current-Phase%202%20Integration-orange?style=for-the-badge)](#)
-[![Status](https://img.shields.io/badge/Status-Active%20Development-success?style=for-the-badge)](#)
+[![Phase](https://img.shields.io/badge/Phase%202-Completed-success?style=for-the-badge)](#)
+[![Status](https://img.shields.io/badge/Status-Phase%203%20Preparation-orange?style=for-the-badge)](#)
 
 </div>
 
@@ -48,9 +49,9 @@
 - **Vision**: YOLO와 OpenCV 기반 영상 분석 및 객체 탐지
 - **Flow**: 영상, 위치, 배터리, 탐지 이벤트, 이력 데이터가 실시간으로 흐르는 통합 파이프라인
 
-현재 2차 프로젝트에서는 **스마트폰·브라우저·더미 영상 기반 가상 드론**을 이용해 전체 관제 파이프라인을 구현하고 검증합니다. 이후 3차 프로젝트에서는 **DJI Mini 4 Pro 실기체 연계**, 무선 영상 입력, 현장 시연 및 운영 안정화로 확장하는 것을 목표로 합니다.
+2차 프로젝트에서는 **스마트폰·브라우저·더미 영상 기반 가상 드론**으로 전체 관제 파이프라인을 구현하고 통합 검증했습니다. 현재는 데이터·백업·운영 기준선을 정리하고 있으며, 3차 프로젝트에서는 **DJI Mini 4 Pro 실기체 연계**, 무선 영상 입력, 현장 시연 및 운영 안정화로 확장합니다.
 
-> **핵심 방향**  
+> **핵심 방향**<br>
 > 특정 드론 기체나 단일 AI 모델에 종속되지 않고, 영상 입력원과 탐지 모델을 교체해도 재사용할 수 있는 **표준화된 Vision AI 관제 파이프라인**을 구축합니다.
 
 ---
@@ -168,28 +169,28 @@ graph LR
     style Dashboard fill:#111827,stroke:#ffffff,color:#ffffff
 ```
 
-점선으로 표시된 실제 드론 입력은 **3차 프로젝트 확장 범위**이며, 현재 2차 프로젝트는 가상 드론과 시험 영상으로 통합 파이프라인을 우선 검증합니다.
+점선으로 표시된 실제 드론 입력은 **3차 프로젝트 확장 범위**이며, 2차 프로젝트에서는 가상 드론과 시험 영상으로 통합 파이프라인을 검증했습니다.
 
 ---
 
 ## 🌊 Data Flow
 
-1. **입력 수집**  
+1. **입력 수집**<br>
    브라우저 카메라, 스마트폰, 시험 영상 또는 향후 실제 드론에서 영상과 텔레메트리를 수집합니다.
 
-2. **AI 분석**  
+2. **AI 분석**<br>
    FastAPI 서버가 영상 프레임을 수신하고 YOLO·OpenCV 기반 객체 탐지를 수행합니다.
 
-3. **관제 데이터 처리**  
+3. **관제 데이터 처리**<br>
    Spring Boot 서버가 드론 상태, 비행 세션, 텔레메트리, AI 이벤트를 검증하고 저장합니다.
 
-4. **실시간 전달**  
+4. **실시간 전달**<br>
    WebSocket을 통해 최신 텔레메트리와 상태 변화를 관제 화면으로 전달합니다.
 
-5. **이력 조회 및 재생**  
+5. **이력 조회 및 재생**<br>
    MySQL에 저장된 과거 텔레메트리 경로를 조회하여 실시간 경로와 연결하고 지도에서 재생합니다.
 
-6. **Phase 3 확장**  
+6. **Phase 3 확장**<br>
    실제 드론용 영상·텔레메트리 어댑터를 추가해 기존 서비스 계층을 변경하지 않고 입력원을 확장합니다.
 
 ---
@@ -214,8 +215,8 @@ graph LR
 | 🔄 실시간 통신 | WebSocket Publishing | ✅ 구현 | 개별 드론 및 함대 텔레메트리 실시간 전달 |
 | 🗺️ 관제 지도 | Live Track & History Replay | ✅ 구현 | 실시간 위치, 과거 경로 조회, 연결 표시 및 리플레이 |
 | 🗄️ 이력 관리 | Telemetry Persistence | ✅ 구현 | MySQL 기반 텔레메트리 이력 저장 및 경로 조회 API |
-| 🎬 비행 세션 | Flight Session Management | 🟡 통합 검증 중 | 가상 드론 촬영·비행 단위 세션 생성 및 상태 관리 |
-| 🤖 AI 수집 | Frame Ingest API | 🟡 통합 검증 중 | 브라우저·시험 영상 프레임을 FastAPI로 전달 |
+| 🎬 비행 세션 | Flight Session Management | ✅ 구현 | 가상 드론 촬영·비행 단위 세션 생성 및 상태 관리 |
+| 🤖 AI 수집 | Frame Ingest API | ✅ 구현 | 브라우저·스마트폰·시험 영상 프레임을 FastAPI로 전달 |
 | 🛡️ 안전 탐지 | Helmet / PPE Detection | 🟡 모델 고도화 중 | 작업자와 안전모·보호구 착용 여부 분석 |
 | 🧍 위험 행동 | Human Pose Estimation | 🔵 Phase 3 확장 | 쓰러짐 등 위험 행동 탐지 로직 연구 및 적용 |
 | 📶 실기체 연계 | DJI / Wireless Video Adapter | 🔵 Phase 3 확장 | DJI Mini 4 Pro 영상 및 비행 데이터 연계 검증 |
@@ -235,6 +236,7 @@ VisionFlow-Drone/
 │   └── visionflow-api/            # Spring Boot 관제 API 및 WebSocket
 ├── 03_ai-server/
 │   └── visionflow-ai/             # FastAPI 기반 영상 수집·AI 추론 서버
+├── Daily_Schedule/                # 2차 프로젝트 작업 일정 및 기록
 ├── artifacts/                     # 모델, 결과물, 배포 산출물 관리
 ├── backups/                       # 전환·복구용 백업 자료
 ├── docs/                          # 아키텍처, API, 시연 및 운영 문서
@@ -249,7 +251,7 @@ VisionFlow-Drone/
 
 ## 🚀 Quick Start
 
-현재 개발 환경에서는 프론트엔드, 백엔드, AI 서버, MySQL을 각각 실행해 통합 검증합니다. 전체 서비스의 Docker Compose 일괄 실행은 인프라 구성이 확정된 뒤 공식 실행 방식으로 전환할 예정입니다.
+현재 표준 실행 방식은 Docker Compose이며, GPU AI 서버와 모바일 HTTPS 오버레이를 함께 사용합니다.
 
 ### 1) Clone
 
@@ -258,66 +260,40 @@ git clone https://github.com/automaster5013/VisionFlow-Drone.git
 cd VisionFlow-Drone
 ```
 
-### 2) MySQL 실행
-
-프로젝트의 Docker Compose 파일 위치에서 실행합니다.
+### 2) GPU·모바일 HTTPS 통합 실행
 
 ```bash
-docker compose up -d mysql-db
+docker compose --env-file .env.docker -f compose.yaml -f compose.gpu.yaml -f compose.mobile-https.yaml up -d --wait
 ```
 
-> 서비스명과 Compose 파일 위치는 저장소의 실제 `compose.yaml` 또는 `docker-compose.yml`을 기준으로 확인하십시오.
-
-### 3) Spring Boot 백엔드 실행
+### 3) 서비스 상태 확인
 
 ```bash
-cd 02_backend/visionflow-api
-
-# Windows
-./gradlew.bat bootRun
-
-# Linux / macOS
-./gradlew bootRun
+docker compose --env-file .env.docker -f compose.yaml -f compose.gpu.yaml -f compose.mobile-https.yaml ps
 ```
 
-기본 주소: `http://localhost:8080`
+| 서비스 | 주소 |
+|---|---|
+| Next.js 관제 화면 | `http://localhost:3000` |
+| Spring Boot API | `http://localhost:8080` |
+| FastAPI AI 서버 | `http://localhost:8000` |
+| FastAPI API 문서 | `http://localhost:8000/docs` |
+| 모바일 HTTPS 진입점 | `https://localhost:3443` |
+| MySQL | `localhost:3307` |
 
-### 4) FastAPI AI 서버 실행
+### 4) 기본 운영 점검
 
-```bash
-cd 03_ai-server/visionflow-ai
-
-# 가상환경 활성화 후
-python -m app.main
+```bat
+scripts\run-visionflow-acceptance.bat
+scripts\run-visionflow-storage-audit.bat
+scripts\run-visionflow-backup.bat --consistent
 ```
 
-기본 주소: `http://127.0.0.1:8000`  
-API 문서: `http://127.0.0.1:8000/docs`
+운영·이관·정리 절차는 다음 문서를 참고합니다.
 
-### 5) Next.js 프론트엔드 실행
-
-```bash
-cd 01_frontend/visionflow-web
-npm install
-npm run dev
-```
-
-관제 화면: `http://localhost:3000`
-
-### 6) 기본 품질 검사
-
-```bash
-# Frontend
-npm run lint
-npm run build
-
-# Backend
-./gradlew.bat clean build
-
-# AI Server — 프로젝트 설정에 따라
-python -m pytest
-python -m ruff check .
-```
+- [`docs/README-MIGRATION.md`](docs/README-MIGRATION.md)
+- [`docs/README-backup-resume-fix.md`](docs/README-backup-resume-fix.md)
+- [`docs/README-presentation-data-cleanup.md`](docs/README-presentation-data-cleanup.md)
 
 > `.env`, DB 계정, 포트, 모델 가중치 경로 등은 공개 저장소에 비밀값을 올리지 않고 `.env.example`을 통해 관리합니다.
 
@@ -340,23 +316,22 @@ python -m ruff check .
 - [x] FastAPI 서버 기본 실행 및 프론트엔드 프록시 연동
 - [x] PC 수동 모드 기반 가상 드론 통합 검증
 
-### 🟡 현재 진행 중
+### ✅ Phase 2 통합 검증 완료
 
-<<<<<<< HEAD
-- [ ] 비행 세션 API와 가상 드론 촬영 흐름 안정화
-- [ ] 브라우저·스마트폰 영상 프레임 수집 흐름 고도화
-- [ ] 스마트폰 실센서 모드 HTTPS/인증서 환경 재검증
-- [ ] YOLO 기반 안전모·보호구 탐지 파이프라인 통합
-- [ ] 대시보드 오류 처리, 로딩 상태 및 운영 UI 개선
-- [ ] 전환·복구 스크립트와 다중 PC 개발 환경 표준화
-=======
 - [x] 비행 세션 API와 가상 드론 촬영 흐름 안정화
 - [x] 브라우저·스마트폰 영상 프레임 수집 흐름 고도화
 - [x] 스마트폰 실센서 모드 HTTPS/인증서 환경 재검증
 - [x] YOLO 기반 안전모·보호구 탐지 파이프라인 통합
 - [x] 대시보드 오류 처리, 로딩 상태 및 운영 UI 개선
 - [x] 전환·복구 스크립트와 다중 PC 개발 환경 표준화
->>>>>>> bf6c001b65490bfa178ca2489d919608f4537ec2
+
+### 🟡 Phase 2 후속 안정화
+
+- [x] 발표·데모 데이터 선별 정리와 복원 가능한 격리 백업
+- [x] GPU·모바일 HTTPS Compose 구성을 보존하는 일관성 백업
+- [ ] RBAC 및 운영자 브라우저 세션 모드 정상화
+- [ ] 스마트폰 RTSP·HTTPS 실센서 E2E 회귀 검증
+- [ ] AI 탐지 바운딩박스·스냅숏 표시 회귀 검증
 
 ### 🔵 Phase 3 예정
 
@@ -400,7 +375,7 @@ python -m ruff check .
 
 ## 📄 License & Notice
 
-소스 코드 공개 범위와 라이선스는 최종 배포 전 확정할 예정입니다.  
+소스 코드 공개 범위와 라이선스는 최종 배포 전 확정할 예정입니다.<br>
 외부 데이터셋, 모델 가중치, 이미지 및 제조사 SDK를 사용할 경우 각각의 라이선스와 이용 조건을 준수합니다.
 
 ---

@@ -2,7 +2,7 @@
 
 ## 프로젝트 기간: 2026.07.13 ~ 2026.07.30
 
-> **일정 현행화 기준일: 2026.07.28**  
+> **일정 현행화 기준일: 2026.07.28**
 > 본 일정표는 프로젝트 착수 당시 계획표가 아니라, **현재까지 실제로 진행한 개발·검증 내역과 남은 일정을 기준으로 재작성한 실행 일정표**입니다.
 
 ### 📌 프로젝트 범위
@@ -131,7 +131,7 @@
 
 <div align="center">
 
-**VisionFlow-Drone · Phase 2 → Phase 3 Growth Project**  
+**VisionFlow-Drone · Phase 2 → Phase 3 Growth Project**
 © 2026 Team PyvaOps. All rights reserved.
 
 </div>
