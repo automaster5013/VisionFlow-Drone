@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "project": "visionflow",
+  "baselineCommit": "71d2cd3",
+  "expectedCounts": {
+    "backend": 70,
+    "frontend": 69,
+    "ai": 9
+  },
+  "requiredBackendAccess": [
+    {
+      "method": "GET",
+      "path": "/api/security/sessions",
+      "allowedAccess": ["ROLE_ADMIN"],
+      "reason": "활성 운영자 세션 목록은 ADMIN 전용"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/security/sessions/{}",
+      "allowedAccess": ["ROLE_ADMIN"],
+      "reason": "다른 운영자 세션 강제 종료는 ADMIN 전용"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/security/sessions/others",
+      "allowedAccess": ["ROLE_ADMIN"],
+      "reason": "다른 운영자 세션 일괄 종료는 ADMIN 전용"
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit-logs/export",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "감사 로그 내보내기는 인증된 역할만 허용"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/drones/{}",
+      "allowedAccess": ["ROLE_ADMIN"],
+      "reason": "드론 삭제는 ADMIN 전용"
+    },
+    {
+      "method": "POST",
+      "path": "/api/audit-logs/retention/cleanup",
+      "allowedAccess": ["ROLE_ADMIN"],
+      "reason": "감사 로그 정리는 ADMIN 전용"
+    }
+  ],
+  "expectedBackendPublicWrites": [
+    {
+      "method": "POST",
+      "path": "/api/security/sessions",
+      "reason": "로그인 키를 검증해 세션을 발급하는 공개 진입점"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/security/sessions/current",
+      "reason": "제시된 세션 토큰을 Controller에서 검증하는 로그아웃 진입점"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/drones/{}/telemetry",
+      "reason": "장치 텔레메트리 수집 진입점"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/events",
+      "reason": "AI 서버 이벤트 수집 진입점"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/ai/events/{}/snapshot",
+      "reason": "AI 서버 스냅숏 업로드 진입점"
+    }
+  ],
+  "sensitiveBackendPublicReads": [
+    {
+      "path": "/api/audit-logs/**",
+      "severity": "HIGH",
+      "reason": "감사 행위와 운영자 활동 이력"
+    },
+    {
+      "path": "/api/incidents/**",
+      "severity": "HIGH",
+      "reason": "사고 내용·담당자·처리 상태"
+    },
+    {
+      "path": "/api/ai/alerts/**",
+      "severity": "HIGH",
+      "reason": "AI 탐지 경보와 대응 상태"
+    },
+    {
+      "path": "/api/ai/events/**",
+      "severity": "HIGH",
+      "reason": "AI 추론 이벤트와 스냅숏"
+    },
+    {
+      "path": "/api/drones/**",
+      "severity": "MEDIUM",
+      "reason": "드론 위치·텔레메트리·비행 이력"
+    },
+    {
+      "path": "/api/geofences/**",
+      "severity": "MEDIUM",
+      "reason": "운항 제한 구역과 발생 이벤트"
+    },
+    {
+      "path": "/api/dashboard/**",
+      "severity": "MEDIUM",
+      "reason": "관제 운영 요약"
+    },
+    {
+      "path": "/api/maintenance/**",
+      "severity": "MEDIUM",
+      "reason": "정비 작업·SLA·비행 허가 상태"
+    },
+    {
+      "path": "/api/flight-quality/**",
+      "severity": "MEDIUM",
+      "reason": "비행 품질과 신뢰도 분석"
+    },
+    {
+      "path": "/api/demo/**",
+      "severity": "LOW",
+      "reason": "시연 시나리오 상태"
+    }
+  ],
+  "expectedFrontendUnguardedMutations": [
+    {
+      "method": "POST",
+      "path": "/api/ai/ingest/frame",
+      "reason": "카메라 장치 프레임 수집"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/drones/{}/telemetry",
+      "reason": "센서 장치 텔레메트리 수집"
+    },
+    {
+      "method": "POST",
+      "path": "/api/security/csp-report",
+      "reason": "브라우저 CSP 위반 보고 수집"
+    }
+  ],
+  "advisoryFrontendUnguardedMutations": [],
+  "sensitiveAiPublicOperations": [
+    {
+      "method": "GET",
+      "path": "/api/streams/annotated.mjpeg",
+      "severity": "HIGH",
+      "reason": "실시간 분석 영상"
+    },
+    {
+      "method": "GET",
+      "path": "/api/streams/latest.jpg",
+      "severity": "HIGH",
+      "reason": "최신 분석 프레임"
+    },
+    {
+      "method": "POST",
+      "path": "/api/metrics/reset",
+      "severity": "HIGH",
+      "reason": "AI 성능 계측 상태를 변경하는 운영 명령"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ingest/frame",
+      "severity": "MEDIUM",
+      "reason": "인증 없는 영상 프레임 수집 진입점"
+    },
+    {
+      "method": "GET",
+      "path": "/api/models/status",
+      "severity": "MEDIUM",
+      "reason": "모델·장치 운영 정보"
+    },
+    {
+      "method": "GET",
+      "path": "/api/metrics/status",
+      "severity": "LOW",
+      "reason": "AI 성능·큐 상태"
+    },
+    {
+      "method": "GET",
+      "path": "/api/streams/status",
+      "severity": "LOW",
+      "reason": "스트림 연결 상태"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ingest/status",
+      "severity": "LOW",
+      "reason": "프레임 수집 상태"
+    }
+  ],
+  "runtimeExpectations": {
+    "backendSecurityEnabled": "true",
+    "frontendAuthMode": "session",
+    "frontendSecureCookies": "true"
+  },
+  "composeDefaultExpectations": {
+    "VISIONFLOW_OPERATOR_SECURITY_ENABLED": "true",
+    "VISIONFLOW_WEB_AUTH_MODE": "session",
+    "VISIONFLOW_WEB_SECURE_COOKIES": "true"
+  }
+}
