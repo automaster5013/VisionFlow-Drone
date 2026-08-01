@@ -12,7 +12,8 @@ param(
     [string]$OutputDirectory = ".\artifacts\ai-benchmark",
     [string]$HardwareLabel = "",
     [string]$RunLabel = "",
-    [string]$InputFilePath = ""
+    [string]$InputFilePath = "",
+    [string]$AiInternalKey = $env:VISIONFLOW_AI_INTERNAL_KEY
 )
 
 Set-StrictMode -Version Latest
@@ -26,27 +27,66 @@ $client.Timeout = [TimeSpan]::FromSeconds(5)
 $client.DefaultRequestHeaders.UserAgent.ParseAdd("VisionFlow-AI-Benchmark/2.0")
 $samples = @()
 
+function Get-DotEnvValue {
+    param([string]$Path, [string]$Name)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return ""
+    }
+    $escapedName = [Regex]::Escape($Name)
+    foreach ($rawLine in Get-Content -LiteralPath $Path -Encoding UTF8) {
+        $match = [Regex]::Match(
+            ([string]$rawLine).Trim(),
+            "^(?:export\s+)?${escapedName}\s*=(.*)$"
+        )
+        if ($match.Success) {
+            return $match.Groups[1].Value.Trim().Trim('"').Trim("'")
+        }
+    }
+    return ""
+}
+
+if ([string]::IsNullOrWhiteSpace($AiInternalKey)) {
+    $AiInternalKey = Get-DotEnvValue `
+        -Path (Join-Path (Split-Path -Parent $PSScriptRoot) ".env.docker") `
+        -Name "VISIONFLOW_AI_INTERNAL_KEY"
+}
+if ([string]::IsNullOrWhiteSpace($AiInternalKey)) {
+    throw "VISIONFLOW_AI_INTERNAL_KEY is missing. Run run-visionflow-ai-internal-key.bat ensure first."
+}
+
 function Invoke-JsonRequest {
     param(
         [ValidateSet("GET", "POST")]
         [string]$Method,
-        [string]$Url
+        [string]$Url,
+        [switch]$UseAiInternalAuth
     )
 
+    $request = $null
     $response = $null
-    $content = $null
 
     try {
+        $httpMethod = if ($Method -eq "POST") {
+            [System.Net.Http.HttpMethod]::Post
+        } else {
+            [System.Net.Http.HttpMethod]::Get
+        }
+        $request = [System.Net.Http.HttpRequestMessage]::new($httpMethod, $Url)
+        if ($UseAiInternalAuth) {
+            [void]$request.Headers.TryAddWithoutValidation(
+                "X-VisionFlow-AI-Key",
+                $AiInternalKey
+            )
+        }
         if ($Method -eq "POST") {
-            $content = [System.Net.Http.StringContent]::new(
+            $request.Content = [System.Net.Http.StringContent]::new(
                 "{}",
                 [System.Text.Encoding]::UTF8,
                 "application/json"
             )
-            $response = $client.PostAsync($Url, $content).GetAwaiter().GetResult()
-        } else {
-            $response = $client.GetAsync($Url).GetAwaiter().GetResult()
         }
+        $response = $client.SendAsync($request).GetAwaiter().GetResult()
 
         $body = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
 
@@ -56,12 +96,11 @@ function Invoke-JsonRequest {
 
         return $body | ConvertFrom-Json
     } finally {
-        if ($null -ne $content) {
-            $content.Dispose()
-        }
-
         if ($null -ne $response) {
             $response.Dispose()
+        }
+        if ($null -ne $request) {
+            $request.Dispose()
         }
     }
 }
@@ -98,7 +137,7 @@ Write-Host "Duration: $DurationSeconds seconds"
 Write-Host ""
 
 try {
-    $modelStatus = Invoke-JsonRequest -Method "GET" -Url $ModelStatusUrl
+    $modelStatus = Invoke-JsonRequest -Method "GET" -Url $ModelStatusUrl -UseAiInternalAuth
 
     if (-not [bool]$modelStatus.localFile -or -not ([string]$modelStatus.sha256).Trim()) {
         throw (
@@ -118,7 +157,7 @@ try {
         Start-Sleep -Seconds $WarmupSeconds
     }
 
-    $resetStatus = Invoke-JsonRequest -Method "POST" -Url $MetricsResetUrl
+    $resetStatus = Invoke-JsonRequest -Method "POST" -Url $MetricsResetUrl -UseAiInternalAuth
     $startedAt = [DateTimeOffset]::Now
     $deadline = $startedAt.AddSeconds($DurationSeconds)
     Write-Host "Measurement window reset: $($resetStatus.resetAt)"

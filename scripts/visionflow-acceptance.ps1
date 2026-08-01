@@ -18,6 +18,7 @@ param(
     [string]$ViewerKey = $env:VISIONFLOW_ACCEPTANCE_VIEWER_KEY,
     [string]$OperatorKey = $env:VISIONFLOW_ACCEPTANCE_OPERATOR_KEY,
     [string]$AdminKey = $env:VISIONFLOW_ACCEPTANCE_ADMIN_KEY,
+    [string]$AiInternalKey = $env:VISIONFLOW_ACCEPTANCE_AI_INTERNAL_KEY,
     [string]$OutputDirectory = ".\artifacts\visionflow-acceptance"
 )
 
@@ -109,6 +110,10 @@ $OperatorKey = Resolve-VisionFlowAcceptanceKey `
 $AdminKey = Resolve-VisionFlowAcceptanceKey `
     -CurrentValue $AdminKey `
     -DockerVariableName "VISIONFLOW_ADMIN_KEY" `
+    -DockerEnvironmentPath $dockerEnvironmentPath
+$AiInternalKey = Resolve-VisionFlowAcceptanceKey `
+    -CurrentValue $AiInternalKey `
+    -DockerVariableName "VISIONFLOW_AI_INTERNAL_KEY" `
     -DockerEnvironmentPath $dockerEnvironmentPath
 $script:Results = @()
 $script:Scenario = $null
@@ -509,10 +514,11 @@ function Test-Endpoint {
         [string]$Name,
         [Parameter(Mandatory = $true)]
         [string]$Uri,
-        [int[]]$ExpectedStatus = @(200)
+        [int[]]$ExpectedStatus = @(200),
+        [hashtable]$Headers = @{}
     )
 
-    $response = Invoke-VisionFlowRequest -Method "GET" -Uri $Uri
+    $response = Invoke-VisionFlowRequest -Method "GET" -Uri $Uri -Headers $Headers
     $passed = $ExpectedStatus -contains $response.StatusCode
     $message = if ($null -ne $response.Error) {
         $response.Error
@@ -1233,6 +1239,7 @@ function Write-AcceptanceReport {
             viewerKeySupplied = -not [string]::IsNullOrWhiteSpace($ViewerKey)
             operatorKeySupplied = -not [string]::IsNullOrWhiteSpace($OperatorKey)
             adminKeySupplied = -not [string]::IsNullOrWhiteSpace($AdminKey)
+            aiInternalKeySupplied = -not [string]::IsNullOrWhiteSpace($AiInternalKey)
         }
         summary = [ordered]@{
             total = $script:Results.Count
@@ -1321,8 +1328,16 @@ try {
     Test-Endpoint -Name "Frontend demo console" -Uri "$FrontendUrl/demo-scenario" | Out-Null
 
     if (-not $SkipAi) {
-        Test-Endpoint -Name "AI ingest status" -Uri "$AiUrl/api/ingest/status" | Out-Null
-        Test-Endpoint -Name "AI stream status" -Uri "$AiUrl/api/streams/status" | Out-Null
+        Test-Endpoint -Name "AI public health" -Uri "$AiUrl/health" | Out-Null
+        Test-Endpoint -Name "AI missing key boundary" -Uri "$AiUrl/api/ingest/status" -ExpectedStatus @(401) | Out-Null
+        Test-Endpoint -Name "AI invalid key boundary" -Uri "$AiUrl/api/ingest/status" -ExpectedStatus @(401) -Headers @{ "X-VisionFlow-AI-Key" = "invalid-ai-internal-key-for-acceptance-test-only" } | Out-Null
+        if ([string]::IsNullOrWhiteSpace($AiInternalKey)) {
+            Add-Result -Name "AI internal key" -Passed $false -StatusCode 0 -DurationMs 0 -Message "VISIONFLOW_AI_INTERNAL_KEY is missing from acceptance input and .env.docker"
+        } else {
+            $aiHeaders = @{ "X-VisionFlow-AI-Key" = $AiInternalKey }
+            Test-Endpoint -Name "AI authorized ingest status" -Uri "$AiUrl/api/ingest/status" -Headers $aiHeaders | Out-Null
+            Test-Endpoint -Name "AI authorized stream status" -Uri "$AiUrl/api/streams/status" -Headers $aiHeaders | Out-Null
+        }
         Test-Endpoint -Name "Next AI ingest proxy" -Uri "$FrontendUrl/api/ai/ingest/status" | Out-Null
         Test-Endpoint -Name "Next AI stream proxy" -Uri "$FrontendUrl/api/ai/stream/status" | Out-Null
     }

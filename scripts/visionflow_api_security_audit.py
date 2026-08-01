@@ -63,11 +63,7 @@ HTTP_METHOD_PATTERN = re.compile(
     r"HttpMethod\.(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)"
 )
 QUOTED_PATTERN = re.compile(r'"([^"]+)"')
-AI_AUTH_SIGNAL_PATTERN = re.compile(
-    r"APIKeyHeader|HTTPBearer|OAuth2|Security\s*\(|"
-    r"Depends\s*\([^)]*(?:auth|token|key)|Authorization",
-    re.IGNORECASE,
-)
+AI_INTERNAL_ACCESS = "AI_INTERNAL_KEY"
 
 
 @dataclass(frozen=True)
@@ -361,13 +357,16 @@ def helper_auth_modules(root: Path) -> set[str]:
 
 
 def route_auth_mechanism(text: str, auth_modules: set[str]) -> str:
+    mechanisms: list[str] = []
     if "withBackendOperatorAuth" in text:
-        return "DIRECT_OPERATOR_AUTH"
+        mechanisms.append("OPERATOR_AUTH")
+    if "withAiInternalAuth" in text:
+        mechanisms.append("AI_INTERNAL_AUTH")
     imports = set(re.findall(r"@/lib/server/([\w-]+)", text))
     matched = sorted(imports & auth_modules)
     if matched:
-        return "HELPER_OPERATOR_AUTH:" + ",".join(matched)
-    return "NONE"
+        mechanisms.append("HELPER_OPERATOR_AUTH:" + ",".join(matched))
+    return "+".join(mechanisms) if mechanisms else "NONE"
 
 
 def route_mutation_guard(operation: Operation, text: str) -> str:
@@ -406,6 +405,10 @@ def analyze_frontend(
         security_baseline,
         "advisoryFrontendUnguardedMutations",
     )
+    sensitive_ai = baseline_operation_map(
+        security_baseline,
+        "sensitiveAiPublicOperations",
+    )
     auth_modules = helper_auth_modules(root)
     rows: list[dict[str, Any]] = []
     missing_auth: list[dict[str, Any]] = []
@@ -427,7 +430,11 @@ def analyze_frontend(
             access = (
                 backend_access.get(target.key, "UNKNOWN")
                 if target.service == "backend"
-                else PUBLIC_ACCESS
+                else (
+                    AI_INTERNAL_ACCESS
+                    if target.key in sensitive_ai
+                    else PUBLIC_ACCESS
+                )
             )
             target_row = {
                 "service": target.service,
@@ -435,11 +442,21 @@ def analyze_frontend(
                 "access": access,
             }
             target_rows.append(target_row)
-            if target.service == "backend" and access not in {PUBLIC_ACCESS, "UNKNOWN"}:
+            if access not in {PUBLIC_ACCESS, "UNKNOWN"}:
                 protected_targets.append(target_row)
         auth_state = "NOT_REQUIRED"
         if protected_targets:
-            auth_state = "PASS" if mechanism != "NONE" else "MISSING"
+            backend_required = any(
+                target["service"] == "backend" for target in protected_targets
+            )
+            ai_required = any(
+                target["service"] == "ai" for target in protected_targets
+            )
+            has_required_auth = (
+                (not backend_required or "OPERATOR_AUTH" in mechanism)
+                and (not ai_required or "AI_INTERNAL_AUTH" in mechanism)
+            )
+            auth_state = "PASS" if has_required_auth else "MISSING"
             if auth_state == "MISSING":
                 missing_auth.append(
                     {
@@ -493,6 +510,21 @@ def analyze_frontend(
     }
 
 
+def ai_route_access(text: str, operation: Operation) -> str:
+    decorator_pattern = re.compile(
+        rf'@app\.{operation.method.lower()}\(\s*'
+        rf'"{re.escape(operation.path)}"(?P<options>.*?)'
+        r'\)\s*(?:async\s+)?def\s+',
+        re.DOTALL,
+    )
+    match = decorator_pattern.search(text)
+    if match is None:
+        return "UNKNOWN"
+    if "Depends(require_ai_internal_key)" in match.group("options"):
+        return AI_INTERNAL_ACCESS
+    return PUBLIC_ACCESS
+
+
 def analyze_ai(
     root: Path,
     operations: list[Operation],
@@ -500,13 +532,12 @@ def analyze_ai(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     streaming_path = root / "03_ai-server" / "visionflow-ai" / "app" / "streaming.py"
     text = streaming_path.read_text(encoding="utf-8")
-    signals = sorted(set(match.group(0) for match in AI_AUTH_SIGNAL_PATTERN.finditer(text)))
-    access = "AUTH_REVIEW" if signals else PUBLIC_ACCESS
     sensitive = baseline_operation_map(baseline, "sensitiveAiPublicOperations")
     rows: list[dict[str, Any]] = []
     exposures: list[dict[str, Any]] = []
     for operation in operations:
         policy = sensitive.get(operation.key)
+        access = ai_route_access(text, operation)
         row = {
             "operation": operation_key_text(operation.key),
             "method": operation.method,
@@ -520,9 +551,16 @@ def analyze_ai(
         if policy is not None and access == PUBLIC_ACCESS:
             exposures.append(row)
     return rows, {
-        "authSignals": signals,
         "sensitivePublicOperations": exposures,
-        "publicOperationCount": len(operations) if access == PUBLIC_ACCESS else 0,
+        "publicOperationCount": sum(
+            1 for row in rows if row["access"] == PUBLIC_ACCESS
+        ),
+        "protectedOperationCount": sum(
+            1 for row in rows if row["access"] == AI_INTERNAL_ACCESS
+        ),
+        "unknownOperationCount": sum(
+            1 for row in rows if row["access"] == "UNKNOWN"
+        ),
     }
 
 
@@ -584,9 +622,13 @@ def analyze_runtime(args: argparse.Namespace, baseline: dict[str, Any]) -> dict[
         args.frontend_container,
         ["VISIONFLOW_WEB_AUTH_MODE", "VISIONFLOW_WEB_SECURE_COOKIES"],
     )
+    ai = inspect_container_env(
+        args.ai_container,
+        ["VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED"],
+    )
     expected = baseline.get("runtimeExpectations", {})
     issues: list[dict[str, str]] = []
-    if not backend["available"] or not frontend["available"]:
+    if not backend["available"] or not frontend["available"] or not ai["available"]:
         status = "ADVISORY"
     else:
         mappings = [
@@ -607,6 +649,12 @@ def analyze_runtime(args: argparse.Namespace, baseline: dict[str, Any]) -> dict[
                 frontend["values"].get("VISIONFLOW_WEB_SECURE_COOKIES"),
                 str(expected.get("frontendSecureCookies", "true")),
                 "ADVISORY",
+            ),
+            (
+                "aiInternalSecurityEnabled",
+                ai["values"].get("VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED"),
+                str(expected.get("aiInternalSecurityEnabled", "true")),
+                "BLOCKED",
             ),
         ]
         for name, actual, wanted, severity in mappings:
@@ -630,6 +678,7 @@ def analyze_runtime(args: argparse.Namespace, baseline: dict[str, Any]) -> dict[
         "issues": issues,
         "backend": backend,
         "frontend": frontend,
+        "ai": ai,
     }
 
 
@@ -728,7 +777,11 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             (
                 "operation 수가 보안 기준선과 다릅니다."
                 if count_drift
-                else "Backend 70, Frontend 69, AI 9 기준과 일치합니다."
+                else (
+                    f"Backend {actual_counts['backend']}, "
+                    f"Frontend {actual_counts['frontend']}, "
+                    f"AI {actual_counts['ai']} 기준과 일치합니다."
+                )
             ),
             drift=count_drift,
         )
@@ -805,9 +858,9 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             "frontend-auth-propagation",
             "Frontend 보호 대상 인증 전달",
             (
-                "보호된 Backend 대상에 운영자 인증을 전달하지 않는 Proxy가 있습니다."
+                "보호된 Backend·AI 대상에 필요한 인증을 전달하지 않는 Proxy가 있습니다."
                 if missing_auth
-                else "모든 보호 대상 Frontend Proxy가 운영자 인증을 전달합니다."
+                else "모든 보호 대상 Frontend Proxy가 필요한 서버 인증을 전달합니다."
             ),
             findings=missing_auth,
         )
@@ -835,20 +888,16 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
     ai_exposures = ai_summary["sensitivePublicOperations"]
     checks.append(
         make_check(
-            "ADVISORY" if ai_exposures or ai_summary["authSignals"] else "PASS",
+            "ADVISORY" if ai_exposures or ai_summary["unknownOperationCount"] else "PASS",
             "ai-auth-exposure",
             "AI API 인증·노출",
             (
                 f"인증 없이 노출되는 민감 AI API가 {len(ai_exposures)}개입니다."
                 if ai_exposures
-                else (
-                    "AI 인증 단서가 발견되어 수동 검토가 필요합니다."
-                    if ai_summary["authSignals"]
-                    else "AI 민감 API가 공개되지 않습니다."
-                )
+                else "AI 민감 API 8개가 내부 서비스 키로 보호되고 /health만 공개됩니다."
             ),
             findings=ai_exposures,
-            authSignals=ai_summary["authSignals"],
+            unknownOperationCount=ai_summary["unknownOperationCount"],
         )
     )
     checks.append(
@@ -874,7 +923,7 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
                 "런타임 검사를 생략했습니다."
                 if runtime_status == "SKIPPED"
                 else (
-                    "현재 Backend RBAC·Frontend 세션·Secure Cookie 설정이 권장값입니다."
+                    "현재 Backend RBAC·Frontend 세션·Secure Cookie·AI 내부 인증 설정이 권장값입니다."
                     if runtime_status == "PASS"
                     else "현재 컨테이너의 선택된 비밀 제외 보안 설정을 검토하세요."
                 )
@@ -1123,6 +1172,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=float, default=10.0)
     parser.add_argument("--backend-container", default="visionflow-backend")
     parser.add_argument("--frontend-container", default="visionflow-frontend")
+    parser.add_argument("--ai-container", default="visionflow-ai")
     parser.add_argument("--skip-runtime", action="store_true")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--strict", action="store_true")

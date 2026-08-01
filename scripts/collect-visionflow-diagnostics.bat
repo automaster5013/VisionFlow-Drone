@@ -14,8 +14,8 @@ docker stats --no-stream visionflow-mysql visionflow-backend visionflow-ai visio
 
 curl.exe -sS -i "http://localhost:8080/actuator/health" > "%DIAG_DIR%\backend-health.txt" 2>&1
 curl.exe -sS -i "http://localhost:8080/api/drones" > "%DIAG_DIR%\backend-drones.txt" 2>&1
-curl.exe -sS -i "http://localhost:8000/api/ingest/status" > "%DIAG_DIR%\ai-ingest-status.txt" 2>&1
-curl.exe -sS -i "http://localhost:8000/api/streams/status" > "%DIAG_DIR%\ai-stream-status.txt" 2>&1
+curl.exe -sS -i "http://localhost:3000/api/ai/ingest/status" > "%DIAG_DIR%\ai-ingest-status.txt" 2>&1
+curl.exe -sS -i "http://localhost:3000/api/ai/stream/status" > "%DIAG_DIR%\ai-stream-status.txt" 2>&1
 curl.exe -sS -i "http://localhost:3000/dashboard" > "%DIAG_DIR%\frontend-dashboard.txt" 2>&1
 
 powershell.exe -NoProfile -Command "Compress-Archive -Path '%DIAG_DIR%\*' -DestinationPath '%DIAG_DIR%.zip' -Force"

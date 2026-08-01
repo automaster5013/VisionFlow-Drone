@@ -100,8 +100,8 @@ try {
 
     Test-HttpEndpoint -Name "Backend health" -Uri "http://localhost:8080/actuator/health"
     Test-HttpEndpoint -Name "Backend drones" -Uri "http://localhost:8080/api/drones"
-    Test-HttpEndpoint -Name "AI ingest" -Uri "http://localhost:8000/api/ingest/status"
-    Test-HttpEndpoint -Name "AI stream" -Uri "http://localhost:8000/api/streams/status"
+    Test-HttpEndpoint -Name "AI ingest" -Uri "http://localhost:3000/api/ai/ingest/status"
+    Test-HttpEndpoint -Name "AI stream" -Uri "http://localhost:3000/api/ai/stream/status"
     Test-HttpEndpoint -Name "Frontend dashboard" -Uri "http://localhost:3000/dashboard"
     Test-HttpEndpoint -Name "Frontend demo console" -Uri "http://localhost:3000/demo-scenario"
 

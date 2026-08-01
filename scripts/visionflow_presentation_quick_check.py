@@ -85,14 +85,14 @@ ENDPOINTS = (
     {
         "key": "ai-ingest",
         "title": "AI ingest status",
-        "base": "ai",
-        "path": "/api/ingest/status",
+        "base": "frontend",
+        "path": "/api/ai/ingest/status",
     },
     {
         "key": "ai-stream",
         "title": "AI stream status",
-        "base": "ai",
-        "path": "/api/streams/status",
+        "base": "frontend",
+        "path": "/api/ai/stream/status",
     },
     {
         "key": "frontend-ai-ingest-proxy",

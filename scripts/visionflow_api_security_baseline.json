@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "project": "visionflow",
-  "baselineCommit": "cb59dba",
+  "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 69,
+    "frontend": 70,
     "ai": 9
   },
   "requiredBackendAccess": [
@@ -249,11 +249,13 @@
   "runtimeExpectations": {
     "backendSecurityEnabled": "true",
     "frontendAuthMode": "session",
-    "frontendSecureCookies": "true"
+    "frontendSecureCookies": "true",
+    "aiInternalSecurityEnabled": "true"
   },
   "composeDefaultExpectations": {
     "VISIONFLOW_OPERATOR_SECURITY_ENABLED": "true",
     "VISIONFLOW_WEB_AUTH_MODE": "session",
-    "VISIONFLOW_WEB_SECURE_COOKIES": "true"
+    "VISIONFLOW_WEB_SECURE_COOKIES": "true",
+    "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED": "true"
   }
 }

@@ -603,7 +603,11 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             (
                 "operation 수가 기준선과 달라 검토가 필요합니다."
                 if count_drift
-                else "Backend 70, Frontend 69, AI 9 기준과 일치합니다."
+                else (
+                    f"Backend {actual_counts['backend']}, "
+                    f"Frontend {actual_counts['frontend']}, "
+                    f"AI {actual_counts['ai']} 기준과 일치합니다."
+                )
             ),
             drift=count_drift,
         )

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "project": "visionflow",
-  "baselineCommit": "aa540af066902e5c3c712840d8341b97b4964980",
+  "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 69,
+    "frontend": 70,
     "ai": 9
   },
   "frontendLocalOperations": [
@@ -51,6 +51,13 @@
       "path": "/api/ai/stream/status",
       "targets": [
         { "service": "ai", "method": "GET", "path": "/api/streams/status" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/stream/annotated",
+      "targets": [
+        { "service": "ai", "method": "GET", "path": "/api/streams/annotated.mjpeg" }
       ]
     },
     {
@@ -160,19 +167,8 @@
       "reason": "직접 단일 프레임 점검용"
     }
   ],
-  "advisoryAiOnlyOperations": [
-    {
-      "method": "GET",
-      "path": "/api/streams/annotated.mjpeg",
-      "reason": "브라우저가 사용하지만 same-origin HTTPS proxy가 없음"
-    }
-  ],
-  "browserDirectUrlAdvisories": [
-    {
-      "pattern": "http://localhost:8000/api/streams/annotated.mjpeg",
-      "reason": "HTTPS·스마트폰에서 localhost 또는 mixed content 문제가 발생할 수 있음"
-    }
-  ],
+  "advisoryAiOnlyOperations": [],
+  "browserDirectUrlAdvisories": [],
   "backendOpenapiAcceptedStatuses": [
     200,
     401,

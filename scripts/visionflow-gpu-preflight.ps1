@@ -267,5 +267,5 @@ if ($StartStack) {
     Write-Host "[PASS] VisionFlow GPU stack is healthy." -ForegroundColor Green
     Write-Host "Frontend: http://localhost:3000"
     Write-Host "Backend : http://localhost:8080"
-    Write-Host "AI model: http://localhost:8000/api/models/status"
+    Write-Host "AI model: http://localhost:8000/api/models/status (internal key required)"
 }
