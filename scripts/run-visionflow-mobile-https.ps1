@@ -15,7 +15,9 @@ $SetupScript = Join-Path $PSScriptRoot "setup-visionflow-mobile-https.ps1"
 $MetadataPath = Join-Path $ProjectRoot "artifacts\mobile-https\certificates\visionflow-mobile-https.json"
 
 if (-not $SkipSetup) {
-    $setupArguments = @{}
+    $setupArguments = @{
+        Root = $ProjectRoot
+    }
 
     if (-not [string]::IsNullOrWhiteSpace($LanIp)) {
         $setupArguments.LanIp = $LanIp
@@ -77,6 +79,7 @@ Write-Host "PC URL     : $($metadata.localUrl)"
 Write-Host "Mobile URL : $($metadata.mobileUrl)"
 Write-Host "Login URL  : $($metadata.operatorLoginUrl)"
 Write-Host "Auth mode  : session"
+Write-Host "TLS        : Caddy on port $($metadata.port)"
 Write-Host "Dev origin : $resolvedLanIp"
 Write-Host "Stop       : Ctrl+C"
 Write-Host ""
@@ -87,11 +90,7 @@ try {
     $npmArguments = @(
         "run", "dev", "--",
         "--hostname", "0.0.0.0",
-        "--port", "3000",
-        "--experimental-https",
-        "--experimental-https-key", $privateKeyPath,
-        "--experimental-https-cert", $certificatePath,
-        "--experimental-https-ca", $rootCertificatePath
+        "--port", "3000"
     )
 
     & $npm.Source @npmArguments
