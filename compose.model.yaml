@@ -1,7 +1,7 @@
 services:
   ai-server:
     environment:
-      AI_MODEL_PROFILE: yolo26m-finetuned-best
+      AI_MODEL_PROFILE: best-gpu
       AI_MODEL_PATH: /app/models/best.pt
       AI_REQUIRE_LOCAL_MODEL: "true"
       AI_DEVICE: "0"

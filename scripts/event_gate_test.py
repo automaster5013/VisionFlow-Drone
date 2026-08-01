@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -64,17 +65,22 @@ def packet(
 
 reported: list[int] = []
 
-for index in range(1, 21):
-    if pipeline._should_report_event(
-        packet(index, 0, "Hardhat")
-    ):
-        reported.append(index)
+# _should_report_event uses time.monotonic(), not captured_at. Simulate a
+# deterministic 0.5-second interval for the 25 calls so frame 25 is exactly
+# 10 seconds after the first report at frame 5.
+monotonic_values = [index * 0.5 for index in range(25)]
+with patch("app.pipeline.time.monotonic", side_effect=monotonic_values):
+    for index in range(1, 21):
+        if pipeline._should_report_event(
+            packet(index, 0, "Hardhat")
+        ):
+            reported.append(index)
 
-for index in range(21, 26):
-    if pipeline._should_report_event(
-        packet(index, 1, "NO-Hardhat")
-    ):
-        reported.append(index)
+    for index in range(21, 26):
+        if pipeline._should_report_event(
+            packet(index, 1, "NO-Hardhat")
+        ):
+            reported.append(index)
 
 print("reported_frames=", reported)
 assert reported == [5, 25], reported

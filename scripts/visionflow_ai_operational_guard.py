@@ -19,7 +19,7 @@ EXPECTED_CONTAINERS = (
     "visionflow-mysql",
 )
 EXPECTED_AI_ENV = {
-    "AI_MODEL_PROFILE": "yolo26m-finetuned-best",
+    "AI_MODEL_PROFILE": "best-gpu",
     "AI_MODEL_PATH": "/app/models/best.pt",
     "AI_REQUIRE_LOCAL_MODEL": "true",
     "AI_DEVICE": "0",
@@ -108,10 +108,15 @@ def check_ai_environment() -> CheckResult:
         for key, expected in EXPECTED_AI_ENV.items()
         if actual.get(key) != expected
     }
+    mismatch_names = ", ".join(sorted(mismatch))
     return CheckResult(
         "ai_environment",
         "CRITICAL" if mismatch else "HEALTHY",
-        "AI 모델·GPU·이벤트 게이트 환경값이 정상입니다." if not mismatch else "AI 환경값이 예상과 다릅니다.",
+        (
+            "AI 모델·GPU·이벤트 게이트 환경값이 정상입니다."
+            if not mismatch
+            else f"AI 환경값이 예상과 다릅니다: {mismatch_names}"
+        ),
         {"actual": actual, "mismatch": mismatch},
     )
 
