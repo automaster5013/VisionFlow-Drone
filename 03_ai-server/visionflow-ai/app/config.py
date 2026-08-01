@@ -83,6 +83,8 @@ class Settings:
     stream_port: int
     stream_jpeg_quality: int
     stream_allowed_origins: tuple[str, ...]
+    ai_internal_security_enabled: bool
+    ai_internal_key: str
     performance_warning_p95_ms: float
     performance_critical_p95_ms: float
     performance_warning_processing_ratio: float
@@ -190,6 +192,11 @@ class Settings:
                 "AI_STREAM_ALLOWED_ORIGINS",
                 ("http://localhost:3000", "http://127.0.0.1:3000"),
             ),
+            ai_internal_security_enabled=_read_bool(
+                "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED",
+                True,
+            ),
+            ai_internal_key=os.getenv("VISIONFLOW_AI_INTERNAL_KEY", "").strip(),
             performance_warning_p95_ms=_read_float(
                 "AI_PERFORMANCE_WARNING_P95_MS",
                 250.0,
@@ -299,6 +306,12 @@ class Settings:
 
         if self.stream_enabled and not self.stream_allowed_origins:
             raise ValueError("AI_STREAM_ALLOWED_ORIGINS에는 하나 이상의 주소가 필요합니다.")
+
+        if self.ai_internal_security_enabled and len(self.ai_internal_key) < 32:
+            raise ValueError(
+                "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED=true이면 "
+                "VISIONFLOW_AI_INTERNAL_KEY를 32자 이상으로 설정해야 합니다."
+            )
 
         if not (
             0

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
+from secrets import compare_digest
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
@@ -9,15 +10,17 @@ from typing import Annotated
 
 import cv2
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
+from fastapi.security import APIKeyHeader
 
 from app.domain import InferencePacket
 from app.metrics import InferencePerformanceMonitor
 from app.sources.browser_upload import BrowserUploadSource
 
 MJPEG_BOUNDARY = "visionflow-frame"
+AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,6 +154,8 @@ def create_stream_app(
     ingest_max_payload_bytes: int = 2_000_000,
     performance_monitor: InferencePerformanceMonitor | None = None,
     model_status_provider: Callable[[], dict[str, object]] | None = None,
+    internal_security_enabled: bool = True,
+    internal_api_key: str = "",
 ) -> FastAPI:
     app = FastAPI(
         title="VisionFlow AI Analysis Stream",
@@ -163,16 +168,40 @@ def create_stream_app(
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
+    api_key_header = APIKeyHeader(
+        name=AI_INTERNAL_KEY_HEADER,
+        auto_error=False,
+    )
+
+    async def require_ai_internal_key(
+        provided_key: str | None = Security(api_key_header),
+    ) -> None:
+        if not internal_security_enabled:
+            return
+        if not provided_key or not compare_digest(provided_key, internal_api_key):
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "code": "AI_INTERNAL_AUTHENTICATION_REQUIRED",
+                    "message": "AI 내부 서비스 인증이 필요합니다.",
+                },
+            )
 
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "UP"}
 
-    @app.get("/api/streams/status")
+    @app.get(
+        "/api/streams/status",
+        dependencies=[Depends(require_ai_internal_key)],
+    )
     def stream_status() -> dict[str, object]:
         return hub.status()
 
-    @app.get("/api/metrics/status")
+    @app.get(
+        "/api/metrics/status",
+        dependencies=[Depends(require_ai_internal_key)],
+    )
     def performance_status() -> dict[str, object]:
         if performance_monitor is None:
             raise HTTPException(
@@ -190,7 +219,10 @@ def create_stream_app(
         metrics["stream"] = hub.status()
         return metrics
 
-    @app.post("/api/metrics/reset")
+    @app.post(
+        "/api/metrics/reset",
+        dependencies=[Depends(require_ai_internal_key)],
+    )
     def reset_performance_metrics() -> dict[str, object]:
         if performance_monitor is None:
             raise HTTPException(
@@ -200,7 +232,10 @@ def create_stream_app(
 
         return performance_monitor.reset()
 
-    @app.get("/api/models/status")
+    @app.get(
+        "/api/models/status",
+        dependencies=[Depends(require_ai_internal_key)],
+    )
     def model_status() -> dict[str, object]:
         if model_status_provider is None:
             raise HTTPException(
@@ -210,7 +245,10 @@ def create_stream_app(
 
         return model_status_provider()
 
-    @app.get("/api/streams/latest.jpg")
+    @app.get(
+        "/api/streams/latest.jpg",
+        dependencies=[Depends(require_ai_internal_key)],
+    )
     def latest_frame() -> Response:
         snapshot = hub.latest()
 
@@ -230,7 +268,10 @@ def create_stream_app(
             },
         )
 
-    @app.get("/api/streams/annotated.mjpeg")
+    @app.get(
+        "/api/streams/annotated.mjpeg",
+        dependencies=[Depends(require_ai_internal_key)],
+    )
     def annotated_stream() -> StreamingResponse:
         return StreamingResponse(
             hub.iter_mjpeg(),
@@ -243,11 +284,17 @@ def create_stream_app(
 
     if ingest_source is not None:
 
-        @app.get("/api/ingest/status")
+        @app.get(
+            "/api/ingest/status",
+            dependencies=[Depends(require_ai_internal_key)],
+        )
         def ingest_status() -> dict[str, object]:
             return ingest_source.status()
 
-        @app.post("/api/ingest/frame")
+        @app.post(
+            "/api/ingest/frame",
+            dependencies=[Depends(require_ai_internal_key)],
+        )
         async def ingest_frame(
             request: Request,
             drone_id: Annotated[int, Query(alias="droneId", ge=1)],
@@ -325,6 +372,8 @@ class AnalysisStreamServer:
         ingest_max_payload_bytes: int = 2_000_000,
         performance_monitor: InferencePerformanceMonitor | None = None,
         model_status_provider: Callable[[], dict[str, object]] | None = None,
+        internal_security_enabled: bool = True,
+        internal_api_key: str = "",
     ) -> None:
         self._hub = hub
         self._host = host
@@ -338,6 +387,8 @@ class AnalysisStreamServer:
                     ingest_max_payload_bytes=ingest_max_payload_bytes,
                     performance_monitor=performance_monitor,
                     model_status_provider=model_status_provider,
+                    internal_security_enabled=internal_security_enabled,
+                    internal_api_key=internal_api_key,
                 ),
                 host=host,
                 port=port,

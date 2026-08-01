@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 
+import { withAiInternalAuth } from "@/lib/server/ai-internal-auth";
+
 const AI_STREAM_API_URL = (
   process.env.AI_STREAM_API_URL ?? "http://localhost:8000"
 ).replace(/\/$/, "");
 
 export async function GET() {
   try {
-    const response = await fetch(`${AI_STREAM_API_URL}/api/streams/status`, {
+    const response = await fetch(`${AI_STREAM_API_URL}/api/streams/status`, withAiInternalAuth({
       method: "GET",
       headers: {
         Accept: "application/json",
       },
       cache: "no-store",
       signal: AbortSignal.timeout(2_000),
-    });
+    }));
 
     const body = await response.text();
 

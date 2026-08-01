@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { withAiInternalAuth } from "@/lib/server/ai-internal-auth";
+
 const AI_STREAM_API_URL = (
   process.env.AI_STREAM_API_URL ?? "http://localhost:8000"
 ).replace(/\/$/, "");
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
   try {
     const response = await fetch(
       `${AI_STREAM_API_URL}/api/ingest/frame?${upstreamQuery.toString()}`,
-      {
+      withAiInternalAuth({
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
         body,
         cache: "no-store",
         signal: AbortSignal.timeout(5_000),
-      },
+      }),
     );
 
     const responseBody = await response.text();

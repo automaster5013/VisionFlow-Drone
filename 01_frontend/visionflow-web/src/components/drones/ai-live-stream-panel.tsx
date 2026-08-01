@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { getAiStreamUrl } from "@/lib/ai-stream-url";
 import type { AiInferenceEvent } from "@/types/ai-inference-event";
 import type { AiStreamStatus } from "@/types/ai-stream";
 
@@ -15,8 +16,6 @@ interface StreamViewState {
   status: AiStreamStatus | null;
   error: string | null;
 }
-
-const DEFAULT_STREAM_URL = "http://localhost:8000/api/streams/annotated.mjpeg";
 
 function isAiStreamStatus(value: unknown): value is AiStreamStatus {
   if (typeof value !== "object" || value === null) {
@@ -71,8 +70,7 @@ export function AiLiveStreamPanel({
   const [imageError, setImageError] = useState(false);
   const previousOnlineRef = useRef(false);
 
-  const baseStreamUrl =
-    process.env.NEXT_PUBLIC_AI_STREAM_URL ?? DEFAULT_STREAM_URL;
+  const baseStreamUrl = getAiStreamUrl();
 
   const streamUrl = useMemo(() => {
     const separator = baseStreamUrl.includes("?") ? "&" : "?";

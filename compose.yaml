@@ -135,6 +135,8 @@ services:
       AI_STREAM_HOST: 0.0.0.0
       AI_STREAM_PORT: 8000
       AI_STREAM_ALLOWED_ORIGINS: ${AI_STREAM_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED: ${VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED:-true}
+      VISIONFLOW_AI_INTERNAL_KEY: ${VISIONFLOW_AI_INTERNAL_KEY:-}
       TZ: Asia/Seoul
     depends_on:
       backend-api:
@@ -166,7 +168,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_WEBSOCKET_URL: ${NEXT_PUBLIC_WEBSOCKET_URL:-ws://localhost:8080/ws}
-        NEXT_PUBLIC_AI_STREAM_URL: ${NEXT_PUBLIC_AI_STREAM_URL:-http://localhost:8000/api/streams/annotated.mjpeg}
+        NEXT_PUBLIC_AI_STREAM_URL: ${NEXT_PUBLIC_AI_STREAM_URL:-/api/ai/stream/annotated}
     container_name: visionflow-frontend
     restart: unless-stopped
     ports:
@@ -175,6 +177,7 @@ services:
       SPRING_API_URL: http://backend-api:8080
       BACKEND_API_URL: http://backend-api:8080
       AI_STREAM_API_URL: http://ai-server:8000
+      VISIONFLOW_AI_INTERNAL_KEY: ${VISIONFLOW_AI_INTERNAL_KEY:-}
 
       VISIONFLOW_WEB_OPERATOR_KEY: ${VISIONFLOW_FRONTEND_OPERATOR_KEY:-}
       VISIONFLOW_WEB_AUTH_MODE: ${VISIONFLOW_WEB_AUTH_MODE:-session}
@@ -182,7 +185,7 @@ services:
       VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY: /app/artifacts/mobile-readiness
 
       NEXT_PUBLIC_WEBSOCKET_URL: ${NEXT_PUBLIC_WEBSOCKET_URL:-ws://localhost:8080/ws}
-      NEXT_PUBLIC_AI_STREAM_URL: ${NEXT_PUBLIC_AI_STREAM_URL:-http://localhost:8000/api/streams/annotated.mjpeg}
+      NEXT_PUBLIC_AI_STREAM_URL: ${NEXT_PUBLIC_AI_STREAM_URL:-/api/ai/stream/annotated}
       NODE_ENV: production
       TZ: Asia/Seoul
     volumes:

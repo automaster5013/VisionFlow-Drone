@@ -125,6 +125,8 @@ def main() -> None:
             ingest_max_payload_bytes=settings.browser_upload_max_payload_bytes,
             performance_monitor=performance_monitor,
             model_status_provider=detector.status,
+            internal_security_enabled=settings.ai_internal_security_enabled,
+            internal_api_key=settings.ai_internal_key,
         )
         if frame_hub is not None
         else None
