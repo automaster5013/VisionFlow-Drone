@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "project": "visionflow",
+  "baselineCommit": "aa540af066902e5c3c712840d8341b97b4964980",
+  "expectedCounts": {
+    "backend": 70,
+    "frontend": 69,
+    "ai": 9
+  },
+  "frontendLocalOperations": [
+    {
+      "method": "GET",
+      "path": "/api/mobile/evidence/status",
+      "reason": "Next.js 로컬 모바일 증적 상태"
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/csp-report",
+      "reason": "Next.js bounded memory CSP 관측 상태"
+    },
+    {
+      "method": "POST",
+      "path": "/api/security/csp-report",
+      "reason": "브라우저 CSP report 수집"
+    }
+  ],
+  "frontendSpecialMappings": [
+    {
+      "method": "POST",
+      "path": "/api/ai/ingest/frame",
+      "targets": [
+        { "service": "ai", "method": "POST", "path": "/api/ingest/frame" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/ingest/status",
+      "targets": [
+        { "service": "ai", "method": "GET", "path": "/api/ingest/status" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/metrics/status",
+      "targets": [
+        { "service": "ai", "method": "GET", "path": "/api/metrics/status" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/stream/status",
+      "targets": [
+        { "service": "ai", "method": "GET", "path": "/api/streams/status" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/operator/session",
+      "targets": [
+        { "service": "backend", "method": "GET", "path": "/api/security/me" }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/session",
+      "targets": [
+        { "service": "backend", "method": "POST", "path": "/api/security/sessions" }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/operator/session",
+      "targets": [
+        { "service": "backend", "method": "DELETE", "path": "/api/security/sessions/current" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/operator/sessions",
+      "targets": [
+        { "service": "backend", "method": "GET", "path": "/api/security/sessions" }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/operator/sessions/{}",
+      "targets": [
+        { "service": "backend", "method": "DELETE", "path": "/api/security/sessions/{}" }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/operator/sessions/others",
+      "targets": [
+        { "service": "backend", "method": "DELETE", "path": "/api/security/sessions/others" }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/demo/scenarios/{}/{}",
+      "targets": [
+        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/detect" },
+        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/escalate" },
+        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/resolve" },
+        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/complete" }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/drones/{}/flight-sessions/{}/{}",
+      "targets": [
+        { "service": "backend", "method": "POST", "path": "/api/drones/{}/flight-sessions/{}/complete" },
+        { "service": "backend", "method": "POST", "path": "/api/drones/{}/flight-sessions/{}/abort" }
+      ]
+    }
+  ],
+  "expectedBackendOnlyOperations": [
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "reason": "Backend 직접 health check"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/events",
+      "reason": "AI 서버의 내부 이벤트 저장 입력"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/ai/events/{}/snapshot",
+      "reason": "AI 서버의 내부 스냅숏 업로드"
+    }
+  ],
+  "advisoryBackendOnlyOperations": [
+    {
+      "method": "GET",
+      "path": "/api/drones/{}/flight-sessions/{}",
+      "reason": "Backend 상세 GET에 대응하는 Frontend handler가 없음"
+    }
+  ],
+  "expectedAiOnlyOperations": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "reason": "AI 컨테이너 직접 health check"
+    },
+    {
+      "method": "POST",
+      "path": "/api/metrics/reset",
+      "reason": "운영 성능 도구 전용"
+    },
+    {
+      "method": "GET",
+      "path": "/api/models/status",
+      "reason": "운영 모델 점검 전용"
+    },
+    {
+      "method": "GET",
+      "path": "/api/streams/latest.jpg",
+      "reason": "직접 단일 프레임 점검용"
+    }
+  ],
+  "advisoryAiOnlyOperations": [
+    {
+      "method": "GET",
+      "path": "/api/streams/annotated.mjpeg",
+      "reason": "브라우저가 사용하지만 same-origin HTTPS proxy가 없음"
+    }
+  ],
+  "browserDirectUrlAdvisories": [
+    {
+      "pattern": "http://localhost:8000/api/streams/annotated.mjpeg",
+      "reason": "HTTPS·스마트폰에서 localhost 또는 mixed content 문제가 발생할 수 있음"
+    }
+  ],
+  "backendOpenapiAcceptedStatuses": [
+    200,
+    401,
+    403
+  ]
+}
