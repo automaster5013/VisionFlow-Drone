@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "visionflow",
-  "baselineCommit": "71d2cd3",
+  "baselineCommit": "cb59dba",
   "expectedCounts": {
     "backend": 70,
     "frontend": 69,
@@ -31,6 +31,60 @@
       "path": "/api/audit-logs/export",
       "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
       "reason": "감사 로그 내보내기는 인증된 역할만 허용"
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit-logs",
+      "allowedAccess": ["ROLE_ADMIN"],
+      "reason": "감사 행위와 운영자 활동 이력은 ADMIN 전용"
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit-logs/retention",
+      "allowedAccess": ["ROLE_ADMIN"],
+      "reason": "감사 로그 보존 정책은 ADMIN 전용"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/alerts",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "AI 경보 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/alerts/{}",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "AI 경보 상세는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/events",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "AI 추론 이벤트는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/events/{}/snapshot",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "AI 이벤트 스냅숏은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/incidents",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "Incident 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/incidents/{}",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "Incident 상세는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/incidents/{}/report",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "Incident 보고서는 인증된 역할만 조회"
     },
     {
       "method": "DELETE",

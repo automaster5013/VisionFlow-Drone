@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
   process.env.API_BASE_URL ??
@@ -26,13 +28,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const response = await fetch(
       `${BACKEND_API_URL}/api/ai/events/${encodeURIComponent(id)}/snapshot`,
-      {
+      await withBackendOperatorAuth({
         method: "GET",
         headers: {
           Accept: "image/jpeg",
         },
         cache: "no-store",
-      },
+      }),
     );
 
     const body = await response.arrayBuffer();

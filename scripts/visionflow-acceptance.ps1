@@ -606,6 +606,48 @@ function Test-RbacIdentity {
     Add-Result -Name $Name -Passed $passed -StatusCode $response.StatusCode -DurationMs $response.DurationMs -Message $message
 }
 
+function Test-RbacReadBoundary {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [AllowNull()]
+        [string]$Key,
+        [Parameter(Mandatory = $true)]
+        [int]$ExpectedStatus,
+        [AllowNull()]
+        [string]$ExpectedCode = $null
+    )
+
+    $response = Invoke-VisionFlowRequest -Method "GET" -Uri "$BackendUrl$Path" -Headers (Get-OperatorHeaders -Key $Key)
+    $json = ConvertFrom-ResponseJson -Body $response.Body
+    $actualCode = ""
+
+    if ($null -ne $json -and $null -ne $json.PSObject.Properties["code"]) {
+        $actualCode = [string]$json.code
+    }
+
+    $passed = $response.StatusCode -eq $ExpectedStatus
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedCode)) {
+        $passed = $passed -and $actualCode -eq $ExpectedCode
+    }
+
+    $message = if ($passed) {
+        if ($ExpectedStatus -eq 200) {
+            "Authenticated read access granted"
+        } else {
+            "HTTP $($response.StatusCode) $actualCode"
+        }
+    } elseif ($null -ne $response.Error) {
+        $response.Error
+    } else {
+        Get-ErrorMessage -Json $json -Fallback "Expected HTTP $ExpectedStatus $ExpectedCode, received HTTP $($response.StatusCode) $actualCode"
+    }
+
+    Add-Result -Name $Name -Passed $passed -StatusCode $response.StatusCode -DurationMs $response.DurationMs -Message $message
+}
+
 function Test-RbacBoundary {
     param(
         [Parameter(Mandatory = $true)]
@@ -1307,6 +1349,13 @@ try {
             Test-RbacIdentity -Name "RBAC viewer identity" -Key $ViewerKey -ExpectedRole "VIEWER"
             Test-RbacIdentity -Name "RBAC operator identity" -Key $OperatorKey -ExpectedRole "OPERATOR"
             Test-RbacIdentity -Name "RBAC admin identity" -Key $AdminKey -ExpectedRole "ADMIN"
+            Test-RbacReadBoundary -Name "RBAC missing key sensitive read denial" -Path "/api/incidents?limit=1" -Key $null -ExpectedStatus 401 -ExpectedCode "OPERATOR_AUTHENTICATION_REQUIRED"
+            Test-RbacReadBoundary -Name "RBAC viewer sensitive read access" -Path "/api/incidents?limit=1" -Key $ViewerKey -ExpectedStatus 200
+            Test-RbacReadBoundary -Name "RBAC operator sensitive read access" -Path "/api/ai/alerts?limit=1" -Key $OperatorKey -ExpectedStatus 200
+            Test-RbacReadBoundary -Name "RBAC missing key audit read denial" -Path "/api/audit-logs?size=1" -Key $null -ExpectedStatus 401 -ExpectedCode "OPERATOR_AUTHENTICATION_REQUIRED"
+            Test-RbacReadBoundary -Name "RBAC viewer audit read denial" -Path "/api/audit-logs?size=1" -Key $ViewerKey -ExpectedStatus 403 -ExpectedCode "OPERATOR_PERMISSION_DENIED"
+            Test-RbacReadBoundary -Name "RBAC operator audit read denial" -Path "/api/audit-logs?size=1" -Key $OperatorKey -ExpectedStatus 403 -ExpectedCode "OPERATOR_PERMISSION_DENIED"
+            Test-RbacReadBoundary -Name "RBAC admin audit read access" -Path "/api/audit-logs?size=1" -Key $AdminKey -ExpectedStatus 200
             Test-RbacBoundary -Name "RBAC missing key boundary" -Key $null -ExpectedStatus 401 -ExpectedCode "OPERATOR_AUTHENTICATION_REQUIRED"
             Test-RbacBoundary -Name "RBAC viewer admin denial" -Key $ViewerKey -ExpectedStatus 403 -ExpectedCode "OPERATOR_PERMISSION_DENIED"
             Test-RbacBoundary -Name "RBAC operator admin denial" -Key $OperatorKey -ExpectedStatus 403 -ExpectedCode "OPERATOR_PERMISSION_DENIED"

@@ -742,7 +742,10 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             (
                 "ADMIN·인증 전용 API의 보호 규칙이 기준과 다릅니다."
                 if protection_failures
-                else "세션 관리·감사 내보내기·삭제·정리 API의 보호 규칙이 유지됩니다."
+                else (
+                    "세션 관리·감사·Incident·AI 이벤트와 "
+                    "경보 API의 역할별 보호 규칙이 유지됩니다."
+                )
             ),
             failures=protection_failures,
         )

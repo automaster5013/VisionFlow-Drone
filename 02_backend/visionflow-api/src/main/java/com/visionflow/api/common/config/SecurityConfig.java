@@ -91,6 +91,19 @@ public class SecurityConfig {
                                     "/api/audit-logs/export"
                             )
                             .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
+                            .requestMatchers(
+                                    HttpMethod.GET,
+                                    "/api/audit-logs",
+                                    "/api/audit-logs/retention"
+                            )
+                            .hasRole("ADMIN")
+                            .requestMatchers(
+                                    HttpMethod.GET,
+                                    "/api/ai/alerts/**",
+                                    "/api/ai/events/**",
+                                    "/api/incidents/**"
+                            )
+                            .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
                             .requestMatchers(HttpMethod.GET, "/api/**")
                             .permitAll()
                             .requestMatchers(
