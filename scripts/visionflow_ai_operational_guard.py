@@ -222,6 +222,108 @@ def check_snapshot_consistency(root: Path) -> CheckResult:
     )
 
 
+def check_data_integrity(root: Path, report_dir: Path) -> CheckResult:
+    script = root / "scripts" / "visionflow_data_integrity_audit.py"
+    if not script.is_file():
+        return CheckResult(
+            "data_integrity",
+            "CRITICAL",
+            "읽기 전용 데이터 정합성 감사 스크립트가 없습니다.",
+            {"path": str(script)},
+        )
+
+    audit_dir = report_dir / "data-integrity"
+    completed = run(
+        [
+            sys.executable,
+            str(script),
+            "--root",
+            str(root),
+            "--output",
+            str(audit_dir),
+        ],
+        timeout=600,
+        check=False,
+    )
+    report_path = audit_dir / "visionflow-data-integrity-audit.json"
+    if not report_path.is_file():
+        return CheckResult(
+            "data_integrity",
+            "CRITICAL",
+            "데이터 정합성 감사 보고서가 생성되지 않았습니다.",
+            {
+                "exitCode": completed.returncode,
+                "stdout": completed.stdout.strip(),
+                "stderr": completed.stderr.strip(),
+            },
+        )
+
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return CheckResult(
+            "data_integrity",
+            "CRITICAL",
+            "데이터 정합성 감사 보고서를 해석하지 못했습니다.",
+            {"error": str(exc), "report": str(report_path)},
+        )
+
+    audit_status = str(report.get("status", "UNKNOWN"))
+    summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
+    safety = report.get("safety") if isinstance(report.get("safety"), dict) else {}
+    read_only = (
+        report.get("readOnly") is True
+        and safety.get("databaseMutation") is False
+        and safety.get("containerMutation") is False
+        and safety.get("serviceRestart") is False
+        and safety.get("credentialValueCollection") is False
+        and safety.get("snapshotFileContentRead") is False
+        and safety.get("writesOnlyReports") is True
+    )
+    expected_exit_codes = {
+        "DATA_INTEGRITY_HEALTHY": {0},
+        "DATA_INTEGRITY_ADVISORY": {0},
+        "DATA_INTEGRITY_BLOCKED": {1},
+    }
+    exit_code_valid = completed.returncode in expected_exit_codes.get(audit_status, set())
+    status_map = {
+        "DATA_INTEGRITY_HEALTHY": "HEALTHY",
+        "DATA_INTEGRITY_ADVISORY": "WARNING",
+        "DATA_INTEGRITY_BLOCKED": "CRITICAL",
+    }
+    status = status_map.get(audit_status, "CRITICAL")
+    if not read_only or not exit_code_valid:
+        status = "CRITICAL"
+
+    if not read_only:
+        message = "데이터 정합성 감사의 읽기 전용 안전 증명이 유효하지 않습니다."
+    elif not exit_code_valid:
+        message = "데이터 정합성 감사 상태와 종료 코드가 일치하지 않습니다."
+    elif status == "HEALTHY":
+        message = "39개 DB 관계와 5개 snapshot 규칙이 정상입니다."
+    elif status == "WARNING":
+        message = "데이터 정합성 감사에 검토할 advisory가 있습니다."
+    else:
+        message = "데이터 정합성 감사에서 차단 수준 문제가 발견됐습니다."
+
+    return CheckResult(
+        "data_integrity",
+        status,
+        message,
+        {
+            "auditStatus": audit_status,
+            "exitCode": completed.returncode,
+            "readOnlySafetyVerified": read_only,
+            "databaseRules": summary.get("databaseRules"),
+            "snapshotRules": summary.get("snapshotRules"),
+            "findings": summary.get("findings"),
+            "criticalRules": summary.get("criticalRules"),
+            "advisoryRules": summary.get("advisoryRules"),
+            "report": str(report_path),
+        },
+    )
+
+
 def check_disk(root: Path, warning_percent: float) -> CheckResult:
     usage = shutil.disk_usage(root)
     free_percent = usage.free / usage.total * 100
@@ -265,11 +367,15 @@ def overall(results: list[CheckResult]) -> str:
     return "CRITICAL" if "CRITICAL" in statuses else "WARNING" if "WARNING" in statuses else "HEALTHY"
 
 
-def write_report(root: Path, results: list[CheckResult]) -> Path:
+def create_report_dir(root: Path) -> Path:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     report_dir = root / "artifacts" / "operational-guard" / f"guard-{stamp}"
     report_dir.mkdir(parents=True, exist_ok=False)
-    payload = {"schemaVersion": 1, "generatedAt": datetime.now(timezone.utc).isoformat(), "status": overall(results), "checks": [asdict(result) for result in results]}
+    return report_dir
+
+
+def write_report(report_dir: Path, results: list[CheckResult]) -> Path:
+    payload = {"schemaVersion": 2, "generatedAt": datetime.now(timezone.utc).isoformat(), "status": overall(results), "checks": [asdict(result) for result in results]}
     path = report_dir / "operational-guard.json"
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     text = [f"VisionFlow AI Operational Guard: {payload['status']}", f"Generated: {payload['generatedAt']}", ""]
@@ -290,6 +396,7 @@ def main() -> int:
     if shutil.which("docker") is None:
         raise RuntimeError("docker 명령을 찾을 수 없습니다.")
     root = Path(args.root).resolve()
+    report_dir = create_report_dir(root)
     checks: list[tuple[str, Callable[[], CheckResult]]] = [
         ("containers", check_containers),
         ("ai_environment", check_ai_environment),
@@ -297,6 +404,7 @@ def main() -> int:
         ("event_gate", lambda: check_event_gate(root)),
         ("recent_growth", lambda: check_recent_growth(args.warning_events_10m, args.critical_events_10m)),
         ("snapshot_consistency", lambda: check_snapshot_consistency(root)),
+        ("data_integrity", lambda: check_data_integrity(root, report_dir)),
         ("disk", lambda: check_disk(root, args.disk_warning_percent)),
         ("cleanup_record", lambda: check_cleanup_record(root)),
     ]
@@ -310,7 +418,7 @@ def main() -> int:
             result = CheckResult(name, "CRITICAL", "점검 중 예외가 발생했습니다.", {"error": str(exc)})
         results.append(result)
         print(f"[{result.status}] {result.name}: {result.message}")
-    report = write_report(root, results)
+    report = write_report(report_dir, results)
     status = overall(results)
     print("")
     print(f"VisionFlow AI Operational Guard: {status}")
