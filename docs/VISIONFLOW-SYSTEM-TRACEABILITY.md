@@ -1,0 +1,225 @@
+# VisionFlow-Drone 시스템 API·DB 추적성 현행화
+
+> 기준일: 2026-08-02<br>
+> 기준 Git 커밋: `fc794e571c39fb3ea1cede7d5509816f483c5664`<br>
+> 범위: Next.js Frontend Proxy · Spring Backend · FastAPI AI · Flyway/MySQL · 런타임 저장소<br>
+> 상태: `SYSTEM_TRACEABILITY_HEALTHY`
+
+## 1. 목적
+
+이 문서는 기존 API 현행화 문서를 실제 영속 테이블과 기능 흐름으로 확장한다. 각 기능이 어느 API 계층을 통과하고 어떤 DB 테이블 또는 런타임 저장소를 사용하는지 고정하여 다음 변경에서 누락·고아 데이터·잘못된 상관관계를 조기에 찾는 것이 목적이다.
+
+자동 감사는 다음 항목을 소스만 읽어 검증한다.
+
+- Backend Controller 70 operations
+- Frontend Route Handler 70 operations
+- FastAPI AI 9 operations
+- Flyway 생성 테이블 16개
+- JPA Entity 15개와 Repository 15개
+- 물리 Foreign Key 12개
+- API operation과 테이블의 기능 흐름 coverage
+
+DB, 컨테이너, 서비스, 비밀값은 읽거나 변경하지 않는다.
+
+## 2. 전체 구조
+
+```mermaid
+flowchart LR
+    Browser[PC·스마트폰 브라우저]
+    Next[Next.js UI·same-origin Proxy]
+    Backend[Spring Backend Controller]
+    Service[Service·Automation]
+    MySQL[(MySQL · 16 tables)]
+    AI[FastAPI AI · YOLO]
+    Runtime[(Queue·FrameHub·Metrics)]
+    Files[(Snapshot·Evidence files)]
+
+    Browser -->|HTTPS·HttpOnly session| Next
+    Next -->|operator session header| Backend
+    Next -->|AI internal key| AI
+    AI --> Runtime
+    AI -->|AI event·snapshot metadata| Backend
+    AI --> Files
+    Backend --> Service
+    Service --> MySQL
+    Next -->|CSP report·evidence status| Files
+```
+
+주요 책임 경계는 다음과 같다.
+
+- 브라우저는 Backend·AI의 내부 인증값을 직접 보유하지 않는다.
+- Next.js가 브라우저 세션을 Backend 인증 헤더로 변환한다.
+- Next.js가 AI 내부 서비스 키를 서버 측에서만 추가한다.
+- Backend Service가 MySQL 영속화와 자동화 규칙을 담당한다.
+- AI 프레임·성능 상태는 프로세스 메모리에 있고, 이벤트 메타데이터는 Backend를 통해 DB에 저장된다.
+
+## 3. 기능 흐름 매트릭스
+
+operation 수는 하나의 API가 둘 이상의 기능 흐름에 참여할 경우 중복 집계될 수 있다.
+
+| 기능 흐름 | Backend | Frontend | AI | 핵심 DB·저장소 |
+| --- | ---: | ---: | ---: | --- |
+| 플랫폼 상태 | 1 | 0 | 1 | `system_status` 레거시 스키마, runtime health |
+| 운영자 인증·감사 | 10 | 10 | 0 | `audit_log`, 세션·로그인 제한 메모리, HttpOnly cookie |
+| 운영 대시보드 | 1 | 1 | 0 | `flight_session`, `ai_inference_event`, `audit_log` |
+| 통합 시연 시나리오 | 6 | 3 | 0 | `demo_scenario` 및 비행·AI·Incident 계열 |
+| 드론·텔레메트리 | 8 | 8 | 0 | `drone`, `drone_telemetry_history`, WebSocket publisher |
+| 비행 세션·재생 | 9 | 7 | 0 | `flight_session`, 텔레메트리, AI 이벤트·탐지 |
+| 비행 품질·신뢰성 | 6 | 6 | 0 | `flight_quality_assessment`, Incident, 작업지시 |
+| 지오펜스 | 6 | 6 | 0 | `drone_geofence`, `drone_geofence_event`, Incident |
+| AI 이벤트·경보 영속화 | 8 | 6 | 0 | `ai_inference_event`, `ai_detection`, `ai_alert`, snapshot files |
+| AI 영상 입력·추론 스트림 | 0 | 5 | 8 | BrowserUpload queue, FrameHub, Metrics, YOLO state |
+| Incident 관리 | 7 | 7 | 0 | `incident`, `incident_action_history`, 증적 context |
+| 정비·SLA·비행 허가 | 10 | 10 | 0 | `maintenance_work_order`, history, Incident, 품질 평가 |
+| Frontend 로컬 관측 | 0 | 3 | 0 | bounded CSP memory, mobile evidence files |
+
+## 4. 핵심 E2E 데이터 흐름
+
+### 4.1 스마트폰 가상 비행과 AI 추론
+
+1. 브라우저가 `/api/drones/{id}/flight-sessions`를 통해 세션을 시작한다.
+2. Backend가 `flight_session`을 만들고 `drone.active_session_id`를 연결한다.
+3. 센서 입력은 `drone`의 현재 상태와 `drone_telemetry_history` 이력으로 저장된다.
+4. 카메라 프레임은 Next.js `/api/ai/ingest/frame`이 AI `/api/ingest/frame`으로 전달한다.
+5. AI는 BrowserUpload queue에서 프레임을 받아 YOLO 추론 후 FrameHub에 주석 영상을 게시한다.
+6. 이벤트 게이트를 통과한 결과는 Backend `/api/ai/events`로 전달되어 `ai_inference_event`와 `ai_detection`에 저장된다.
+7. snapshot 파일은 파일시스템에 저장되고 경로·크기·해시는 `ai_inference_event`에 기록된다.
+8. 경보가 생성되면 `ai_alert`, 필요 시 `incident`와 `incident_action_history`로 이어진다.
+
+### 4.2 비행 품질에서 정비 작업까지
+
+```mermaid
+flowchart LR
+    Session[flight_session]
+    Telemetry[drone_telemetry_history]
+    Event[ai_inference_event]
+    Quality[flight_quality_assessment]
+    Incident[incident]
+    Work[maintenance_work_order]
+    History[maintenance_work_order_history]
+
+    Session --> Quality
+    Telemetry --> Quality
+    Event --> Quality
+    Quality --> Incident
+    Incident --> Work
+    Work --> History
+```
+
+- 품질 평가는 세션·텔레메트리·AI 이벤트를 집계한다.
+- 신뢰도 기준을 넘지 못하면 Incident 자동화가 실행될 수 있다.
+- Incident는 정비 작업지시와 비행 허가 상태의 근거가 된다.
+- 작업 상태 변경은 별도 history에 누적된다.
+
+### 4.3 운영자 인증과 감사
+
+- VIEWER·OPERATOR·ADMIN 원본 KEY는 환경 설정에서만 사용한다.
+- 성공한 로그인은 만료형 Backend 세션과 Secure·HttpOnly cookie로 전환된다.
+- 세션 registry와 로그인 시도 제한은 프로세스 메모리이며 DB 테이블이 아니다.
+- 보안상 중요한 조회·변경은 `audit_log`에 기록된다.
+- 강제 세션 종료와 현재 세션 보호는 Backend security API에서 수행한다.
+
+## 5. DB 테이블·Entity·Repository 현황
+
+| Table | Flyway | Entity | Repository | 분류 |
+| --- | --- | --- | --- | --- |
+| `system_status` | V1 | 없음 | 없음 | 레거시 스키마 |
+| `drone` | V2 | `Drone` | `DroneRepository` | Core |
+| `drone_telemetry_history` | V3 | `DroneTelemetryHistory` | `DroneTelemetryHistoryRepository` | Core |
+| `drone_geofence` | V4 | `DroneGeofence` | `DroneGeofenceRepository` | Core |
+| `drone_geofence_event` | V4 | `DroneGeofenceEvent` | `DroneGeofenceEventRepository` | Core |
+| `ai_inference_event` | V5 | `AiInferenceEvent` | `AiInferenceEventRepository` | Core |
+| `ai_detection` | V5 | `AiDetection` | `AiDetectionRepository` | Core |
+| `flight_session` | V9 | `FlightSession` | `FlightSessionRepository` | Core |
+| `ai_alert` | V10 | `AiAlert` | `AiAlertRepository` | Core |
+| `incident` | V11 | `Incident` | `IncidentRepository` | Core |
+| `incident_action_history` | V11 | `IncidentActionHistory` | `IncidentActionHistoryRepository` | History |
+| `demo_scenario` | V14 | `DemoScenario` | `DemoScenarioRepository` | Demo |
+| `audit_log` | V15 | `AuditLog` | `AuditLogRepository` | Audit |
+| `flight_quality_assessment` | V16 | `FlightQualityAssessment` | `FlightQualityAssessmentRepository` | Core |
+| `maintenance_work_order` | V19 | `MaintenanceWorkOrder` | `MaintenanceWorkOrderRepository` | Core |
+| `maintenance_work_order_history` | V19 | `MaintenanceWorkOrderHistory` | `MaintenanceWorkOrderHistoryRepository` | History |
+
+`system_status`는 Flyway V1에 존재하지만 현재 HealthService는 DB를 조회하지 않는다. 삭제·재사용 여부는 별도 migration 결정으로 처리하며 현 단계에서는 자동 변경하지 않는다.
+
+## 6. 물리 FK 12개
+
+| From | To | 삭제 의미 |
+| --- | --- | --- |
+| `drone_telemetry_history.drone_id` | `drone.id` | 기체 삭제 연계 |
+| `drone_geofence_event.geofence_id` | `drone_geofence.id` | 지오펜스 삭제 연계 |
+| `ai_detection.event_id` | `ai_inference_event.id` | 이벤트 삭제 시 탐지 CASCADE |
+| `flight_session.drone_id` | `drone.id` | 기체 기준 세션 |
+| `ai_alert.event_id` | `ai_inference_event.id` | 이벤트 삭제 시 경보 CASCADE |
+| `incident_action_history.incident_id` | `incident.id` | Incident 삭제 시 이력 CASCADE |
+| `flight_quality_assessment.session_id` | `flight_session.session_id` | 세션 삭제 시 평가 CASCADE |
+| `flight_quality_assessment.drone_id` | `drone.id` | 기체 기준 평가 |
+| `maintenance_work_order.incident_id` | `incident.id` | Incident 삭제 시 작업 CASCADE |
+| `maintenance_work_order.drone_id` | `drone.id` | 기체 기준 작업 |
+| `maintenance_work_order.source_assessment_id` | `flight_quality_assessment.id` | 평가 삭제 시 참조 NULL |
+| `maintenance_work_order_history.work_order_id` | `maintenance_work_order.id` | 작업 삭제 시 이력 CASCADE |
+
+## 7. 소프트 상관관계와 정합성 위험
+
+다음 연결은 물리 FK만으로 완전히 보장되지 않는다.
+
+| 상관키 | 범위 | 위험·검증 기준 |
+| --- | --- | --- |
+| `session_id` | 세션·텔레메트리·AI 이벤트·경보·Incident·Demo·정비 | 문자열 UUID 연결이므로 고아 값과 세션 소유 기체 불일치를 정례 검사 |
+| `drone_id` | AI·경보·Incident·Demo 등 | 일부 테이블은 FK 없이 서비스 검증에 의존하므로 존재하지 않는 기체 ID 검사 |
+| `source_type + source_id` | Incident 다형 소스 | source type별 대상 테이블 존재 여부와 UNIQUE 계약 검사 |
+| `snapshot_path` | DB와 파일시스템 | DB 참조·실제 JPG 수·크기·SHA-256 일치 검사 |
+
+현재 운영 가드는 snapshot 정합성을 검사하지만 모든 소프트 상관관계를 하나의 FK 감사로 통합하지는 않는다. 다음 데이터 품질 단계에서 이 네 범위를 읽기 전용 정합성 검사로 정례화한다.
+
+## 8. 런타임 전용 상태
+
+다음 상태는 MySQL에 영속되지 않으므로 컨테이너 재시작 시 초기화되는 것이 정상이다.
+
+- 운영자 세션 registry와 로그인 실패 제한
+- AI BrowserUpload queue
+- AI AnnotatedFrameHub 최신 프레임과 연결 수
+- AI 성능 metric 누적값
+- Frontend CSP report bounded memory
+
+반면 다음 파일 기반 상태는 DB와 함께 검증해야 한다.
+
+- AI event snapshot JPG
+- 모바일 HTTPS 인증서와 metadata
+- 모바일 증적 보고서
+- 감사·계약·보안·운영 가드 산출물
+
+## 9. 자동 감사 실행
+
+저장소 루트에서 실행한다.
+
+```bat
+scripts\run-visionflow-system-traceability-audit.bat
+```
+
+정상 기준은 다음과 같다.
+
+```text
+VisionFlow system traceability audit: SYSTEM_TRACEABILITY_HEALTHY
+Operations: Backend=70, Frontend=70, AI=9
+Data model: Tables=16, Entities=15, Repositories=15, ForeignKeys=12
+```
+
+보고서는 `artifacts/system-traceability-audit` 아래에 JSON·HTML·Markdown으로 생성된다.
+
+## 10. 변경 관리 원칙
+
+- API를 추가하거나 제거하면 기능 흐름과 operation 기준 수를 함께 갱신한다.
+- 테이블·Entity·Repository·FK 변경은 Flyway migration과 기준선을 같은 커밋에서 검토한다.
+- DB가 없는 런타임 상태를 억지로 테이블에 연결하지 않는다.
+- 소프트 상관관계를 물리 FK로 전환할 때 기존 데이터 정리·백업·복구 계획을 먼저 마련한다.
+- 기준선 갱신은 감사 실패를 숨기는 용도로 사용하지 않는다.
+
+## 11. 다음 데이터 품질 작업
+
+1. `session_id`, `drone_id`, `source_type + source_id`의 고아·불일치 읽기 전용 SQL 감사
+2. API별 생성량 상한과 AI alert → Incident 중복 방지 회귀 테스트
+3. 테스트·발표·실운영 데이터 태그 설계
+4. `system_status` 레거시 테이블의 유지·제거 결정
+
+이 문서는 코드 구조가 아니라 실제 API·DB·런타임 책임 경계를 기준으로 관리한다.

@@ -1,0 +1,639 @@
+from __future__ import annotations
+
+import argparse
+import html
+import json
+import re
+import sys
+from collections import defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from visionflow_ai_openapi_snapshot import build_openapi, collect_routes
+from visionflow_api_contract_audit import (
+    atomic_write_text,
+    configure_console,
+    current_git_commit,
+    parse_backend_operations,
+    parse_frontend_operations,
+    parse_openapi_operations,
+)
+
+
+CREATE_TABLE_PATTERN = re.compile(
+    r"\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([A-Za-z0-9_]+)`?",
+    re.IGNORECASE,
+)
+FOREIGN_KEY_PATTERN = re.compile(
+    r"(?:CONSTRAINT\s+`?[A-Za-z0-9_]+`?\s+)?"
+    r"FOREIGN\s+KEY\s*\(\s*`?([A-Za-z0-9_]+)`?\s*\)\s*"
+    r"REFERENCES\s+`?([A-Za-z0-9_]+)`?\s*"
+    r"\(\s*`?([A-Za-z0-9_]+)`?\s*\)",
+    re.IGNORECASE | re.DOTALL,
+)
+CLASS_PATTERN = re.compile(r"(?:public\s+)?class\s+([A-Za-z0-9_]+)")
+REPOSITORY_PATTERN = re.compile(
+    r"(?:public\s+)?interface\s+([A-Za-z0-9_]+)\s+extends\s+"
+    r"JpaRepository\s*<\s*([A-Za-z0-9_]+)\s*,"
+)
+
+
+def read_object(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"JSON 최상위 값이 객체가 아닙니다: {path}")
+    return value
+
+
+def migration_sort_key(path: Path) -> tuple[int, str]:
+    match = re.match(r"V(\d+)__", path.name)
+    return (int(match.group(1)) if match else 999999, path.name)
+
+
+def parse_migrations(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
+    migration_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "resources"
+        / "db"
+        / "migration"
+    )
+    files = sorted(migration_root.glob("V*.sql"), key=migration_sort_key)
+    if not files:
+        raise FileNotFoundError(f"Flyway migration을 찾지 못했습니다: {migration_root}")
+
+    table_sources: dict[str, str] = {}
+    foreign_keys: list[dict[str, str]] = []
+    for path in files:
+        text = path.read_text(encoding="utf-8")
+        creates = list(CREATE_TABLE_PATTERN.finditer(text))
+        for create in creates:
+            name = create.group(1).lower()
+            if name in table_sources:
+                raise ValueError(f"중복 CREATE TABLE: {name}")
+            table_sources[name] = path.name
+
+        for foreign_key in FOREIGN_KEY_PATTERN.finditer(text):
+            preceding = [item for item in creates if item.start() < foreign_key.start()]
+            if not preceding:
+                raise ValueError(f"FK의 원본 테이블을 찾지 못했습니다: {path.name}")
+            source_table = preceding[-1].group(1).lower()
+            foreign_keys.append(
+                {
+                    "fromTable": source_table,
+                    "fromColumn": foreign_key.group(1).lower(),
+                    "toTable": foreign_key.group(2).lower(),
+                    "toColumn": foreign_key.group(3).lower(),
+                    "source": path.name,
+                }
+            )
+    return table_sources, sorted(
+        foreign_keys,
+        key=lambda item: (
+            item["fromTable"],
+            item["fromColumn"],
+            item["toTable"],
+            item["toColumn"],
+        ),
+    )
+
+
+def parse_entities(root: Path) -> dict[str, dict[str, str]]:
+    java_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java"
+    )
+    entities: dict[str, dict[str, str]] = {}
+    for path in sorted(java_root.rglob("*.java")):
+        text = path.read_text(encoding="utf-8")
+        entity_at = text.find("@Entity")
+        table_at = text.find("@Table", entity_at + 1)
+        class_match = CLASS_PATTERN.search(text, entity_at + 1)
+        if entity_at < 0:
+            continue
+        if table_at < 0 or class_match is None:
+            raise ValueError(f"@Entity의 @Table 또는 class를 해석하지 못했습니다: {path}")
+        table_section = text[table_at : class_match.start()]
+        table_match = re.search(r'\bname\s*=\s*"([^"]+)"', table_section)
+        if table_match is None:
+            raise ValueError(f"@Table name을 해석하지 못했습니다: {path}")
+        table = table_match.group(1).lower()
+        if table in entities:
+            raise ValueError(f"중복 Entity table mapping: {table}")
+        entities[table] = {
+            "entity": class_match.group(1),
+            "source": str(path.relative_to(root)).replace("\\", "/"),
+        }
+    return entities
+
+
+def parse_repositories(root: Path) -> dict[str, dict[str, str]]:
+    java_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java"
+    )
+    repositories: dict[str, dict[str, str]] = {}
+    for path in sorted(java_root.rglob("*Repository.java")):
+        text = path.read_text(encoding="utf-8")
+        match = REPOSITORY_PATTERN.search(text)
+        if match is None:
+            raise ValueError(f"JpaRepository 선언을 해석하지 못했습니다: {path}")
+        repository, entity = match.groups()
+        if entity in repositories:
+            raise ValueError(f"Entity의 Repository가 중복됩니다: {entity}")
+        repositories[entity] = {
+            "repository": repository,
+            "source": str(path.relative_to(root)).replace("\\", "/"),
+        }
+    return repositories
+
+
+def operation_text(operation: Any) -> str:
+    return f"{operation.method} {operation.path}"
+
+
+def check(status: str, key: str, title: str, detail: str, **extra: Any) -> dict[str, Any]:
+    return {"key": key, "title": title, "status": status, "detail": detail, **extra}
+
+
+def foreign_key_key(value: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(value.get("fromTable", "")),
+        str(value.get("fromColumn", "")),
+        str(value.get("toTable", "")),
+        str(value.get("toColumn", "")),
+    )
+
+
+def assign_flows(
+    operations: dict[str, list[Any]],
+    flows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, list[str]], list[dict[str, str]]]:
+    assignments: dict[str, list[str]] = defaultdict(list)
+    unused_patterns: list[dict[str, str]] = []
+    flow_rows: list[dict[str, Any]] = []
+    layer_fields = {
+        "backend": "backendPatterns",
+        "frontend": "frontendPatterns",
+        "ai": "aiPatterns",
+    }
+    for flow in flows:
+        key = str(flow.get("key", ""))
+        if not key:
+            raise ValueError("flow key가 비어 있습니다.")
+        row = {
+            "key": key,
+            "title": str(flow.get("title", key)),
+            "description": str(flow.get("description", "")),
+            "tables": [str(value) for value in flow.get("tables", [])],
+            "runtimeStores": [str(value) for value in flow.get("runtimeStores", [])],
+            "operations": {},
+        }
+        for layer, field in layer_fields.items():
+            matched: set[str] = set()
+            patterns = flow.get(field, [])
+            if not isinstance(patterns, list):
+                raise ValueError(f"{key}.{field} 값이 배열이 아닙니다.")
+            for raw_pattern in patterns:
+                pattern = re.compile(str(raw_pattern))
+                pattern_matches = {
+                    operation_text(item)
+                    for item in operations[layer]
+                    if pattern.fullmatch(operation_text(item))
+                }
+                if not pattern_matches:
+                    unused_patterns.append(
+                        {"flow": key, "layer": layer, "pattern": str(raw_pattern)}
+                    )
+                matched.update(pattern_matches)
+            row["operations"][layer] = sorted(matched)
+            for operation in matched:
+                assignments[f"{layer}:{operation}"].append(key)
+        flow_rows.append(row)
+    return flow_rows, dict(assignments), unused_patterns
+
+
+def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
+    root = args.root.resolve()
+    baseline_path = args.baseline.resolve()
+    baseline = read_object(baseline_path)
+
+    backend, backend_issues = parse_backend_operations(root)
+    frontend = parse_frontend_operations(root)
+    ai_source = root / "03_ai-server" / "visionflow-ai" / "app" / "streaming.py"
+    ai_document = build_openapi(collect_routes(ai_source), ai_source.relative_to(root))
+    ai = parse_openapi_operations(ai_document, str(ai_source.relative_to(root)))
+    operations = {"backend": backend, "frontend": frontend, "ai": ai}
+
+    tables, foreign_keys = parse_migrations(root)
+    entities = parse_entities(root)
+    repositories = parse_repositories(root)
+    expected_counts = baseline.get("expectedCounts", {})
+    actual_counts = {
+        "backend": len(backend),
+        "frontend": len(frontend),
+        "ai": len(ai),
+        "tables": len(tables),
+        "entities": len(entities),
+        "repositories": len(repositories),
+        "foreignKeys": len(foreign_keys),
+    }
+
+    checks: list[dict[str, Any]] = []
+    checks.append(
+        check(
+            "BLOCKED" if backend_issues else "PASS",
+            "source-inventory",
+            "API 소스 inventory",
+            "Backend·Frontend·AI operation을 정상 해석했습니다."
+            if not backend_issues
+            else "Backend Controller 해석 문제가 있습니다.",
+            issues=backend_issues,
+        )
+    )
+    count_drift = {
+        key: {"expected": int(expected_counts.get(key, -1)), "actual": actual}
+        for key, actual in actual_counts.items()
+        if actual != int(expected_counts.get(key, -1))
+    }
+    checks.append(
+        check(
+            "BLOCKED" if count_drift else "PASS",
+            "baseline-counts",
+            "기준 수량",
+            "API·테이블·Entity·Repository·FK 수가 기준과 일치합니다."
+            if not count_drift
+            else "기준 수량과 다른 항목이 있습니다.",
+            drift=count_drift,
+        )
+    )
+
+    expected_table_rows = baseline.get("tables", [])
+    if not isinstance(expected_table_rows, list):
+        raise ValueError("baseline tables 값이 배열이 아닙니다.")
+    expected_tables = {str(item["name"]): item for item in expected_table_rows}
+    missing_tables = sorted(set(expected_tables) - set(tables))
+    unexpected_tables = sorted(set(tables) - set(expected_tables))
+    migration_drift = [
+        {
+            "table": name,
+            "expected": str(expected_tables[name].get("createdIn", "")),
+            "actual": tables[name],
+        }
+        for name in sorted(set(tables) & set(expected_tables))
+        if tables[name] != str(expected_tables[name].get("createdIn", ""))
+    ]
+    checks.append(
+        check(
+            "BLOCKED" if missing_tables or unexpected_tables or migration_drift else "PASS",
+            "migration-tables",
+            "Flyway 테이블",
+            "Flyway CREATE TABLE 기준이 일치합니다."
+            if not missing_tables and not unexpected_tables and not migration_drift
+            else "Flyway 테이블 기준에 드리프트가 있습니다.",
+            missing=missing_tables,
+            unexpected=unexpected_tables,
+            migrationDrift=migration_drift,
+        )
+    )
+
+    mapping_drift: list[dict[str, Any]] = []
+    table_matrix: list[dict[str, Any]] = []
+    for name, expected in expected_tables.items():
+        entity_row = entities.get(name)
+        actual_entity = entity_row.get("entity") if entity_row else None
+        repository_row = repositories.get(str(actual_entity)) if actual_entity else None
+        actual_repository = repository_row.get("repository") if repository_row else None
+        expected_entity = expected.get("entity")
+        expected_repository = expected.get("repository")
+        if actual_entity != expected_entity or actual_repository != expected_repository:
+            mapping_drift.append(
+                {
+                    "table": name,
+                    "expectedEntity": expected_entity,
+                    "actualEntity": actual_entity,
+                    "expectedRepository": expected_repository,
+                    "actualRepository": actual_repository,
+                }
+            )
+        table_matrix.append(
+            {
+                "table": name,
+                "createdIn": tables.get(name),
+                "entity": actual_entity,
+                "repository": actual_repository,
+                "classification": expected.get("classification"),
+                "note": expected.get("note", ""),
+            }
+        )
+    entity_unexpected = sorted(set(entities) - set(expected_tables))
+    mapped_entities = {str(row.get("entity")) for row in expected_table_rows if row.get("entity")}
+    repository_unexpected = sorted(set(repositories) - mapped_entities)
+    checks.append(
+        check(
+            "BLOCKED" if mapping_drift or entity_unexpected or repository_unexpected else "PASS",
+            "entity-repository-mapping",
+            "Entity·Repository 매핑",
+            "15개 영속 모델의 Entity·Repository 매핑이 일치합니다."
+            if not mapping_drift and not entity_unexpected and not repository_unexpected
+            else "Entity·Repository 매핑에 드리프트가 있습니다.",
+            drift=mapping_drift,
+            unexpectedEntityTables=entity_unexpected,
+            unexpectedRepositoryEntities=repository_unexpected,
+        )
+    )
+
+    expected_fk_rows = baseline.get("foreignKeys", [])
+    if not isinstance(expected_fk_rows, list):
+        raise ValueError("baseline foreignKeys 값이 배열이 아닙니다.")
+    expected_fk = {foreign_key_key(item) for item in expected_fk_rows}
+    actual_fk = {foreign_key_key(item) for item in foreign_keys}
+    missing_fk = sorted(expected_fk - actual_fk)
+    unexpected_fk = sorted(actual_fk - expected_fk)
+    checks.append(
+        check(
+            "BLOCKED" if missing_fk or unexpected_fk else "PASS",
+            "foreign-key-contract",
+            "물리 FK 계약",
+            "Flyway 물리 FK 12개가 기준과 일치합니다."
+            if not missing_fk and not unexpected_fk
+            else "물리 FK 기준에 드리프트가 있습니다.",
+            missing=[".".join(value) for value in missing_fk],
+            unexpected=[".".join(value) for value in unexpected_fk],
+        )
+    )
+
+    flows = baseline.get("flows", [])
+    if not isinstance(flows, list):
+        raise ValueError("baseline flows 값이 배열이 아닙니다.")
+    flow_rows, assignments, unused_patterns = assign_flows(operations, flows)
+    unmapped: dict[str, list[str]] = {}
+    for layer, rows in operations.items():
+        unmapped[layer] = sorted(
+            operation_text(item)
+            for item in rows
+            if f"{layer}:{operation_text(item)}" not in assignments
+        )
+    checks.append(
+        check(
+            "BLOCKED" if any(unmapped.values()) or unused_patterns else "PASS",
+            "flow-operation-coverage",
+            "기능 흐름별 API coverage",
+            "Backend 70·Frontend 70·AI 9 operation이 기능 흐름에 연결됐습니다."
+            if not any(unmapped.values()) and not unused_patterns
+            else "기능 흐름에 연결되지 않은 operation 또는 사용되지 않은 패턴이 있습니다.",
+            unmapped=unmapped,
+            unusedPatterns=unused_patterns,
+        )
+    )
+
+    assigned_tables = {
+        table
+        for flow in flow_rows
+        for table in flow.get("tables", [])
+    }
+    missing_table_coverage = sorted(set(tables) - assigned_tables)
+    unknown_flow_tables = sorted(assigned_tables - set(tables))
+    checks.append(
+        check(
+            "BLOCKED" if missing_table_coverage or unknown_flow_tables else "PASS",
+            "flow-table-coverage",
+            "기능 흐름별 DB coverage",
+            "16개 테이블이 하나 이상의 기능 흐름에 연결됐습니다."
+            if not missing_table_coverage and not unknown_flow_tables
+            else "기능 흐름과 테이블 연결에 누락 또는 잘못된 이름이 있습니다.",
+            missing=missing_table_coverage,
+            unknown=unknown_flow_tables,
+        )
+    )
+
+    status = (
+        "SYSTEM_TRACEABILITY_BLOCKED"
+        if any(item["status"] == "BLOCKED" for item in checks)
+        else "SYSTEM_TRACEABILITY_HEALTHY"
+    )
+    generated_at = datetime.now(timezone.utc)
+    output_dir = args.output
+    if output_dir is None:
+        output_dir = (
+            root
+            / "artifacts"
+            / "system-traceability-audit"
+            / generated_at.strftime("audit-%Y%m%dT%H%M%SZ")
+        )
+    elif not output_dir.is_absolute():
+        output_dir = root / output_dir
+    output_dir = output_dir.resolve()
+
+    report = {
+        "schemaVersion": 1,
+        "project": "visionflow",
+        "scope": "SYSTEM_API_DB_TRACEABILITY",
+        "generatedAt": generated_at.isoformat(),
+        "status": status,
+        "readOnly": True,
+        "git": {
+            "commit": current_git_commit(root),
+            "baselineCommit": baseline.get("baselineCommit"),
+        },
+        "summary": {
+            "counts": actual_counts,
+            "flows": len(flow_rows),
+            "softCorrelations": len(baseline.get("softCorrelations", [])),
+        },
+        "checks": checks,
+        "tables": table_matrix,
+        "foreignKeys": foreign_keys,
+        "softCorrelations": baseline.get("softCorrelations", []),
+        "flows": flow_rows,
+        "assignments": assignments,
+        "safety": {
+            "databaseMutation": False,
+            "containerMutation": False,
+            "serviceRestart": False,
+            "secretValuesCollected": False,
+            "writesOnlyReports": True,
+        },
+    }
+    return report, output_dir
+
+
+def markdown_table(headers: list[str], rows: list[list[Any]]) -> str:
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+    ]
+    for row in rows:
+        values = [str(value if value not in (None, "") else "—").replace("|", "\\|") for value in row]
+        lines.append("| " + " | ".join(values) + " |")
+    return "\n".join(lines)
+
+
+def render_markdown(report: dict[str, Any]) -> str:
+    counts = report["summary"]["counts"]
+    checks = markdown_table(
+        ["상태", "검사", "설명"],
+        [[row["status"], row["title"], row["detail"]] for row in report["checks"]],
+    )
+    tables = markdown_table(
+        ["Table", "Migration", "Entity", "Repository", "분류", "비고"],
+        [
+            [row["table"], row["createdIn"], row["entity"], row["repository"], row["classification"], row["note"]]
+            for row in report["tables"]
+        ],
+    )
+    foreign_keys = markdown_table(
+        ["From", "To", "Migration"],
+        [
+            [f"{row['fromTable']}.{row['fromColumn']}", f"{row['toTable']}.{row['toColumn']}", row["source"]]
+            for row in report["foreignKeys"]
+        ],
+    )
+    flow_rows = []
+    for flow in report["flows"]:
+        operation_counts = flow["operations"]
+        flow_rows.append(
+            [
+                flow["title"],
+                len(operation_counts["backend"]),
+                len(operation_counts["frontend"]),
+                len(operation_counts["ai"]),
+                ", ".join(flow["tables"]) or "—",
+                ", ".join(flow["runtimeStores"]) or "—",
+            ]
+        )
+    flows = markdown_table(
+        ["기능 흐름", "Backend", "Frontend", "AI", "DB tables", "런타임 저장소"],
+        flow_rows,
+    )
+    soft = markdown_table(
+        ["상관키", "관련 테이블", "정합성 위험"],
+        [
+            [row["key"], ", ".join(row["tables"]), row["risk"]]
+            for row in report["softCorrelations"]
+        ],
+    )
+    return f"""# VisionFlow 시스템 API·DB 추적성 감사
+
+- 생성 시각: `{report['generatedAt']}`
+- 상태: **{report['status']}**
+- API: Backend {counts['backend']} · Frontend {counts['frontend']} · AI {counts['ai']}
+- 데이터: Table {counts['tables']} · Entity {counts['entities']} · Repository {counts['repositories']} · FK {counts['foreignKeys']}
+
+## 검사 결과
+
+{checks}
+
+## 기능 흐름 매트릭스
+
+{flows}
+
+## DB 테이블 매트릭스
+
+{tables}
+
+## 물리 FK
+
+{foreign_keys}
+
+## 소프트 상관관계
+
+{soft}
+
+> 읽기 전용 감사입니다. DB·컨테이너·서비스·비밀값을 변경하거나 수집하지 않습니다.
+"""
+
+
+def render_html(report: dict[str, Any]) -> str:
+    markdown = render_markdown(report)
+    rows = "".join(
+        "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(
+            html.escape(item["status"]),
+            html.escape(item["title"]),
+            html.escape(item["detail"]),
+        )
+        for item in report["checks"]
+    )
+    flow_rows = "".join(
+        "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(
+            html.escape(flow["title"]),
+            len(flow["operations"]["backend"]),
+            len(flow["operations"]["frontend"]),
+            len(flow["operations"]["ai"]),
+            html.escape(", ".join(flow["tables"]) or "—"),
+        )
+        for flow in report["flows"]
+    )
+    return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>VisionFlow System Traceability</title>
+<style>body{{font-family:Segoe UI,Arial,sans-serif;background:#f4f7fb;color:#172033;margin:0}}main{{max-width:1280px;margin:auto;padding:28px}}section{{background:white;border:1px solid #dbe3ef;border-radius:14px;padding:20px;margin-top:18px;overflow:auto}}.hero{{background:#071126;color:white}}table{{border-collapse:collapse;width:100%}}th,td{{border-bottom:1px solid #e5eaf2;padding:8px;text-align:left;vertical-align:top}}th{{background:#f8fafc}}code{{white-space:pre-wrap}}</style></head>
+<body><main><section class="hero"><h1>VisionFlow 시스템 API·DB 추적성</h1><p>{html.escape(report['generatedAt'])}</p><strong>{html.escape(report['status'])}</strong></section>
+<section><h2>검사 결과</h2><table><thead><tr><th>상태</th><th>검사</th><th>설명</th></tr></thead><tbody>{rows}</tbody></table></section>
+<section><h2>기능 흐름</h2><table><thead><tr><th>흐름</th><th>Backend</th><th>Frontend</th><th>AI</th><th>DB tables</th></tr></thead><tbody>{flow_rows}</tbody></table></section>
+<section><h2>Markdown 원문</h2><pre><code>{html.escape(markdown)}</code></pre></section></main></body></html>"""
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    script_dir = Path(__file__).resolve().parent
+    parser = argparse.ArgumentParser(
+        description="VisionFlow Backend·Frontend·AI·DB 읽기 전용 시스템 추적성 감사"
+    )
+    parser.add_argument("--root", type=Path, default=script_dir.parent)
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        default=script_dir / "visionflow_system_traceability_baseline.json",
+    )
+    parser.add_argument("--output", type=Path)
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    configure_console()
+    args = parse_args(argv)
+    try:
+        report, output_dir = audit(args)
+        json_path = output_dir / "visionflow-system-traceability-audit.json"
+        markdown_path = output_dir / "visionflow-system-traceability-matrix.md"
+        html_path = output_dir / "visionflow-system-traceability-audit.html"
+        atomic_write_text(json_path, json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+        atomic_write_text(markdown_path, render_markdown(report))
+        atomic_write_text(html_path, render_html(report))
+    except (OSError, SyntaxError, ValueError, json.JSONDecodeError, re.error) as error:
+        print(f"[FAIL] 시스템 추적성 감사를 실행하지 못했습니다: {error}", file=sys.stderr)
+        return 2
+
+    print(f"VisionFlow system traceability audit: {report['status']}")
+    counts = report["summary"]["counts"]
+    print(
+        "Operations: "
+        f"Backend={counts['backend']}, Frontend={counts['frontend']}, AI={counts['ai']}"
+    )
+    print(
+        "Data model: "
+        f"Tables={counts['tables']}, Entities={counts['entities']}, "
+        f"Repositories={counts['repositories']}, ForeignKeys={counts['foreignKeys']}"
+    )
+    for item in report["checks"]:
+        print(f"[{item['status']}] {item['key']}: {item['detail']}")
+    print(f"JSON report: {json_path}")
+    print(f"HTML report: {html_path}")
+    print(f"Markdown matrix: {markdown_path}")
+    print("Safety: read-only; reports only; no runtime or secret access")
+    return 1 if report["status"] == "SYSTEM_TRACEABILITY_BLOCKED" else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
