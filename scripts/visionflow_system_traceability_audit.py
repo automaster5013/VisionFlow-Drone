@@ -649,6 +649,135 @@ def demo_scenario_lifecycle_concurrency_policy_drift(
     return drift
 
 
+def flight_quality_assessment_concurrency_policy_drift(
+    root: Path,
+) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+    )
+    paths = {
+        "session-repository": backend_root
+        / "java/com/visionflow/api/flight/repository"
+        / "FlightSessionRepository.java",
+        "assessment-service": backend_root
+        / "java/com/visionflow/api/flight/quality/service"
+        / "FlightQualityAssessmentService.java",
+        "close-automation": backend_root
+        / "java/com/visionflow/api/flight/quality/service"
+        / "FlightQualityAssessmentAutomationService.java",
+        "backfill": backend_root
+        / "java/com/visionflow/api/flight/quality/service"
+        / "FlightQualityBackfillService.java",
+        "migration": backend_root
+        / "resources/db/migration"
+        / "V16__create_flight_quality_assessment.sql",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "session-repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findBySessionIdAndDroneIdForUpdate(",
+        ],
+        "assessment-service": [
+            "requireSessionForUpdate(",
+            ".findBySessionIdAndDroneIdForUpdate(sessionId, droneId)",
+            ".findBySessionIdAndDroneId(sessionId, droneId)",
+            ".findBySessionIdAndRuleVersion(",
+            "assessmentRepository.saveAndFlush(assessment)",
+        ],
+        "close-automation": [
+            "assessmentService.recalculate(",
+        ],
+        "backfill": [
+            "assessmentService.recalculate(droneId, sessionId)",
+        ],
+        "migration": [
+            "CONSTRAINT uk_flight_quality_session_rule",
+            "UNIQUE (session_id, rule_version)",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("session-repository")
+    if repository is not None:
+        method_at = repository.find(
+            "findBySessionIdAndDroneIdForUpdate("
+        )
+        annotation_at = repository.rfind(
+            "@Lock(LockModeType.PESSIMISTIC_WRITE)",
+            0,
+            method_at,
+        )
+        if not (0 <= annotation_at < method_at):
+            drift.append("usage:session-repository:lock-session-id")
+
+    service = sources.get("assessment-service")
+    if service is not None:
+        recalculate_at = service.find(
+            "public FlightQualityAssessmentResponse recalculate("
+        )
+        find_at = service.find(
+            "public FlightQualityAssessmentResponse find("
+        )
+        history_at = service.find(
+            "public List<FlightQualityAssessmentResponse> findHistory("
+        )
+        recalculate_source = (
+            service[recalculate_at:find_at]
+            if 0 <= recalculate_at < find_at
+            else ""
+        )
+        lock_at = recalculate_source.find(
+            "requireSessionForUpdate("
+        )
+        sample_at = recalculate_source.find(
+            "countByDroneIdAndFlightSessionId("
+        )
+        assessment_at = recalculate_source.find(
+            ".findBySessionIdAndRuleVersion("
+        )
+        save_at = recalculate_source.find(
+            "assessmentRepository.saveAndFlush(assessment)"
+        )
+        if not (
+            0 <= lock_at < sample_at < assessment_at < save_at
+        ):
+            drift.append(
+                "ordering:assessment-service:session-lock-before-recalculation-write"
+            )
+
+        find_source = (
+            service[find_at:history_at]
+            if 0 <= find_at < history_at
+            else ""
+        )
+        if (
+            "requireSession(droneId, sessionId)" not in find_source
+            or "requireSessionForUpdate(" in find_source
+        ):
+            drift.append(
+                "usage:assessment-service:read-remains-non-locking"
+            )
+    return drift
+
+
 def read_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -960,6 +1089,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not lifecycle_drift
             else "비행 세션 시작·갱신 동시성 방어가 누락됐습니다.",
             drift=lifecycle_drift,
+        )
+    )
+    quality_assessment_drift = (
+        flight_quality_assessment_concurrency_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if quality_assessment_drift else "PASS",
+            "flight-quality-assessment-concurrency-policy",
+            "비행 품질 평가 재계산 동시성 정책",
+            "수동·세션 종료·백필 재계산이 Flight Session 행 잠금으로 직렬화되고 읽기 조회는 비잠금으로 유지됩니다."
+            if not quality_assessment_drift
+            else "비행 품질 평가 재계산의 세션 잠금 또는 DB UNIQUE 방어가 누락됐습니다.",
+            drift=quality_assessment_drift,
         )
     )
     incident_lifecycle_drift = (

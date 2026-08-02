@@ -58,7 +58,10 @@ public class FlightQualityAssessmentService {
             Long droneId,
             String sessionId
     ) {
-        FlightSession session = requireSession(droneId, sessionId);
+        FlightSession session = requireSessionForUpdate(
+                droneId,
+                sessionId
+        );
         long telemetryCount =
                 telemetryRepository.countByDroneIdAndFlightSessionId(
                         droneId,
@@ -172,6 +175,21 @@ public class FlightQualityAssessmentService {
         ensureDroneExists(droneId);
         return sessionRepository
                 .findBySessionIdAndDroneId(sessionId, droneId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "관리 비행 세션을 찾을 수 없습니다: "
+                                        + sessionId
+                        )
+                );
+    }
+
+    private FlightSession requireSessionForUpdate(
+            Long droneId,
+            String sessionId
+    ) {
+        ensureDroneExists(droneId);
+        return sessionRepository
+                .findBySessionIdAndDroneIdForUpdate(sessionId, droneId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "관리 비행 세션을 찾을 수 없습니다: "
