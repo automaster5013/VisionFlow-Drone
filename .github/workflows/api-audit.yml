@@ -1,4 +1,4 @@
-name: API contract and security audit
+name: API contract, security, and system traceability audit
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
       - "01_frontend/visionflow-web/src/app/api/**"
       - "01_frontend/visionflow-web/src/lib/**"
       - "02_backend/visionflow-api/src/main/java/**"
+      - "02_backend/visionflow-api/src/main/resources/db/migration/**"
       - "03_ai-server/visionflow-ai/app/**"
       - "scripts/visionflow_api_contract_audit.py"
       - "scripts/visionflow_api_contract_baseline.json"
@@ -15,6 +16,9 @@ on:
       - "scripts/visionflow_ai_openapi_snapshot.py"
       - "scripts/visionflow_ci_api_audit_gate.py"
       - "scripts/visionflow_ci_api_audit_policy.json"
+      - "scripts/visionflow_system_traceability_audit.py"
+      - "scripts/visionflow_system_traceability_baseline.json"
+      - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
   push:
     branches:
       - main
@@ -23,6 +27,7 @@ on:
       - "01_frontend/visionflow-web/src/app/api/**"
       - "01_frontend/visionflow-web/src/lib/**"
       - "02_backend/visionflow-api/src/main/java/**"
+      - "02_backend/visionflow-api/src/main/resources/db/migration/**"
       - "03_ai-server/visionflow-ai/app/**"
       - "scripts/visionflow_api_contract_audit.py"
       - "scripts/visionflow_api_contract_baseline.json"
@@ -31,6 +36,9 @@ on:
       - "scripts/visionflow_ai_openapi_snapshot.py"
       - "scripts/visionflow_ci_api_audit_gate.py"
       - "scripts/visionflow_ci_api_audit_policy.json"
+      - "scripts/visionflow_system_traceability_audit.py"
+      - "scripts/visionflow_system_traceability_baseline.json"
+      - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
   workflow_dispatch:
 
 permissions:
@@ -42,7 +50,7 @@ concurrency:
 
 jobs:
   static-api-audit:
-    name: Static API drift gate
+    name: Static API and data-flow drift gate
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -64,10 +72,12 @@ jobs:
             scripts/visionflow_api_contract_audit.py \
             scripts/visionflow_api_security_audit.py \
             scripts/visionflow_ai_openapi_snapshot.py \
-            scripts/visionflow_ci_api_audit_gate.py
+            scripts/visionflow_ci_api_audit_gate.py \
+            scripts/visionflow_system_traceability_audit.py
           python -m json.tool scripts/visionflow_api_contract_baseline.json >/dev/null
           python -m json.tool scripts/visionflow_api_security_baseline.json >/dev/null
           python -m json.tool scripts/visionflow_ci_api_audit_policy.json >/dev/null
+          python -m json.tool scripts/visionflow_system_traceability_baseline.json >/dev/null
 
       - name: Generate source-derived AI OpenAPI inventory
         run: |
@@ -92,18 +102,25 @@ jobs:
             --strict \
             --output "$OUTPUT_ROOT/security"
 
+      - name: Run system traceability audit
+        run: |
+          python scripts/visionflow_system_traceability_audit.py \
+            --root . \
+            --output "$OUTPUT_ROOT/traceability"
+
       - name: Enforce CI audit policy
         run: |
           python scripts/visionflow_ci_api_audit_gate.py \
             --contract-report "$OUTPUT_ROOT/contract/visionflow-api-contract-audit.json" \
             --security-report "$OUTPUT_ROOT/security/visionflow-api-security-audit.json" \
+            --traceability-report "$OUTPUT_ROOT/traceability/visionflow-system-traceability-audit.json" \
             --policy scripts/visionflow_ci_api_audit_policy.json
 
       - name: Upload audit reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: visionflow-api-audit-reports
+          name: visionflow-api-and-traceability-audit-reports
           path: artifacts/ci-api-audit
           if-no-files-found: warn
           retention-days: 14

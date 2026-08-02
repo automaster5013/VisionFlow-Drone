@@ -46,6 +46,12 @@ def verify_read_only(report: dict[str, Any], label: str, failures: list[str]) ->
     for key in ("databaseMutation", "containerMutation", "serviceRestart"):
         if safety.get(key) is not False:
             failures.append(f"{label}: safety.{key}=false가 아닙니다.")
+    if safety.get("writesOnlyReports") is not True:
+        failures.append(f"{label}: safety.writesOnlyReports=true가 아닙니다.")
+    if label == "security" and safety.get("credentialValueCollection") is not False:
+        failures.append(f"{label}: safety.credentialValueCollection=false가 아닙니다.")
+    if label == "traceability" and safety.get("secretValuesCollected") is not False:
+        failures.append(f"{label}: safety.secretValuesCollected=false가 아닙니다.")
 
 
 def verify_counts(
@@ -150,6 +156,68 @@ def verify_security(
         failures.append(f"security: {key} 상태가 {row_status}입니다.")
 
 
+def traceability_counts(report: dict[str, Any]) -> dict[str, int]:
+    summary = report.get("summary")
+    counts = summary.get("counts") if isinstance(summary, dict) else None
+    if not isinstance(counts, dict):
+        raise ValueError("추적성 보고서 summary.counts 값이 없습니다.")
+    result = {
+        name: int(counts.get(name, -1))
+        for name in (
+            "backend",
+            "frontend",
+            "ai",
+            "tables",
+            "entities",
+            "repositories",
+            "foreignKeys",
+        )
+    }
+    result["flows"] = int(summary.get("flows", -1))
+    result["softCorrelations"] = int(summary.get("softCorrelations", -1))
+    return result
+
+
+def verify_traceability(
+    report: dict[str, Any],
+    policy: dict[str, Any],
+    failures: list[str],
+) -> None:
+    status = report.get("status")
+    if status != "SYSTEM_TRACEABILITY_HEALTHY":
+        failures.append(
+            "traceability: SYSTEM_TRACEABILITY_HEALTHY가 아닙니다: "
+            f"{status}"
+        )
+
+    expected = policy.get("expectedTraceabilityCounts")
+    if not isinstance(expected, dict):
+        raise ValueError("정책 expectedTraceabilityCounts 값이 없습니다.")
+    actual = traceability_counts(report)
+    normalized_expected = {name: int(expected.get(name, -1)) for name in actual}
+    if actual != normalized_expected:
+        failures.append(
+            "traceability: 기준 수량이 다릅니다. "
+            f"expected={normalized_expected}, actual={actual}"
+        )
+
+    expected_checks_value = policy.get("expectedTraceabilityChecks")
+    if not isinstance(expected_checks_value, list):
+        raise ValueError("정책 expectedTraceabilityChecks 값이 배열이 아닙니다.")
+    expected_checks = {str(value) for value in expected_checks_value}
+    checks = check_index(report)
+    actual_checks = set(checks)
+    if actual_checks != expected_checks:
+        failures.append(
+            "traceability: 검사키 구성이 다릅니다. "
+            f"missing={sorted(expected_checks - actual_checks)}, "
+            f"unexpected={sorted(actual_checks - expected_checks)}"
+        )
+    for key, row in checks.items():
+        if row.get("status") != "PASS":
+            failures.append(f"traceability: {key} 상태가 {row.get('status')}입니다.")
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     script_dir = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(
@@ -157,6 +225,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--contract-report", type=Path, required=True)
     parser.add_argument("--security-report", type=Path, required=True)
+    parser.add_argument("--traceability-report", type=Path, required=True)
     parser.add_argument(
         "--policy",
         type=Path,
@@ -171,6 +240,7 @@ def main(argv: list[str] | None = None) -> int:
         policy = read_object(args.policy)
         contract = read_object(args.contract_report)
         security = read_object(args.security_report)
+        traceability = read_object(args.traceability_report)
         expected_counts = policy.get("expectedCounts")
         if not isinstance(expected_counts, dict):
             raise ValueError("정책 expectedCounts 값이 없습니다.")
@@ -180,8 +250,10 @@ def main(argv: list[str] | None = None) -> int:
         verify_counts(security, expected_counts, "security", failures)
         verify_read_only(contract, "contract", failures)
         verify_read_only(security, "security", failures)
+        verify_read_only(traceability, "traceability", failures)
         verify_contract(contract, policy, failures)
         verify_security(security, policy, failures)
+        verify_traceability(traceability, policy, failures)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"VisionFlow API audit CI gate: BLOCKED\n[FAIL] {error}")
         return 2
@@ -200,6 +272,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     print("Contract: known advisory policy only")
     print("Security: API_SECURITY_HEALTHY")
+    trace_counts = traceability_counts(traceability)
+    print(
+        "Traceability: SYSTEM_TRACEABILITY_HEALTHY; "
+        f"Tables={trace_counts['tables']}, Entities={trace_counts['entities']}, "
+        f"Repositories={trace_counts['repositories']}, "
+        f"ForeignKeys={trace_counts['foreignKeys']}"
+    )
     print("Safety: read-only reports; no runtime or secret access")
     return 0
 

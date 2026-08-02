@@ -1,11 +1,31 @@
 {
-  "schemaVersion": 1,
-  "baselineCommit": "1bfc957a4ad4c593838f459a93a14c25f407445b",
+  "schemaVersion": 2,
+  "baselineCommit": "4d4b8693cda6ecb4ba2d322ed617750525a17580",
   "expectedCounts": {
     "backend": 70,
     "frontend": 70,
     "ai": 9
   },
+  "expectedTraceabilityCounts": {
+    "backend": 70,
+    "frontend": 70,
+    "ai": 9,
+    "tables": 16,
+    "entities": 15,
+    "repositories": 15,
+    "foreignKeys": 12,
+    "flows": 13,
+    "softCorrelations": 4
+  },
+  "expectedTraceabilityChecks": [
+    "source-inventory",
+    "baseline-counts",
+    "migration-tables",
+    "entity-repository-mapping",
+    "foreign-key-contract",
+    "flow-operation-coverage",
+    "flow-table-coverage"
+  ],
   "allowedContractAdvisories": [
     {
       "key": "backend-coverage",

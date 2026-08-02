@@ -6,6 +6,7 @@ set "OUTPUT=%ROOT%\artifacts\api-audit-ci\local"
 set "AI_OPENAPI=%OUTPUT%\ai-openapi.json"
 set "CONTRACT_OUTPUT=%OUTPUT%\contract"
 set "SECURITY_OUTPUT=%OUTPUT%\security"
+set "TRACEABILITY_OUTPUT=%OUTPUT%\traceability"
 
 where py.exe >nul 2>&1
 if not errorlevel 1 (
@@ -30,5 +31,8 @@ if errorlevel 1 exit /b %ERRORLEVEL%
 %PYTHON% "%~dp0visionflow_api_security_audit.py" --root "%ROOT%" --ai-openapi-file "%AI_OPENAPI%" --skip-runtime --strict --output "%SECURITY_OUTPUT%"
 if errorlevel 1 exit /b %ERRORLEVEL%
 
-%PYTHON% "%~dp0visionflow_ci_api_audit_gate.py" --contract-report "%CONTRACT_OUTPUT%\visionflow-api-contract-audit.json" --security-report "%SECURITY_OUTPUT%\visionflow-api-security-audit.json"
+%PYTHON% "%~dp0visionflow_system_traceability_audit.py" --root "%ROOT%" --output "%TRACEABILITY_OUTPUT%"
+if errorlevel 1 exit /b %ERRORLEVEL%
+
+%PYTHON% "%~dp0visionflow_ci_api_audit_gate.py" --contract-report "%CONTRACT_OUTPUT%\visionflow-api-contract-audit.json" --security-report "%SECURITY_OUTPUT%\visionflow-api-security-audit.json" --traceability-report "%TRACEABILITY_OUTPUT%\visionflow-system-traceability-audit.json"
 exit /b %ERRORLEVEL%
