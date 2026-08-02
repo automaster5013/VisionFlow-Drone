@@ -1,0 +1,109 @@
+name: API contract and security audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/api-audit.yml"
+      - "01_frontend/visionflow-web/src/app/api/**"
+      - "01_frontend/visionflow-web/src/lib/**"
+      - "02_backend/visionflow-api/src/main/java/**"
+      - "03_ai-server/visionflow-ai/app/**"
+      - "scripts/visionflow_api_contract_audit.py"
+      - "scripts/visionflow_api_contract_baseline.json"
+      - "scripts/visionflow_api_security_audit.py"
+      - "scripts/visionflow_api_security_baseline.json"
+      - "scripts/visionflow_ai_openapi_snapshot.py"
+      - "scripts/visionflow_ci_api_audit_gate.py"
+      - "scripts/visionflow_ci_api_audit_policy.json"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/api-audit.yml"
+      - "01_frontend/visionflow-web/src/app/api/**"
+      - "01_frontend/visionflow-web/src/lib/**"
+      - "02_backend/visionflow-api/src/main/java/**"
+      - "03_ai-server/visionflow-ai/app/**"
+      - "scripts/visionflow_api_contract_audit.py"
+      - "scripts/visionflow_api_contract_baseline.json"
+      - "scripts/visionflow_api_security_audit.py"
+      - "scripts/visionflow_api_security_baseline.json"
+      - "scripts/visionflow_ai_openapi_snapshot.py"
+      - "scripts/visionflow_ci_api_audit_gate.py"
+      - "scripts/visionflow_ci_api_audit_policy.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-api-audit:
+    name: Static API drift gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONUTF8: "1"
+      OUTPUT_ROOT: artifacts/ci-api-audit
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate audit sources
+        run: |
+          python -m py_compile \
+            scripts/visionflow_api_contract_audit.py \
+            scripts/visionflow_api_security_audit.py \
+            scripts/visionflow_ai_openapi_snapshot.py \
+            scripts/visionflow_ci_api_audit_gate.py
+          python -m json.tool scripts/visionflow_api_contract_baseline.json >/dev/null
+          python -m json.tool scripts/visionflow_api_security_baseline.json >/dev/null
+          python -m json.tool scripts/visionflow_ci_api_audit_policy.json >/dev/null
+
+      - name: Generate source-derived AI OpenAPI inventory
+        run: |
+          python scripts/visionflow_ai_openapi_snapshot.py \
+            --root . \
+            --output "$OUTPUT_ROOT/ai-openapi.json"
+
+      - name: Run API contract audit
+        run: |
+          python scripts/visionflow_api_contract_audit.py \
+            --root . \
+            --ai-openapi-file "$OUTPUT_ROOT/ai-openapi.json" \
+            --skip-backend-openapi-probe \
+            --output "$OUTPUT_ROOT/contract"
+
+      - name: Run API security audit
+        run: |
+          python scripts/visionflow_api_security_audit.py \
+            --root . \
+            --ai-openapi-file "$OUTPUT_ROOT/ai-openapi.json" \
+            --skip-runtime \
+            --strict \
+            --output "$OUTPUT_ROOT/security"
+
+      - name: Enforce CI audit policy
+        run: |
+          python scripts/visionflow_ci_api_audit_gate.py \
+            --contract-report "$OUTPUT_ROOT/contract/visionflow-api-contract-audit.json" \
+            --security-report "$OUTPUT_ROOT/security/visionflow-api-security-audit.json" \
+            --policy scripts/visionflow_ci_api_audit_policy.json
+
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visionflow-api-audit-reports
+          path: artifacts/ci-api-audit
+          if-no-files-found: warn
+          retention-days: 14

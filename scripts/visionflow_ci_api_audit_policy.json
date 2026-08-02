@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "1bfc957a4ad4c593838f459a93a14c25f407445b",
+  "expectedCounts": {
+    "backend": 70,
+    "frontend": 70,
+    "ai": 9
+  },
+  "allowedContractAdvisories": [
+    {
+      "key": "backend-coverage",
+      "maxFindings": 1,
+      "operations": [
+        "GET /api/drones/{}/flight-sessions/{}"
+      ],
+      "reason": "Backend 상세 조회에 대응하는 Frontend handler가 없는 기존 검토 항목"
+    }
+  ],
+  "allowedSecuritySkippedChecks": [
+    "runtime-security-mode"
+  ]
+}
