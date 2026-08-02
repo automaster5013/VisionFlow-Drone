@@ -6,14 +6,14 @@
 
 ## 판정 정책
 
-- operation 기준: Backend 70, Frontend 70, AI 9
-- 계약 감사: 기존 `backend-coverage` 검토 항목 1건만 허용
-- 계약 감사의 새 Advisory, `unexpected` 항목, missing target, operation 수 변경: 실패
+- operation 기준: Backend 70, Frontend 71, AI 9
+- 계약 감사: `API_CONTRACT_HEALTHY`만 허용; 허용 Advisory 0건
+- 계약 감사의 Advisory, `unexpected` 항목, missing target, operation 수 변경: 실패
 - 보안 감사: `API_SECURITY_HEALTHY`만 허용
 - 런타임 보안 검사는 CI에서 `SKIPPED`가 정상이며 정적 보안 검사는 모두 `PASS`여야 함
 - 시스템 추적성 감사: `SYSTEM_TRACEABILITY_HEALTHY`만 허용
 - 데이터 기준: Table 16, Entity 15, Repository 15, 물리 FK 12, 기능 흐름 13, 소프트 상관관계 4
-- 추적성 감사의 10개 검사키가 정확히 존재하고 모두 `PASS`여야 함
+- 추적성 감사의 14개 검사키가 정확히 존재하고 모두 `PASS`여야 함
 - 비행 세션 생명주기 검사는 Drone·Session 행 잠금, ACTIVE 세션 DB UNIQUE 제약, 읽기 전용 중복 탐지 규칙을 함께 확인
 - AI OpenAPI inventory는 `streaming.py`의 정적 FastAPI decorator에서 매번 생성하므로 실행 중인 AI 서버가 필요하지 않음
 

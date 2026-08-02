@@ -65,20 +65,15 @@ scripts\run-visionflow-api-contract-audit.bat --strict
 
 ## 현재 기준선
 
-기준 커밋은 `aa540af066902e5c3c712840d8341b97b4964980`이며 operation 수는 다음과 같습니다.
+현재 기준은 `f670b101682a1129e8e258b553300f9ca0dfd0b6`에서 세션 상세 GET proxy를 추가한 소스이며 operation 수는 다음과 같습니다.
 
 | 계층 | Operation 수 | 메서드 분포 |
 |---|---:|---|
 | Backend Controller | 70 | GET 35, POST 16, PUT 4, PATCH 11, DELETE 4 |
-| Frontend Route | 69 | GET 38, POST 13, PUT 3, PATCH 11, DELETE 4 |
+| Frontend Route | 71 | GET 40, POST 13, PUT 3, PATCH 11, DELETE 4 |
 | AI OpenAPI | 9 | GET 7, POST 2 |
 
-현재 소스의 정상 예상 결과는 `API_CONTRACT_ADVISORY`입니다. 다음 두 공백을 숨기지 않고 계속 추적하기 때문입니다.
-
-1. Backend `GET /api/drones/{droneId}/flight-sessions/{sessionId}`에 대응하는 Frontend GET proxy가 없습니다.
-2. AI `GET /api/streams/annotated.mjpeg`의 same-origin HTTPS proxy가 없으며, 두 Frontend 컴포넌트가 `http://localhost:8000`을 직접 참조합니다.
-
-이 상태에서도 Frontend proxy가 가리키는 실제 Backend·AI 대상 누락이 0건이면 기본 실행은 종료 코드 0입니다.
+현재 소스의 정상 예상 결과는 `API_CONTRACT_HEALTHY`입니다. 비행 세션 상세 GET과 AI annotated stream은 모두 인증된 same-origin Frontend proxy를 갖춤으며, Backend·AI 업무 operation의 미중계 Advisory는 0건입니다. Health, 장치·AI 내부 입력, 운영 점검 operation만 명시적 direct-only 예외로 유지합니다.
 
 ## 기준선 관리
 

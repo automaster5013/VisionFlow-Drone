@@ -3,12 +3,12 @@
   "baselineCommit": "4d4b8693cda6ecb4ba2d322ed617750525a17580",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 70,
+    "frontend": 71,
     "ai": 9
   },
   "expectedTraceabilityCounts": {
     "backend": 70,
-    "frontend": 70,
+    "frontend": 71,
     "ai": 9,
     "tables": 16,
     "entities": 15,
@@ -33,16 +33,7 @@
     "flow-operation-coverage",
     "flow-table-coverage"
   ],
-  "allowedContractAdvisories": [
-    {
-      "key": "backend-coverage",
-      "maxFindings": 1,
-      "operations": [
-        "GET /api/drones/{}/flight-sessions/{}"
-      ],
-      "reason": "Backend 상세 조회에 대응하는 Frontend handler가 없는 기존 검토 항목"
-    }
-  ],
+  "allowedContractAdvisories": [],
   "allowedSecuritySkippedChecks": [
     "runtime-security-mode"
   ]

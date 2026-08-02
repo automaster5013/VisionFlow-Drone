@@ -256,7 +256,7 @@ scripts\run-visionflow-system-traceability-audit.bat
 
 ```text
 VisionFlow system traceability audit: SYSTEM_TRACEABILITY_HEALTHY
-Operations: Backend=70, Frontend=70, AI=9
+Operations: Backend=70, Frontend=71, AI=9
 Data model: Tables=16, Entities=15, Repositories=15, ForeignKeys=12
 ```
 

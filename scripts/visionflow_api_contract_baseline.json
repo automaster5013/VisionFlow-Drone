@@ -4,7 +4,7 @@
   "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 70,
+    "frontend": 71,
     "ai": 9
   },
   "frontendLocalOperations": [
@@ -138,13 +138,7 @@
       "reason": "AI 서버의 내부 스냅숏 업로드"
     }
   ],
-  "advisoryBackendOnlyOperations": [
-    {
-      "method": "GET",
-      "path": "/api/drones/{}/flight-sessions/{}",
-      "reason": "Backend 상세 GET에 대응하는 Frontend handler가 없음"
-    }
-  ],
+  "advisoryBackendOnlyOperations": [],
   "expectedAiOnlyOperations": [
     {
       "method": "GET",

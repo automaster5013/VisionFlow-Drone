@@ -88,11 +88,16 @@ def verify_contract(
     failures: list[str],
 ) -> None:
     status = report.get("status")
-    if status not in {"API_CONTRACT_HEALTHY", "API_CONTRACT_ADVISORY"}:
+    allowed = allowed_contract_advisories(policy)
+    allowed_statuses = (
+        {"API_CONTRACT_HEALTHY", "API_CONTRACT_ADVISORY"}
+        if allowed
+        else {"API_CONTRACT_HEALTHY"}
+    )
+    if status not in allowed_statuses:
         failures.append(f"contract: 허용되지 않은 전체 상태입니다: {status}")
 
     checks = check_index(report)
-    allowed = allowed_contract_advisories(policy)
     advisory_keys = {
         key for key, row in checks.items() if row.get("status") == "ADVISORY"
     }
@@ -270,7 +275,7 @@ def main(argv: list[str] | None = None) -> int:
         "Operations: "
         f"Backend={counts['backend']}, Frontend={counts['frontend']}, AI={counts['ai']}"
     )
-    print("Contract: known advisory policy only")
+    print(f"Contract: {contract.get('status')}")
     print("Security: API_SECURITY_HEALTHY")
     trace_counts = traceability_counts(traceability)
     print(

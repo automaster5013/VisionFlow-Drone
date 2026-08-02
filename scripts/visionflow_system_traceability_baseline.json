@@ -3,7 +3,7 @@
   "baselineCommit": "fc794e571c39fb3ea1cede7d5509816f483c5664",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 70,
+    "frontend": 71,
     "ai": 9,
     "tables": 16,
     "entities": 15,

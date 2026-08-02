@@ -4,7 +4,7 @@
 
 - Spring `SecurityConfig`의 RBAC 활성·비활성 분기와 규칙 순서
 - Backend Controller 70개 operation
-- Frontend Route Handler 69개의 Backend 인증 전달과 same-origin 방어
+- Frontend Route Handler 71개의 Backend 인증 전달과 same-origin 방어
 - AI OpenAPI 9개 operation과 FastAPI 인증 단서
 - `compose.yaml`의 비밀값이 아닌 보안 기본값
 - 실행 중인 Backend·Frontend 컨테이너의 선택된 비밀 제외 보안 모드
@@ -86,21 +86,18 @@ Backend 표에는 RBAC 활성 모드와 비활성 모드를 모두 표시합니�
 
 ## 현재 기준 결과
 
-기준 커밋은 `71d2cd3`이며 operation 수는 Backend 70·Frontend 69·AI 9입니다. 현재 정상 예상 상태는 `API_SECURITY_ADVISORY`입니다.
+현재 기준은 `f670b101682a1129e8e258b553300f9ca0dfd0b6`에서 세션 상세 GET proxy를 추가한 소스이며 operation 수는 Backend 70·Frontend 71·AI 9입니다. 정상 예상 상태는 `API_SECURITY_HEALTHY`입니다.
 
 확인된 현재 상태:
 
-- RBAC 활성 모드 Backend: `PUBLIC` 38, `ROLE_ADMIN` 5, `ROLES_OPERATOR_ADMIN` 26, `ROLES_VIEWER_OPERATOR_ADMIN` 1
-- 민감 운영 데이터를 공개 GET으로 읽는 Backend API: 31개
-- 기준선에 없는 공개 변경 API: 0개
-- 핵심 ADMIN·인증 보호 규칙 실패: 0개
-- RBAC 비활성 모드 누락: `/api/flight-quality/**` 계열 2개
-- 보호된 Backend로 인증을 전달하지 않는 Frontend Proxy: 0개
-- 명시적 same-origin 보강 대상: `DELETE /api/operator/sessions/{sessionId}` 1개
-- 인증 없는 민감 AI API: 8개
-- Compose 기본값: RBAC `false`, Frontend `static`, Secure Cookie `false`
-
-31개의 공개 GET은 곧바로 31개의 독립 취약점이라는 뜻은 아닙니다. 현재 `GET /api/** permitAll` 정책이 드론 위치·사고·감사·정비·AI 이벤트 데이터까지 포함한다는 노출 범위입니다. 3차 운영 정책에서 역할별 읽기 권한을 결정할 근거로 사용합니다.
+- 핵심 ADMIN·인증 보호 규칙 실패: 0건
+- 기준선에 없는 공개 변경 API: 0건
+- 민감 GET: 인증 보호, 승인된 LOW 공개 예외 1건
+- 보안 비활성 모드의 API 허용 범위: 일관성 PASS
+- 보호된 Backend·AI로 필요한 인증을 전달하지 않는 Frontend Proxy: 0건
+- Frontend 변경 요청 same-origin 방어 누락: 0건
+- AI 민감 API 8개: 내부 서비스 키 보호, `/health`만 공개
+- Compose 기본값: 운영 권장 보안 모드 PASS
 
 ## 상태와 종료 코드
 

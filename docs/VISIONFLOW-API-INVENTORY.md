@@ -1,7 +1,7 @@
 # VisionFlow-Drone API 현행화 문서
 
-> 기준일: 2026-08-01<br>
-> 기준 Git 커밋: `aa540af066902e5c3c712840d8341b97b4964980`<br>
+> 기준일: 2026-08-03<br>
+> 소스 기준 Git 커밋: `f670b101682a1129e8e258b553300f9ca0dfd0b6`<br>
 > 프로젝트: VisionFlow-Drone — 지능형 드론 관제 및 무선 Vision AI 표준 파이프라인<br>
 > 팀·담당: PyvaOps / 이명휘
 
@@ -10,7 +10,7 @@
 이 문서는 실행 중인 AI OpenAPI, Spring Controller 매핑, Next.js Route Handler 소스를 교차 대조해 현재 API 구조를 한 곳에 정리한 기준 문서다.
 
 - Backend: Spring Boot Controller 19개
-- Frontend Proxy: Next.js `app/api` Route Handler 59개 파일
+- Frontend Proxy: Next.js `app/api` Route Handler 60개 파일
 - AI: FastAPI OpenAPI 3.1.0, 애플리케이션 버전 0.6.0
 - 조사 대상: HTTP API와 Next.js 내부 로컬 API
 - 제외 대상: STOMP/WebSocket 메시지 세부 destination, 요청·응답 DTO 전체 필드, 비밀 환경값
@@ -22,11 +22,11 @@ Backend의 `/v3/api-docs`는 HTTP 401이 반환됐다. 이는 Backend 장애가 
 | 계층 | 파일/Controller | HTTP Operation | GET | POST | PUT | PATCH | DELETE |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Spring Backend | 19 Controller | 70 | 35 | 16 | 4 | 11 | 4 |
-| Next.js Frontend API | 59 route 파일 | 69 | 38 | 13 | 3 | 11 | 4 |
+| Next.js Frontend API | 60 route 파일 | 71 | 40 | 13 | 3 | 11 | 4 |
 | FastAPI AI | OpenAPI 0.6.0 | 9 | 7 | 2 | 0 | 0 | 0 |
-| 합계 | 계층별 구현 합계 | 148 | 80 | 31 | 7 | 22 | 8 |
+| 합계 | 계층별 구현 합계 | 150 | 82 | 31 | 7 | 22 | 8 |
 
-148은 외부에 공개되는 고유 업무 API 수가 아니라 각 계층에 구현된 operation의 합계다. 다수의 Next.js API는 Backend 또는 AI API를 중계한다.
+150은 외부에 공개되는 고유 업무 API 수가 아니라 각 계층에 구현된 operation의 합계다. 다수의 Next.js API는 Backend 또는 AI API를 중계한다.
 
 ```text
 Browser / Smartphone
@@ -250,6 +250,7 @@ AI OpenAPI에는 인증 scheme이 선언되어 있지 않다. 현재 네트워�
 | GET | `/api/drones/[id]/telemetry/history` | Backend 동일 경로 |
 | GET | `/api/drones/[id]/flight-sessions` | Backend 동일 경로 |
 | POST | `/api/drones/[id]/flight-sessions` | Backend 동일 경로 |
+| GET | `/api/drones/[id]/flight-sessions/[sessionId]` | Backend 동일 경로 |
 | PATCH | `/api/drones/[id]/flight-sessions/[sessionId]` | Backend 동일 경로 |
 | POST | `/api/drones/[id]/flight-sessions/[sessionId]/[action]` | Backend `complete` 또는 `abort` |
 | GET | `/api/drones/[id]/flight-sessions/[sessionId]/replay` | Backend 동일 경로 |
@@ -316,7 +317,6 @@ AI OpenAPI에는 인증 scheme이 선언되어 있지 않다. 현재 네트워�
 | GET | `/api/health` | Backend 직접 상태 점검용; Frontend proxy 없음 |
 | POST | `/api/ai/events` | AI 서버가 Backend에 저장하는 내부 입력; Frontend proxy 불필요 |
 | PUT | `/api/ai/events/{eventId}/snapshot` | AI 서버 스냅숏 업로드; Frontend proxy 불필요 |
-| GET | `/api/drones/{droneId}/flight-sessions/{sessionId}` | Frontend 상세 GET proxy가 없음; 사용 여부 확인 필요 |
 
 ### 7.2 AI에만 존재하거나 브라우저 proxy가 없는 API
 
@@ -326,7 +326,6 @@ AI OpenAPI에는 인증 scheme이 선언되어 있지 않다. 현재 네트워�
 | POST | `/api/metrics/reset` | 운영·성능 도구 전용 |
 | GET | `/api/models/status` | 운영·모델 점검 전용 |
 | GET | `/api/streams/latest.jpg` | 단일 최신 프레임; proxy 없음 |
-| GET | `/api/streams/annotated.mjpeg` | UI가 직접 사용하지만 same-origin HTTPS proxy 없음 |
 
 ### 7.3 Frontend 로컬 전용 API
 
@@ -345,26 +344,9 @@ AI OpenAPI에는 인증 scheme이 선언되어 있지 않다. 현재 네트워�
 
 ## 8. 확인된 위험과 개선 우선순위
 
-### P0 — AI MJPEG same-origin HTTPS Proxy
+### 완료 — AI MJPEG same-origin HTTPS Proxy
 
-현재 두 Client Component가 다음 기본 주소를 사용한다.
-
-```text
-http://localhost:8000/api/streams/annotated.mjpeg
-```
-
-영향:
-
-- PC에서는 localhost가 AI 서버 PC를 가리켜 동작할 수 있다.
-- 스마트폰에서는 localhost가 스마트폰 자신을 가리킨다.
-- `https://...:3443` 페이지에서 `http://...:8000` 영상을 요청하면 mixed content로 차단될 수 있다.
-- AI status는 정상인데 YOLO 영상 영역만 검게 보이는 현상과 일치한다.
-
-권장 조치:
-
-- Next.js에 `/api/ai/stream/annotated.mjpeg` streaming proxy를 추가하거나 Caddy가 해당 경로만 AI 서버로 reverse proxy하게 한다.
-- Client Component 기본 URL을 same-origin HTTPS 경로로 바꾼다.
-- 연결 해제, client disconnect, cache header, streaming backpressure를 테스트한다.
+AI annotated stream은 `/api/ai/stream/annotated`를 통해 내부 서비스 키를 전달하고 same-origin으로 중계된다. 브라우저는 `localhost:8000`을 직접 참조하지 않으며 HTTPS 스마트폰 경로에서도 mixed-content 경계를 유지한다.
 
 ### P1 — Device ingress 인증·제한
 
@@ -399,9 +381,9 @@ http://localhost:8000/api/streams/annotated.mjpeg
 - 운영자 보안을 항상 활성화할 계획이면 이를 명시한다.
 - 비활성 로컬 모드도 지원한다면 `/api/flight-quality/**` 정책을 다른 업무 API와 일관되게 맞춘다.
 
-### P2 — 비행 세션 상세 Frontend Proxy
+### 완료 — 비행 세션 상세 Frontend Proxy
 
-Backend에는 `GET /api/drones/{droneId}/flight-sessions/{sessionId}`가 있으나 동일한 Frontend GET handler가 없다. 현재 UI가 목록 응답만 사용한다면 불필요할 수 있지만, 상세 화면·직접 새로고침·딥링크에 필요하면 handler를 추가한다.
+`GET /api/drones/[id]/flight-sessions/[sessionId]`가 Backend 상세 API를 인증된 same-origin 경로로 중계한다. ID 검증, 10초 timeout, `no-store`, upstream 상태·본문 전달을 적용한다.
 
 ### P2 — API 계약 자동 검증
 
@@ -412,9 +394,9 @@ Backend에는 `GET /api/drones/{droneId}/flight-sessions/{sessionId}`가 있으�
 
 ## 9. 권장 완료 기준
 
-- [ ] Backend 70, Frontend 69, AI 9 operation 수가 의도된 변경 없이 유지된다.
-- [ ] 모든 Frontend 업무 Proxy가 실제 Backend 또는 AI target을 가진다.
-- [ ] MJPEG 영상이 PC·스마트폰 모두 same-origin HTTPS로 표시된다.
+- [x] Backend 70, Frontend 71, AI 9 operation 수가 승인된 기준선과 일치한다.
+- [x] 모든 Frontend 업무 Proxy가 실제 Backend 또는 AI target을 가진다.
+- [x] MJPEG 영상이 PC·스마트폰 모두 same-origin HTTPS로 표시된다.
 - [ ] 공개 쓰기 API가 명시적 Device ingress allowlist와 제한을 가진다.
 - [ ] Backend OpenAPI를 비밀값 없이 재생성할 수 있다.
 - [ ] API 변경 시 이 문서와 자동 계약 검사가 함께 갱신된다.

@@ -1146,7 +1146,7 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             "BLOCKED" if any(unmapped.values()) or unused_patterns else "PASS",
             "flow-operation-coverage",
             "기능 흐름별 API coverage",
-            "Backend 70·Frontend 70·AI 9 operation이 기능 흐름에 연결됐습니다."
+            "Backend 70·Frontend 71·AI 9 operation이 기능 흐름에 연결됐습니다."
             if not any(unmapped.values()) and not unused_patterns
             else "기능 흐름에 연결되지 않은 operation 또는 사용되지 않은 패턴이 있습니다.",
             unmapped=unmapped,
