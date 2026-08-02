@@ -23,6 +23,7 @@
     "session-correlation-write-policy",
     "flight-session-lifecycle-concurrency-policy",
     "incident-lifecycle-concurrency-policy",
+    "ai-alert-lifecycle-concurrency-policy",
     "baseline-counts",
     "migration-tables",
     "entity-repository-mapping",

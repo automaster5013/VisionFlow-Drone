@@ -157,7 +157,7 @@ public class AiAlertService {
             Long alertId,
             String operator
     ) {
-        AiAlert alert = findAlert(alertId);
+        AiAlert alert = findAlertForUpdate(alertId);
         alert.acknowledge(
                 normalizeRequired(operator, "확인 처리자"),
                 LocalDateTime.now(ZoneOffset.UTC)
@@ -188,7 +188,7 @@ public class AiAlertService {
             String operator,
             String note
     ) {
-        AiAlert alert = findAlert(alertId);
+        AiAlert alert = findAlertForUpdate(alertId);
         alert.resolve(
                 normalizeRequired(operator, "해결 처리자"),
                 normalizeOptional(note),
@@ -216,6 +216,13 @@ public class AiAlertService {
 
     private AiAlert findAlert(Long alertId) {
         return alertRepository.findById(alertId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "AI 경보를 찾을 수 없습니다: " + alertId
+                ));
+    }
+
+    private AiAlert findAlertForUpdate(Long alertId) {
+        return alertRepository.findByIdForUpdate(alertId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "AI 경보를 찾을 수 없습니다: " + alertId
                 ));

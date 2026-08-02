@@ -140,6 +140,18 @@ flowchart LR
 - 통합 시연의 SLA 초과 준비용 직접 SQL도 같은 트랜잭션에서 먼저
   `SELECT ... FOR UPDATE`를 수행한다.
 
+### 4.5 AI 경보 확인·해결 직렬화
+
+- 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
+  `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
+- 같은 경보의 확인과 해결 요청이 동시에 도착해도 먼저 완료된 변경을 오래된
+  트랜잭션이 덮어쓰지 않으며, 연동된 Incident 동기화도 같은 순서로 수행된다.
+- 통합 시연의 경보 해결 경로도 공통 `AiAlertService.resolve`를 사용하므로 같은
+  잠금 정책을 따른다.
+- 경보 목록과 상세 조회는 비잠금 읽기를 유지한다.
+- 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
+  방어선으로 유지한다.
+
 ## 5. DB 테이블·Entity·Repository 현황
 
 | Table | Flyway | Entity | Repository | 분류 |

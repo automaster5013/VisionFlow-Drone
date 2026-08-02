@@ -5,8 +5,11 @@ import com.visionflow.api.ai.domain.AiAlertSeverity;
 import com.visionflow.api.ai.domain.AiAlertStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,6 +18,12 @@ import java.util.Optional;
 public interface AiAlertRepository extends JpaRepository<AiAlert, Long> {
 
     Optional<AiAlert> findByEventId(Long eventId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT alert FROM AiAlert alert WHERE alert.id = :alertId")
+    Optional<AiAlert> findByIdForUpdate(
+            @Param("alertId") Long alertId
+    );
 
     @Query("""
             SELECT alert

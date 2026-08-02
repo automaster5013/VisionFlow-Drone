@@ -376,6 +376,79 @@ def incident_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def ai_alert_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+        / "ai"
+    )
+    paths = {
+        "repository": backend_root
+        / "repository/AiAlertRepository.java",
+        "service": backend_root / "service/AiAlertService.java",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "service": [
+            "findAlertForUpdate(alertId)",
+            "alert.acknowledge(",
+            "alert.resolve(",
+            "alertRepository.findById(alertId)",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("repository")
+    if repository is not None and repository.count(
+        "@Lock(LockModeType.PESSIMISTIC_WRITE)"
+    ) < 1:
+        drift.append("usage:repository:lock-alert-id")
+
+    service = sources.get("service")
+    if service is not None:
+        if service.count("findAlertForUpdate(alertId)") < 2:
+            drift.append("usage:service:lock-acknowledge-resolve")
+        acknowledge_at = service.find("findAlertForUpdate(alertId)")
+        acknowledge_mutation_at = service.find("alert.acknowledge(")
+        resolve_at = service.find(
+            "findAlertForUpdate(alertId)",
+            acknowledge_at + 1,
+        )
+        resolve_mutation_at = service.find("alert.resolve(")
+        if not (
+            0 <= acknowledge_at < acknowledge_mutation_at
+            and 0 <= resolve_at < resolve_mutation_at
+        ):
+            drift.append(
+                "ordering:service:alert-lock-before-lifecycle-mutation"
+            )
+    return drift
+
+
 def read_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -701,6 +774,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not incident_lifecycle_drift
             else "Incident 변경 경로의 행 잠금 또는 중복 방어가 누락됐습니다.",
             drift=incident_lifecycle_drift,
+        )
+    )
+    ai_alert_lifecycle_drift = (
+        ai_alert_lifecycle_concurrency_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if ai_alert_lifecycle_drift else "PASS",
+            "ai-alert-lifecycle-concurrency-policy",
+            "AI Alert 수명주기 동시성 정책",
+            "AI 경보 확인·해결 변경이 경보 행 잠금으로 직렬화되며 읽기 조회는 비잠금으로 유지됩니다."
+            if not ai_alert_lifecycle_drift
+            else "AI 경보 확인·해결 경로의 행 잠금이 누락됐습니다.",
+            drift=ai_alert_lifecycle_drift,
         )
     )
     count_drift = {
