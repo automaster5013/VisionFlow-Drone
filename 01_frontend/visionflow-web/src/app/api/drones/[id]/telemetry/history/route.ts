@@ -3,6 +3,8 @@ import {
     NextResponse,
 } from "next/server";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+
 const SPRING_API_URL =
     process.env.SPRING_API_URL ??
     "http://localhost:8080";
@@ -38,13 +40,13 @@ export async function GET(
         (queryString ? `?${queryString}` : "");
 
     try {
-        const response = await fetch(backendUrl, {
+        const response = await fetch(backendUrl, await withBackendOperatorAuth({
             method: "GET",
             headers: {
                 Accept: "application/json",
             },
             cache: "no-store",
-        });
+        }));
 
         const body = await response.text();
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import {
     parseIncidentList,
     type IncidentItem,
@@ -107,12 +108,12 @@ export async function getIncidents(
     try {
         response = await fetch(
             `${apiBaseUrl}/api/incidents?${searchParams.toString()}`,
-            {
+            await withBackendOperatorAuth({
                 method: "GET",
                 headers: { Accept: "application/json" },
                 cache: "no-store",
                 signal: AbortSignal.timeout(5_000),
-            },
+            }),
         );
     } catch (error) {
         const message =

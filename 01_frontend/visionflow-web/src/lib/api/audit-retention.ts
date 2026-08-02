@@ -1,5 +1,6 @@
 import "server-only";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import {
     parseAuditRetentionStatus,
     type AuditRetentionStatus,
@@ -36,12 +37,15 @@ async function readFailureMessage(response: Response): Promise<string> {
 export async function getAuditRetentionStatus(): Promise<AuditRetentionStatus> {
     let response: Response;
     try {
-        response = await fetch(`${getApiBaseUrl()}/api/audit-logs/retention`, {
+        response = await fetch(
+          `${getApiBaseUrl()}/api/audit-logs/retention`,
+          await withBackendOperatorAuth({
             method: "GET",
             headers: { Accept: "application/json" },
             cache: "no-store",
             signal: AbortSignal.timeout(5_000),
-        });
+          }),
+        );
     } catch (error) {
         const message =
             error instanceof Error ? error.message : "Unknown connection error";

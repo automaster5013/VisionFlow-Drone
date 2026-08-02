@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { DroneRealtimeDetail } from "@/components/drones/drone-realtime-detail";
 import { getDrone } from "@/lib/api/drones";
@@ -36,6 +36,15 @@ export default async function DroneDetailPage({
             error.message === "DRONE_NOT_FOUND"
         ) {
             notFound();
+        }
+
+        if (
+            error instanceof Error &&
+            error.message === "OPERATOR_AUTHENTICATION_REQUIRED"
+        ) {
+            redirect(
+                `/operator-login?returnTo=${encodeURIComponent(`/drones/${id}`)}`,
+            );
         }
 
         throw error;

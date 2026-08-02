@@ -1,3 +1,6 @@
+import "server-only";
+
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import type {
     DashboardAiAlertItem,
     DashboardAppliedFilters,
@@ -260,14 +263,14 @@ export async function getOperationsDashboard(
     try {
         response = await fetch(
             `${apiBaseUrl}/api/dashboard/operations?${searchParams}`,
-            {
+            await withBackendOperatorAuth({
                 method: "GET",
                 headers: {
                     Accept: "application/json",
                 },
                 cache: "no-store",
                 signal: AbortSignal.timeout(5000),
-            },
+            }),
         );
     } catch (error) {
         const message =

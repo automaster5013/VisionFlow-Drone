@@ -1,4 +1,5 @@
 import { DroneFleetControl } from "@/components/drones/drone-fleet-control";
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import type { Drone } from "@/types/drone";
 import type { IncidentReplayFocus } from "@/types/incident-replay";
 import {
@@ -65,10 +66,10 @@ async function getInitialFleetClearance(
   try {
     const response = await fetch(
       `${backendApiUrl}/api/maintenance/flight-clearance`,
-      {
+      await withBackendOperatorAuth({
         cache: "no-store",
         signal: AbortSignal.timeout(5_000),
-      },
+      }),
     );
     if (!response.ok) {
       console.error(
@@ -119,25 +120,22 @@ export default async function DronesPage({ searchParams }: DronesPageProps) {
   const [response, initialFleetClearance] = await Promise.all([
     fetch(
       `${backendApiUrl}/api/drones`,
-      {
+      await withBackendOperatorAuth({
         cache: "no-store",
-      },
+      }),
     ),
     getInitialFleetClearance(backendApiUrl),
   ]);
 
-  if (!response.ok) {
+  if (!response.ok && response.status !== 401) {
     throw new Error(
         `드론 목록 조회 실패: ${response.status} ${response.statusText}`,
     );
   }
 
-  const payload: unknown = await response.json();
-
-  // Next.js 서버 터미널에서 실제 응답 확인
-  console.log("GET /api/drones 응답:", payload);
-
-  const drones = extractDrones(payload);
+  const drones = response.status === 401
+    ? []
+    : extractDrones(await response.json() as unknown);
   const initialSelectedDroneId =
     requestedDroneId !== null &&
     requestedDroneId > 0 &&

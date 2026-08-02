@@ -1,3 +1,6 @@
+import "server-only";
+
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import type {
     ApiResponse,
     Drone,
@@ -19,13 +22,13 @@ export async function getDrones(
 
     const response = await fetch(
         `${getApiBaseUrl()}/api/drones${query}`,
-        {
+        await withBackendOperatorAuth({
             method: "GET",
             headers: {
                 Accept: "application/json",
             },
             cache: "no-store",
-        },
+        }),
     );
 
     if (!response.ok) {
@@ -47,14 +50,14 @@ export async function getDrone(
     try {
         response = await fetch(
             `${getApiBaseUrl()}/api/drones/${id}`,
-            {
+            await withBackendOperatorAuth({
                 method: "GET",
                 headers: {
                     Accept: "application/json",
                 },
                 cache: "no-store",
                 signal: AbortSignal.timeout(5000),
-            },
+            }),
         );
     } catch (error) {
         const message =
@@ -69,6 +72,10 @@ export async function getDrone(
 
     if (response.status === 404) {
         throw new Error("DRONE_NOT_FOUND");
+    }
+
+    if (response.status === 401) {
+        throw new Error("OPERATOR_AUTHENTICATION_REQUIRED");
     }
 
     if (!response.ok) {

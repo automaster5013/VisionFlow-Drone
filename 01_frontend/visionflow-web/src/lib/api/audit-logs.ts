@@ -1,5 +1,6 @@
 import "server-only";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import {
     parseAuditLogPage,
     type AuditLogPage,
@@ -86,12 +87,12 @@ export async function getAuditLogs(
     try {
         response = await fetch(
             `${getApiBaseUrl()}/api/audit-logs?${params.toString()}`,
-            {
+            await withBackendOperatorAuth({
                 method: "GET",
                 headers: { Accept: "application/json" },
                 cache: "no-store",
                 signal: AbortSignal.timeout(5_000),
-            },
+            }),
         );
     } catch (error) {
         const message =

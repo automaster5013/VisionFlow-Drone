@@ -1,3 +1,6 @@
+import "server-only";
+
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import {
   extractFleetReliabilityResponse,
   type FleetReliabilityResponse,
@@ -33,12 +36,12 @@ export async function getFleetReliability(
   try {
     response = await fetch(
       `${getApiBaseUrl()}/api/flight-quality/fleet-reliability?${query}`,
-      {
+      await withBackendOperatorAuth({
         method: "GET",
         headers: { Accept: "application/json" },
         cache: "no-store",
         signal: AbortSignal.timeout(5_000),
-      },
+      }),
     );
   } catch (error) {
     const message =

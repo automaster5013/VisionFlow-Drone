@@ -1,5 +1,6 @@
 import "server-only";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import {
     parseAiAlertList,
     type AiAlertItem,
@@ -109,12 +110,12 @@ export async function getAiAlerts(
     try {
         response = await fetch(
             `${apiBaseUrl}/api/ai/alerts?${searchParams.toString()}`,
-            {
+            await withBackendOperatorAuth({
                 method: "GET",
                 headers: { Accept: "application/json" },
                 cache: "no-store",
                 signal: AbortSignal.timeout(5_000),
-            },
+            }),
         );
     } catch (error) {
         const message =

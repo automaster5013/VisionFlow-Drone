@@ -52,13 +52,13 @@ export async function GET(
     try {
         const response = await fetch(
             `${apiBaseUrl}/api/drones${query}`,
-            {
+            await withBackendOperatorAuth({
                 method: "GET",
                 headers: {
                     Accept: "application/json",
                 },
                 cache: "no-store",
-            },
+            }),
         );
 
         return proxyResponse(response);

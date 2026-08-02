@@ -64,6 +64,13 @@ HTTP_METHOD_PATTERN = re.compile(
 )
 QUOTED_PATTERN = re.compile(r'"([^"]+)"')
 AI_INTERNAL_ACCESS = "AI_INTERNAL_KEY"
+FRONTEND_HANDLER_DECLARATION = re.compile(
+    r"export\s+(?:async\s+)?function\s+"
+    r"(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s*\("
+)
+LOCAL_FUNCTION_DECLARATION = re.compile(
+    r"(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\("
+)
 
 
 @dataclass(frozen=True)
@@ -310,7 +317,12 @@ def analyze_backend(
     sensitive_policies = baseline.get("sensitiveBackendPublicReads", [])
     if not isinstance(sensitive_policies, list):
         raise ValueError("sensitiveBackendPublicReads 값이 배열이 아닙니다.")
+    approved_public_reads = baseline_operation_map(
+        baseline,
+        "approvedBackendPublicReads",
+    )
     sensitive_public_reads: list[dict[str, Any]] = []
+    approved_sensitive_public_reads: list[dict[str, Any]] = []
     for row in rows:
         if row["method"] != "GET" or row["enabledAccess"] != PUBLIC_ACCESS:
             continue
@@ -319,14 +331,20 @@ def analyze_backend(
                 continue
             pattern = str(policy.get("path", ""))
             if pattern and ant_matches(pattern, row["normalizedPath"]):
-                sensitive_public_reads.append(
-                    {
-                        "operation": row["operation"],
-                        "severity": str(policy.get("severity", "MEDIUM")),
-                        "reason": str(policy.get("reason", "")),
-                        "source": row["source"],
-                    }
+                finding = {
+                    "operation": row["operation"],
+                    "severity": str(policy.get("severity", "MEDIUM")),
+                    "reason": str(policy.get("reason", "")),
+                    "source": row["source"],
+                }
+                approved = approved_public_reads.get(
+                    operation_key(row["method"], row["normalizedPath"])
                 )
+                if approved is None:
+                    sensitive_public_reads.append(finding)
+                else:
+                    finding["approvalReason"] = str(approved.get("reason", ""))
+                    approved_sensitive_public_reads.append(finding)
                 break
 
     disabled_non_public = [
@@ -340,6 +358,7 @@ def analyze_backend(
         "unexpectedPublicWrites": unexpected_public_writes,
         "changedExpectedPublicWrites": changed_expected_public_writes,
         "sensitivePublicReads": sensitive_public_reads,
+        "approvedSensitivePublicReads": approved_sensitive_public_reads,
         "disabledNonPublic": disabled_non_public,
         "deniedEnabled": denied_enabled,
     }
@@ -356,14 +375,82 @@ def helper_auth_modules(root: Path) -> set[str]:
     return modules
 
 
-def route_auth_mechanism(text: str, auth_modules: set[str]) -> str:
+def function_blocks(text: str) -> dict[str, str]:
+    matches = list(LOCAL_FUNCTION_DECLARATION.finditer(text))
+    blocks: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        blocks[match.group(1)] = text[match.start():end]
+    return blocks
+
+
+def route_handler_context(operation: Operation, text: str) -> str:
+    matches = list(FRONTEND_HANDLER_DECLARATION.finditer(text))
+    handler = next(
+        (match for match in matches if match.group(1) == operation.method),
+        None,
+    )
+    if handler is None:
+        return ""
+    next_start = next(
+        (match.start() for match in matches if match.start() > handler.start()),
+        len(text),
+    )
+    context = text[handler.start():next_start]
+    blocks = function_blocks(text)
+    included: set[str] = {operation.method}
+    for _ in range(4):
+        added = False
+        for name, block in blocks.items():
+            if name in included or not re.search(rf"\b{re.escape(name)}\s*\(", context):
+                continue
+            context += "\n" + block
+            included.add(name)
+            added = True
+        if not added:
+            break
+    return context
+
+
+def imported_auth_helpers(
+    text: str,
+    handler_context: str,
+    auth_modules: set[str],
+) -> list[str]:
+    matched: list[str] = []
+    import_pattern = re.compile(
+        r'import\s*\{(?P<symbols>[^}]*)\}\s*from\s*'
+        r'"@/lib/server/(?P<module>[\w-]+)"',
+    )
+    for match in import_pattern.finditer(text):
+        module = match.group("module")
+        if module not in auth_modules:
+            continue
+        symbols = [
+            part.strip().split(" as ")[-1].strip()
+            for part in match.group("symbols").split(",")
+            if part.strip() and not part.strip().startswith("type ")
+        ]
+        if any(
+            re.search(rf"\b{re.escape(symbol)}\b", handler_context)
+            for symbol in symbols
+        ):
+            matched.append(module)
+    return sorted(set(matched))
+
+
+def route_auth_mechanism(
+    operation: Operation,
+    text: str,
+    auth_modules: set[str],
+) -> str:
+    handler_context = route_handler_context(operation, text)
     mechanisms: list[str] = []
-    if "withBackendOperatorAuth" in text:
+    if "withBackendOperatorAuth" in handler_context:
         mechanisms.append("OPERATOR_AUTH")
-    if "withAiInternalAuth" in text:
+    if "withAiInternalAuth" in handler_context:
         mechanisms.append("AI_INTERNAL_AUTH")
-    imports = set(re.findall(r"@/lib/server/([\w-]+)", text))
-    matched = sorted(imports & auth_modules)
+    matched = imported_auth_helpers(text, handler_context, auth_modules)
     if matched:
         mechanisms.append("HELPER_OPERATOR_AUTH:" + ",".join(matched))
     return "+".join(mechanisms) if mechanisms else "NONE"
@@ -422,7 +509,7 @@ def analyze_frontend(
             operation.key,
             [Target("backend", operation.method, operation.normalized_path)],
         )
-        mechanism = route_auth_mechanism(text, auth_modules)
+        mechanism = route_auth_mechanism(operation, text, auth_modules)
         guard = route_mutation_guard(operation, text)
         target_rows: list[dict[str, str]] = []
         protected_targets: list[dict[str, str]] = []
@@ -796,8 +883,8 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
                 "ADMIN·인증 전용 API의 보호 규칙이 기준과 다릅니다."
                 if protection_failures
                 else (
-                    "세션 관리·감사·Incident·AI 이벤트와 "
-                    "경보 API의 역할별 보호 규칙이 유지됩니다."
+                    "세션 관리·감사·Incident·AI 이벤트·경보와 "
+                    "운영 조회 API의 역할별 보호 규칙이 유지됩니다."
                 )
             ),
             failures=protection_failures,
@@ -824,6 +911,7 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
         )
     )
     sensitive_reads = backend_summary["sensitivePublicReads"]
+    approved_sensitive_reads = backend_summary["approvedSensitivePublicReads"]
     checks.append(
         make_check(
             "ADVISORY" if sensitive_reads else "PASS",
@@ -832,9 +920,13 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             (
                 f"민감 운영 데이터를 인증 없이 읽을 수 있는 API가 {len(sensitive_reads)}개입니다."
                 if sensitive_reads
-                else "민감 GET API가 인증으로 보호됩니다."
+                else (
+                    "민감 GET API가 인증으로 보호되며, "
+                    f"승인된 LOW 공개 예외 {len(approved_sensitive_reads)}건만 유지됩니다."
+                )
             ),
             findings=sensitive_reads,
+            approvedExceptions=approved_sensitive_reads,
         )
     )
     disabled_non_public = backend_summary["disabledNonPublic"]

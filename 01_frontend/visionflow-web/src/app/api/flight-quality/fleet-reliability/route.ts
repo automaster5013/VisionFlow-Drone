@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
   process.env.API_BASE_URL ??
@@ -40,12 +42,12 @@ export async function GET(request: NextRequest) {
     });
     const response = await fetch(
       `${BACKEND_API_URL}/api/flight-quality/fleet-reliability?${query}`,
-      {
+      await withBackendOperatorAuth({
         method: "GET",
         headers: { Accept: "application/json" },
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),
-      },
+      }),
     );
     const body = await response.text();
 

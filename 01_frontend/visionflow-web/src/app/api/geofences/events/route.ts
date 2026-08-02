@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
   process.env.API_BASE_URL ??
@@ -13,13 +15,13 @@ export async function GET(request: NextRequest) {
 
     backendUrl.search = request.nextUrl.search;
 
-    const response = await fetch(backendUrl, {
+    const response = await fetch(backendUrl, await withBackendOperatorAuth({
       method: "GET",
       headers: {
         Accept: "application/json",
       },
       cache: "no-store",
-    });
+    }));
 
     const body = await response.text();
 

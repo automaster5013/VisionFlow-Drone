@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
   process.env.API_BASE_URL ??
@@ -84,12 +86,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const response = await fetch(
       `${BACKEND_API_URL}/api/drones/${encodeURIComponent(id)}` +
         `/flight-sessions/${encodeURIComponent(sessionId)}/replay?${query}`,
-      {
+      await withBackendOperatorAuth({
         method: "GET",
         headers: { Accept: "application/json" },
         cache: "no-store",
         signal: AbortSignal.timeout(10_000),
-      },
+      }),
     );
 
     const body = await response.text();

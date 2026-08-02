@@ -43,6 +43,7 @@ public class SecurityConfig {
                                         "/api/dashboard/**",
                                         "/api/incidents/**",
                                         "/api/maintenance/**",
+                                        "/api/flight-quality/**",
                                         "/api/audit-logs/**",
                                         "/api/security/**",
                                         "/api/demo/**",
@@ -102,6 +103,15 @@ public class SecurityConfig {
                                     "/api/ai/alerts/**",
                                     "/api/ai/events/**",
                                     "/api/incidents/**"
+                            )
+                            .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
+                            .requestMatchers(
+                                    HttpMethod.GET,
+                                    "/api/dashboard/**",
+                                    "/api/drones/**",
+                                    "/api/flight-quality/**",
+                                    "/api/geofences/**",
+                                    "/api/maintenance/**"
                             )
                             .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
                             .requestMatchers(HttpMethod.GET, "/api/**")

@@ -1319,7 +1319,7 @@ try {
     Write-Host ""
 
     Test-Endpoint -Name "Backend health" -Uri "$BackendUrl/api/health" | Out-Null
-    Test-Endpoint -Name "Backend drone list" -Uri "$BackendUrl/api/drones" | Out-Null
+    Test-Endpoint -Name "Backend authenticated drone list" -Uri "$BackendUrl/api/drones" -Headers (Get-OperatorHeaders -Key $ViewerKey) | Out-Null
     Test-Endpoint -Name "Frontend dashboard" -Uri "$FrontendUrl/dashboard" | Out-Null
     Test-FrontendSecurityHeaders
     Test-CspReportOnlyEndpoint
@@ -1364,6 +1364,12 @@ try {
             Test-RbacIdentity -Name "RBAC viewer identity" -Key $ViewerKey -ExpectedRole "VIEWER"
             Test-RbacIdentity -Name "RBAC operator identity" -Key $OperatorKey -ExpectedRole "OPERATOR"
             Test-RbacIdentity -Name "RBAC admin identity" -Key $AdminKey -ExpectedRole "ADMIN"
+            Test-RbacReadBoundary -Name "RBAC missing key operations read denial" -Path "/api/dashboard/operations?limit=1" -Key $null -ExpectedStatus 401 -ExpectedCode "OPERATOR_AUTHENTICATION_REQUIRED"
+            Test-RbacReadBoundary -Name "RBAC missing key drone read denial" -Path "/api/drones" -Key $null -ExpectedStatus 401 -ExpectedCode "OPERATOR_AUTHENTICATION_REQUIRED"
+            Test-RbacReadBoundary -Name "RBAC viewer drone read access" -Path "/api/drones" -Key $ViewerKey -ExpectedStatus 200
+            Test-RbacReadBoundary -Name "RBAC operator maintenance read access" -Path "/api/maintenance/work-orders" -Key $OperatorKey -ExpectedStatus 200
+            Test-RbacReadBoundary -Name "RBAC admin geofence read access" -Path "/api/geofences" -Key $AdminKey -ExpectedStatus 200
+            Test-RbacReadBoundary -Name "RBAC viewer fleet reliability access" -Path "/api/flight-quality/fleet-reliability?limitPerDrone=1" -Key $ViewerKey -ExpectedStatus 200
             Test-RbacReadBoundary -Name "RBAC missing key sensitive read denial" -Path "/api/incidents?limit=1" -Key $null -ExpectedStatus 401 -ExpectedCode "OPERATOR_AUTHENTICATION_REQUIRED"
             Test-RbacReadBoundary -Name "RBAC viewer sensitive read access" -Path "/api/incidents?limit=1" -Key $ViewerKey -ExpectedStatus 200
             Test-RbacReadBoundary -Name "RBAC operator sensitive read access" -Path "/api/ai/alerts?limit=1" -Key $OperatorKey -ExpectedStatus 200

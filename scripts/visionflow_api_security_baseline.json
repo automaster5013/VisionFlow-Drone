@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "visionflow",
-  "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
+  "baselineCommit": "4537e9bc7d8b2e332efbe096e07a02e4c62b5343",
   "expectedCounts": {
     "backend": 70,
     "frontend": 70,
@@ -85,6 +85,132 @@
       "path": "/api/incidents/{}/report",
       "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
       "reason": "Incident 보고서는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard/operations",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "관제 운영 요약은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "드론 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones/{}",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "드론 상세는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones/{}/telemetry/history",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "텔레메트리 이력은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones/{}/flight-sessions",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "비행 세션 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones/{}/flight-sessions/{}",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "비행 세션 상세는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones/{}/flight-sessions/{}/replay",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "비행 세션 리플레이는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones/{}/flight-quality-assessments",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "비행 품질 평가 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/drones/{}/flight-sessions/{}/quality-assessment",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "비행 세션 품질 평가는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/flight-quality/fleet-reliability",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "함대 신뢰도 분석은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofences",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "지오펜스 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofences/{}",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "지오펜스 상세는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofences/events",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "지오펜스 이벤트는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/flight-clearance",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "비행 허가 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/flight-clearance/{}",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "기체별 비행 허가는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/metrics",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "정비 지표는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/priorities",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "정비 우선순위는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/sla",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "정비 SLA는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/sla/incidents",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "정비 SLA Incident는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/work-orders",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "정비 작업 목록은 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/maintenance/work-orders/{}",
+      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "reason": "정비 작업 상세는 인증된 역할만 조회"
     },
     {
       "method": "DELETE",
@@ -176,6 +302,14 @@
       "path": "/api/demo/**",
       "severity": "LOW",
       "reason": "시연 시나리오 상태"
+    }
+  ],
+  "approvedBackendPublicReads": [
+    {
+      "method": "GET",
+      "path": "/api/demo/scenarios/{}",
+      "severity": "LOW",
+      "reason": "발표 시연 진행 상태를 인증 전 화면에서도 조회할 수 있도록 유지"
     }
   ],
   "expectedFrontendUnguardedMutations": [

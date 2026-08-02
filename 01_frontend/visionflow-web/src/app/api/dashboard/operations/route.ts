@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+
 const BACKEND_API_URL = (
     process.env.SPRING_API_URL ??
     process.env.BACKEND_API_URL ??
@@ -84,12 +86,12 @@ export async function GET(request: NextRequest) {
     try {
         const response = await fetch(
             `${BACKEND_API_URL}/api/dashboard/operations?${backendSearchParams}`,
-            {
+            await withBackendOperatorAuth({
                 method: "GET",
                 headers: { Accept: "application/json" },
                 cache: "no-store",
                 signal: AbortSignal.timeout(10_000),
-            },
+            }),
         );
         const responseBody = await response.text();
 
