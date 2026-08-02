@@ -176,7 +176,7 @@ flowchart LR
 | `source_type + source_id` | Incident 다형 소스 | source type별 대상 테이블 존재 여부와 UNIQUE 계약 검사 |
 | `snapshot_path` | DB와 파일시스템 | DB 참조·실제 JPG 수·크기·SHA-256 일치 검사 |
 
-39개 DB 상관관계와 5개 snapshot 규칙은 읽기 전용 데이터 정합성 감사로 통합되어 있으며, 기존 운영 가드의 기본 30분 주기에서도 함께 실행된다. 문제를 발견해도 자동 복구하거나 행을 삭제하지 않는다.
+40개 DB 상관관계·수명주기 규칙과 5개 snapshot 규칙은 읽기 전용 데이터 정합성 감사로 통합되어 있으며, 기존 운영 가드의 기본 30분 주기에서도 함께 실행된다. 기체별 ACTIVE 비행 세션 중복도 이 범위에서 차단한다. 문제를 발견해도 자동 복구하거나 행을 삭제하지 않는다.
 
 ## 8. 런타임 전용 상태
 
@@ -228,6 +228,7 @@ Data model: Tables=16, Entities=15, Repositories=15, ForeignKeys=12
 - `session_id`, `drone_id`, `source_type + source_id` 고아·불일치 읽기 전용 감사
 - historical flight session 복구와 Drone 이력 삭제 재발 방지
 - 텔레메트리·AI 이벤트 외부 입력의 세션 존재·Drone 소유권 쓰기 방어
+- Drone·비행 세션 행 잠금과 DB UNIQUE 제약을 통한 기체별 단일 ACTIVE 세션 보장
 - 운영 가드 기반 정기 감시와 자동 복구 금지
 
 다음 후보는 아래 순서로 검토한다.

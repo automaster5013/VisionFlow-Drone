@@ -16,6 +16,8 @@ on:
       - "scripts/visionflow_ai_openapi_snapshot.py"
       - "scripts/visionflow_ci_api_audit_gate.py"
       - "scripts/visionflow_ci_api_audit_policy.json"
+      - "scripts/visionflow_data_integrity_audit.py"
+      - "scripts/visionflow_data_integrity_policy.json"
       - "scripts/visionflow_system_traceability_audit.py"
       - "scripts/visionflow_system_traceability_baseline.json"
       - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
@@ -36,6 +38,8 @@ on:
       - "scripts/visionflow_ai_openapi_snapshot.py"
       - "scripts/visionflow_ci_api_audit_gate.py"
       - "scripts/visionflow_ci_api_audit_policy.json"
+      - "scripts/visionflow_data_integrity_audit.py"
+      - "scripts/visionflow_data_integrity_policy.json"
       - "scripts/visionflow_system_traceability_audit.py"
       - "scripts/visionflow_system_traceability_baseline.json"
       - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
@@ -73,10 +77,12 @@ jobs:
             scripts/visionflow_api_security_audit.py \
             scripts/visionflow_ai_openapi_snapshot.py \
             scripts/visionflow_ci_api_audit_gate.py \
+            scripts/visionflow_data_integrity_audit.py \
             scripts/visionflow_system_traceability_audit.py
           python -m json.tool scripts/visionflow_api_contract_baseline.json >/dev/null
           python -m json.tool scripts/visionflow_api_security_baseline.json >/dev/null
           python -m json.tool scripts/visionflow_ci_api_audit_policy.json >/dev/null
+          python -m json.tool scripts/visionflow_data_integrity_policy.json >/dev/null
           python -m json.tool scripts/visionflow_system_traceability_baseline.json >/dev/null
 
       - name: Generate source-derived AI OpenAPI inventory

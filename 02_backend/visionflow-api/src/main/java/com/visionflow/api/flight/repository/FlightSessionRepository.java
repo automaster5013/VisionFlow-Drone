@@ -4,8 +4,11 @@ import com.visionflow.api.flight.domain.FlightSession;
 import com.visionflow.api.flight.domain.FlightSessionStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -18,6 +21,18 @@ public interface FlightSessionRepository
     Optional<FlightSession> findBySessionIdAndDroneId(
             String sessionId,
             Long droneId
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT flightSession
+            FROM FlightSession flightSession
+            WHERE flightSession.sessionId = :sessionId
+              AND flightSession.droneId = :droneId
+            """)
+    Optional<FlightSession> findBySessionIdAndDroneIdForUpdate(
+            @Param("sessionId") String sessionId,
+            @Param("droneId") Long droneId
     );
 
     Optional<FlightSession>

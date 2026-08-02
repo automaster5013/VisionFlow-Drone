@@ -92,6 +92,32 @@ class DataIntegrityAuditTest(unittest.TestCase):
         )
         self.assertEqual(status, "DATA_INTEGRITY_BLOCKED")
 
+    def test_multiple_active_sessions_for_one_drone_blocks(self) -> None:
+        counts = {key: 0 for key in audit.DATABASE_RULES}
+        counts["flight-session-multiple-active-per-drone"] = 1
+        counts.update(
+            {
+                "snapshot-invalid-reference": 0,
+                "snapshot-missing-file": 0,
+                "snapshot-size-mismatch": 0,
+                "snapshot-duplicate-reference": 0,
+                "snapshot-unreferenced-file": 0,
+            }
+        )
+        status, rules = audit.evaluate(
+            self.policy,
+            {"missingRequiredTables": []},
+            counts,
+            {},
+        )
+        self.assertEqual(status, "DATA_INTEGRITY_BLOCKED")
+        active_rule = next(
+            row
+            for row in rules
+            if row["key"] == "flight-session-multiple-active-per-drone"
+        )
+        self.assertEqual(active_rule["status"], "CRITICAL")
+
     def test_unreferenced_snapshot_is_advisory(self) -> None:
         counts = {key: 0 for key in audit.DATABASE_RULES}
         counts.update(

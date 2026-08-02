@@ -300,7 +300,10 @@ def check_data_integrity(root: Path, report_dir: Path) -> CheckResult:
     elif not exit_code_valid:
         message = "데이터 정합성 감사 상태와 종료 코드가 일치하지 않습니다."
     elif status == "HEALTHY":
-        message = "39개 DB 관계와 5개 snapshot 규칙이 정상입니다."
+        message = (
+            f"{summary.get('databaseRules')}개 DB 관계와 "
+            f"{summary.get('snapshotRules')}개 snapshot 규칙이 정상입니다."
+        )
     elif status == "WARNING":
         message = "데이터 정합성 감사에 검토할 advisory가 있습니다."
     else:

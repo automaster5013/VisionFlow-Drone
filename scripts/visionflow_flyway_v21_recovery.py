@@ -313,7 +313,11 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print("[PASS] DB가 승인된 V21 실패 프로필과 정확히 일치합니다.")
         print("[PASS] 세 FK는 CASCADE 상태이며 반쪽 DDL 적용이 없습니다.")
-        print("[PASS] 39개 DB 정합성 규칙의 finding이 0입니다.")
+        print(
+            "[PASS] "
+            f"{len(integrity.DATABASE_RULES)}개 DB 정합성 규칙의 "
+            "finding이 0입니다."
+        )
         if args.action == "plan":
             print("Status: READY")
             print(

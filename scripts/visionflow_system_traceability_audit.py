@@ -131,6 +131,131 @@ def session_correlation_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def flight_session_lifecycle_policy_drift(root: Path) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+    )
+    paths = {
+        "management": backend_root
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+        / "flight"
+        / "service"
+        / "FlightSessionManagementService.java",
+        "session-repository": backend_root
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+        / "flight"
+        / "repository"
+        / "FlightSessionRepository.java",
+        "drone-repository": backend_root
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+        / "drone"
+        / "repository"
+        / "DroneRepository.java",
+        "exception": backend_root
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+        / "flight"
+        / "exception"
+        / "ActiveFlightSessionExistsException.java",
+        "migration": backend_root
+        / "resources"
+        / "db"
+        / "migration"
+        / "V22__enforce_single_active_flight_session.sql",
+        "integrity-audit": root
+        / "scripts"
+        / "visionflow_data_integrity_audit.py",
+        "integrity-policy": root
+        / "scripts"
+        / "visionflow_data_integrity_policy.json",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "management": [
+            "droneRepository.findByIdForUpdate(droneId)",
+            "new ActiveFlightSessionExistsException(droneId)",
+            "sessionRepository.saveAndFlush(session)",
+            "uq_flight_session_one_active_per_drone",
+            "isActiveSessionUniquenessViolation(exception)",
+            "findManagedSessionForUpdate(",
+        ],
+        "session-repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findBySessionIdAndDroneIdForUpdate(",
+        ],
+        "drone-repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "exception": ["ACTIVE_FLIGHT_SESSION_EXISTS"],
+        "migration": [
+            "GENERATED ALWAYS AS",
+            "status = 'ACTIVE'",
+            "UNIQUE (active_drone_id)",
+        ],
+        "integrity-audit": [
+            '"flight-session-multiple-active-per-drone"',
+            "HAVING COUNT(*) > 1",
+        ],
+        "integrity-policy": [
+            '"key": "flight-session-multiple-active-per-drone"',
+            '"severity": "CRITICAL"',
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    management = sources.get("management")
+    if management is not None:
+        lock_at = management.find(
+            "droneRepository.findByIdForUpdate(droneId)"
+        )
+        active_check_at = management.find(
+            ".findFirstByDroneIdAndStatusOrderByStartedAtDesc("
+        )
+        persistence_at = management.find(
+            "sessionRepository.saveAndFlush(session)"
+        )
+        if not (
+            0 <= lock_at < active_check_at < persistence_at
+        ):
+            drift.append(
+                "ordering:management:drone-lock-before-active-check-before-insert"
+            )
+        if management.count("findManagedSessionForUpdate(") < 4:
+            drift.append(
+                "usage:management:lock-update-complete-abort"
+            )
+    return drift
+
+
 def read_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -430,6 +555,18 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not session_correlation_drift
             else "외부 입력에서 비행 세션 상관관계 검증이 누락됐습니다.",
             drift=session_correlation_drift,
+        )
+    )
+    lifecycle_drift = flight_session_lifecycle_policy_drift(root)
+    checks.append(
+        check(
+            "BLOCKED" if lifecycle_drift else "PASS",
+            "flight-session-lifecycle-concurrency-policy",
+            "비행 세션 수명주기 동시성 정책",
+            "기체별 단일 ACTIVE 세션과 세션 종료 전이가 행 잠금·DB UNIQUE 제약으로 보호됩니다."
+            if not lifecycle_drift
+            else "비행 세션 시작·갱신 동시성 방어가 누락됐습니다.",
+            drift=lifecycle_drift,
         )
     )
     count_drift = {

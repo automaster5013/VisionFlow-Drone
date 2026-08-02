@@ -9,9 +9,11 @@ import com.visionflow.api.flight.dto.FlightSessionResponse;
 import com.visionflow.api.flight.dto.FlightSessionStartRequest;
 import com.visionflow.api.flight.dto.FlightSessionUpdateRequest;
 import com.visionflow.api.flight.event.FlightSessionClosedEvent;
+import com.visionflow.api.flight.exception.ActiveFlightSessionExistsException;
 import com.visionflow.api.flight.repository.FlightSessionRepository;
 import com.visionflow.api.maintenance.service.MaintenanceFlightGateService;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,9 @@ import java.util.UUID;
 
 @Service
 public class FlightSessionManagementService {
+
+    private static final String ACTIVE_SESSION_UNIQUE_CONSTRAINT =
+            "uq_flight_session_one_active_per_drone";
 
     private static final DateTimeFormatter DEFAULT_NAME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 비행");
@@ -47,7 +52,7 @@ public class FlightSessionManagementService {
             Long droneId,
             FlightSessionStartRequest request
     ) {
-        Drone drone = droneRepository.findById(droneId)
+        Drone drone = droneRepository.findByIdForUpdate(droneId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "드론을 찾을 수 없습니다: " + droneId
                 ));
@@ -58,10 +63,7 @@ public class FlightSessionManagementService {
                         FlightSessionStatus.ACTIVE
                 )
                 .ifPresent(activeSession -> {
-                    throw new IllegalArgumentException(
-                            "이미 진행 중인 비행 세션이 있습니다: "
-                                    + activeSession.getSessionId()
-                    );
+                    throw new ActiveFlightSessionExistsException(droneId);
                 });
 
         flightGateService.requireStartClearance(droneId);
@@ -90,9 +92,17 @@ public class FlightSessionManagementService {
                 now
         );
 
-        return FlightSessionResponse.from(
-                sessionRepository.save(session)
-        );
+        try {
+            return FlightSessionResponse.from(
+                    sessionRepository.saveAndFlush(session)
+            );
+        } catch (DataIntegrityViolationException exception) {
+            if (isActiveSessionUniquenessViolation(exception)) {
+                throw new ActiveFlightSessionExistsException(droneId);
+            }
+
+            throw exception;
+        }
     }
 
     @Transactional(readOnly = true)
@@ -114,7 +124,10 @@ public class FlightSessionManagementService {
             );
         }
 
-        FlightSession session = findManagedSession(droneId, sessionId);
+        FlightSession session = findManagedSessionForUpdate(
+                droneId,
+                sessionId
+        );
 
         if (request.name() != null) {
             session.rename(normalizeRequiredName(request.name()));
@@ -136,7 +149,10 @@ public class FlightSessionManagementService {
             Long droneId,
             String sessionId
     ) {
-        FlightSession session = findManagedSession(droneId, sessionId);
+        FlightSession session = findManagedSessionForUpdate(
+                droneId,
+                sessionId
+        );
         boolean transitioned =
                 session.getStatus() != FlightSessionStatus.COMPLETED;
         session.complete(LocalDateTime.now());
@@ -153,7 +169,10 @@ public class FlightSessionManagementService {
             Long droneId,
             String sessionId
     ) {
-        FlightSession session = findManagedSession(droneId, sessionId);
+        FlightSession session = findManagedSessionForUpdate(
+                droneId,
+                sessionId
+        );
         boolean transitioned =
                 session.getStatus() != FlightSessionStatus.ABORTED;
         session.abort(LocalDateTime.now());
@@ -173,6 +192,23 @@ public class FlightSessionManagementService {
         ));
     }
 
+    private boolean isActiveSessionUniquenessViolation(
+            DataIntegrityViolationException exception
+    ) {
+        Throwable current = exception;
+
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null
+                    && message.contains(ACTIVE_SESSION_UNIQUE_CONSTRAINT)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+
+        return false;
+    }
+
     private FlightSession findManagedSession(
             Long droneId,
             String sessionId
@@ -181,6 +217,23 @@ public class FlightSessionManagementService {
 
         return sessionRepository
                 .findBySessionIdAndDroneId(
+                        normalizedSessionId,
+                        droneId
+                )
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "관리 비행 세션을 찾을 수 없습니다: "
+                                + normalizedSessionId
+                ));
+    }
+
+    private FlightSession findManagedSessionForUpdate(
+            Long droneId,
+            String sessionId
+    ) {
+        String normalizedSessionId = normalizeSessionId(sessionId);
+
+        return sessionRepository
+                .findBySessionIdAndDroneIdForUpdate(
                         normalizedSessionId,
                         droneId
                 )

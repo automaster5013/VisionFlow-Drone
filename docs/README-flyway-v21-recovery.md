@@ -20,7 +20,7 @@ V21 최초 SQL은 한 `ALTER TABLE` 문 안에서 기존 FK를 삭제하면서 �
 - Flyway V21 실패 행이 정확히 한 건
 - 설치 순번·버전·설명·스크립트·성공 상태가 승인 프로필과 일치
 - Drone 물리 FK 네 개가 기존 `CASCADE/CASCADE/CASCADE/NO ACTION` 상태
-- 39개 DB 정합성 규칙의 finding이 0
+- 현재 정의된 모든 DB 정합성 규칙의 finding이 0
 
 적용 시 운영 테이블 행과 스키마 DDL은 변경하지 않는다. 실패한
 `flyway_schema_history` 메타데이터 한 행만 백업 후 삭제한다.

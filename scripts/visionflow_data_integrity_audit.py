@@ -20,6 +20,16 @@ FORBIDDEN_SQL = re.compile(
 
 
 DATABASE_RULES: dict[str, str] = {
+    "flight-session-multiple-active-per-drone": """
+        SELECT COUNT(*) AS issue_count
+        FROM (
+            SELECT fs.drone_id
+            FROM flight_session fs
+            WHERE fs.status = 'ACTIVE'
+            GROUP BY fs.drone_id
+            HAVING COUNT(*) > 1
+        ) duplicate_active_sessions
+    """,
     "session-orphan-drone": """
         SELECT COUNT(*) AS issue_count
         FROM drone d
