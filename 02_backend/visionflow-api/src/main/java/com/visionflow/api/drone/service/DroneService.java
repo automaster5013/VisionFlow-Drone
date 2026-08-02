@@ -10,10 +10,12 @@ import com.visionflow.api.drone.dto.DroneCreateRequest;
 import com.visionflow.api.drone.dto.DroneResponse;
 import com.visionflow.api.drone.dto.DroneStatusUpdateRequest;
 import com.visionflow.api.drone.dto.DroneUpdateRequest;
+import com.visionflow.api.drone.exception.DroneHistoryDeleteDeniedException;
 import com.visionflow.api.drone.repository.DroneRepository;
 import com.visionflow.api.drone.dto.DroneTelemetryUpdateRequest;
 import com.visionflow.api.geofence.service.GeofenceService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -130,11 +132,21 @@ public class DroneService {
         return DroneResponse.from(drone);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteDrone(
             Long id
     ) {
-        Drone drone = findDroneById(id);
+        Drone drone = droneRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "ID가 " + id + "인 드론을 찾을 수 없습니다."
+                ));
+
+        if (droneRepository.countDeletionDependencies(id) > 0) {
+            throw new DroneHistoryDeleteDeniedException(
+                    "운영 이력이 있는 드론은 삭제할 수 없습니다. "
+                            + "상태를 OFFLINE으로 변경해 이력을 보존해 주세요."
+            );
+        }
 
         droneRepository.delete(drone);
     }

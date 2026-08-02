@@ -36,4 +36,22 @@ public interface DroneRepository extends JpaRepository<Drone, Long> {
             String serialNumber,
             Long id
     );
+
+    @Query(
+            value = """
+                    SELECT (
+                        EXISTS(SELECT 1 FROM flight_session WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM drone_telemetry_history WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM ai_inference_event WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM ai_alert WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM drone_geofence_event WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM incident WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM demo_scenario WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM flight_quality_assessment WHERE drone_id = :droneId)
+                        + EXISTS(SELECT 1 FROM maintenance_work_order WHERE drone_id = :droneId)
+                    )
+                    """,
+            nativeQuery = true
+    )
+    long countDeletionDependencies(@Param("droneId") Long droneId);
 }

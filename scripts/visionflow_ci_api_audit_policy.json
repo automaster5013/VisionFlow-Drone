@@ -19,6 +19,7 @@
   },
   "expectedTraceabilityChecks": [
     "source-inventory",
+    "drone-history-delete-policy",
     "baseline-counts",
     "migration-tables",
     "entity-repository-mapping",

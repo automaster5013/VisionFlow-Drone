@@ -146,16 +146,16 @@ flowchart LR
 
 | From | To | 삭제 의미 |
 | --- | --- | --- |
-| `drone_telemetry_history.drone_id` | `drone.id` | 기체 삭제 연계 |
+| `drone_telemetry_history.drone_id` | `drone.id` | V21부터 기체 삭제 `RESTRICT`; 텔레메트리 이력 보존 |
 | `drone_geofence_event.geofence_id` | `drone_geofence.id` | 지오펜스 삭제 연계 |
 | `ai_detection.event_id` | `ai_inference_event.id` | 이벤트 삭제 시 탐지 CASCADE |
-| `flight_session.drone_id` | `drone.id` | 기체 기준 세션 |
+| `flight_session.drone_id` | `drone.id` | V21부터 기체 삭제 `RESTRICT`; 세션 이력 보존 |
 | `ai_alert.event_id` | `ai_inference_event.id` | 이벤트 삭제 시 경보 CASCADE |
 | `incident_action_history.incident_id` | `incident.id` | Incident 삭제 시 이력 CASCADE |
 | `flight_quality_assessment.session_id` | `flight_session.session_id` | 세션 삭제 시 평가 CASCADE |
-| `flight_quality_assessment.drone_id` | `drone.id` | 기체 기준 평가 |
+| `flight_quality_assessment.drone_id` | `drone.id` | V21부터 기체 삭제 `RESTRICT`; 품질 평가 보존 |
 | `maintenance_work_order.incident_id` | `incident.id` | Incident 삭제 시 작업 CASCADE |
-| `maintenance_work_order.drone_id` | `drone.id` | 기체 기준 작업 |
+| `maintenance_work_order.drone_id` | `drone.id` | 기체 삭제 `RESTRICT`; 정비 작업 보존 |
 | `maintenance_work_order.source_assessment_id` | `flight_quality_assessment.id` | 평가 삭제 시 참조 NULL |
 | `maintenance_work_order_history.work_order_id` | `maintenance_work_order.id` | 작업 삭제 시 이력 CASCADE |
 
@@ -170,7 +170,7 @@ flowchart LR
 | `source_type + source_id` | Incident 다형 소스 | source type별 대상 테이블 존재 여부와 UNIQUE 계약 검사 |
 | `snapshot_path` | DB와 파일시스템 | DB 참조·실제 JPG 수·크기·SHA-256 일치 검사 |
 
-현재 운영 가드는 snapshot 정합성을 검사하지만 모든 소프트 상관관계를 하나의 FK 감사로 통합하지는 않는다. 다음 데이터 품질 단계에서 이 네 범위를 읽기 전용 정합성 검사로 정례화한다.
+39개 DB 상관관계와 5개 snapshot 규칙은 읽기 전용 데이터 정합성 감사로 통합되어 있으며, 기존 운영 가드의 기본 30분 주기에서도 함께 실행된다. 문제를 발견해도 자동 복구하거나 행을 삭제하지 않는다.
 
 ## 8. 런타임 전용 상태
 
@@ -217,9 +217,16 @@ Data model: Tables=16, Entities=15, Repositories=15, ForeignKeys=12
 
 ## 11. 다음 데이터 품질 작업
 
-1. `session_id`, `drone_id`, `source_type + source_id`의 고아·불일치 읽기 전용 SQL 감사
-2. API별 생성량 상한과 AI alert → Incident 중복 방지 회귀 테스트
-3. 테스트·발표·실운영 데이터 태그 설계
-4. `system_status` 레거시 테이블의 유지·제거 결정
+완료된 데이터 품질 경계는 다음과 같다.
+
+- `session_id`, `drone_id`, `source_type + source_id` 고아·불일치 읽기 전용 감사
+- historical flight session 복구와 Drone 이력 삭제 재발 방지
+- 운영 가드 기반 정기 감시와 자동 복구 금지
+
+다음 후보는 아래 순서로 검토한다.
+
+1. API별 생성량 상한과 AI alert → Incident 중복 방지 회귀 테스트
+2. 테스트·발표·실운영 데이터 태그 설계
+3. `system_status` 레거시 테이블의 유지·제거 결정
 
 이 문서는 코드 구조가 아니라 실제 API·DB·런타임 책임 경계를 기준으로 관리한다.

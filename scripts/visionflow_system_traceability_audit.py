@@ -25,6 +25,10 @@ CREATE_TABLE_PATTERN = re.compile(
     r"\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([A-Za-z0-9_]+)`?",
     re.IGNORECASE,
 )
+ALTER_TABLE_PATTERN = re.compile(
+    r"\bALTER\s+TABLE\s+`?([A-Za-z0-9_]+)`?",
+    re.IGNORECASE,
+)
 FOREIGN_KEY_PATTERN = re.compile(
     r"(?:CONSTRAINT\s+`?[A-Za-z0-9_]+`?\s+)?"
     r"FOREIGN\s+KEY\s*\(\s*`?([A-Za-z0-9_]+)`?\s*\)\s*"
@@ -71,6 +75,7 @@ def parse_migrations(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
     for path in files:
         text = path.read_text(encoding="utf-8")
         creates = list(CREATE_TABLE_PATTERN.finditer(text))
+        alters = list(ALTER_TABLE_PATTERN.finditer(text))
         for create in creates:
             name = create.group(1).lower()
             if name in table_sources:
@@ -78,10 +83,29 @@ def parse_migrations(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
             table_sources[name] = path.name
 
         for foreign_key in FOREIGN_KEY_PATTERN.finditer(text):
-            preceding = [item for item in creates if item.start() < foreign_key.start()]
+            preceding = [
+                (item.start(), item.group(1).lower())
+                for item in creates
+                if item.start() < foreign_key.start()
+            ] + [
+                (item.start(), item.group(1).lower())
+                for item in alters
+                if item.start() < foreign_key.start()
+            ]
             if not preceding:
                 raise ValueError(f"FK의 원본 테이블을 찾지 못했습니다: {path.name}")
-            source_table = preceding[-1].group(1).lower()
+            source_table = max(preceding, key=lambda item: item[0])[1]
+            clause = text[foreign_key.end():].split(",", 1)[0]
+            delete_match = re.search(
+                r"\bON\s+DELETE\s+(CASCADE|RESTRICT|SET\s+NULL|NO\s+ACTION)",
+                clause,
+                re.IGNORECASE,
+            )
+            delete_rule = (
+                re.sub(r"\s+", " ", delete_match.group(1).upper())
+                if delete_match
+                else "RESTRICT"
+            )
             foreign_keys.append(
                 {
                     "fromTable": source_table,
@@ -89,10 +113,16 @@ def parse_migrations(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
                     "toTable": foreign_key.group(2).lower(),
                     "toColumn": foreign_key.group(3).lower(),
                     "source": path.name,
+                    "deleteRule": delete_rule,
                 }
             )
+    effective_foreign_keys: dict[tuple[str, str], dict[str, str]] = {}
+    for foreign_key in foreign_keys:
+        effective_foreign_keys[
+            (foreign_key["fromTable"], foreign_key["fromColumn"])
+        ] = foreign_key
     return table_sources, sorted(
-        foreign_keys,
+        effective_foreign_keys.values(),
         key=lambda item: (
             item["fromTable"],
             item["fromColumn"],
@@ -261,6 +291,44 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not backend_issues
             else "Backend Controller 해석 문제가 있습니다.",
             issues=backend_issues,
+        )
+    )
+
+    expected_drone_restrict_relations = {
+        ("drone_telemetry_history", "drone_id"),
+        ("flight_session", "drone_id"),
+        ("flight_quality_assessment", "drone_id"),
+        ("maintenance_work_order", "drone_id"),
+    }
+    actual_drone_relations = {
+        (item["fromTable"], item["fromColumn"]): item
+        for item in foreign_keys
+        if item["toTable"] == "drone" and item["toColumn"] == "id"
+    }
+    destructive_fk_drift = []
+    for relation in sorted(expected_drone_restrict_relations):
+        actual = actual_drone_relations.get(relation)
+        if actual is None or actual.get("deleteRule") != "RESTRICT":
+            destructive_fk_drift.append(
+                {
+                    "relation": (
+                        f"{relation[0]}.{relation[1]} -> drone.id"
+                    ),
+                    "expectedDeleteRule": "RESTRICT",
+                    "actualDeleteRule": (
+                        actual.get("deleteRule") if actual is not None else None
+                    ),
+                }
+            )
+    checks.append(
+        check(
+            "BLOCKED" if destructive_fk_drift else "PASS",
+            "drone-history-delete-policy",
+            "Drone 이력 삭제 정책",
+            "Drone 소유 물리 이력 4개 FK의 삭제 연쇄가 RESTRICT로 차단됩니다."
+            if not destructive_fk_drift
+            else "Drone 삭제 시 물리 이력이 연쇄 삭제될 수 있습니다.",
+            drift=destructive_fk_drift,
         )
     )
     count_drift = {
