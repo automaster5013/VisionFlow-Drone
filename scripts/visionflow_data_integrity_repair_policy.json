@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "project": "visionflow",
+  "sourceBaseline": "ad83fd0b8ab5c388b2403f3efa4836cceb3ea09c",
+  "confirmation": "REPAIR_VISIONFLOW_SESSION_INTEGRITY",
+  "expected": {
+    "flightSessionRows": 2,
+    "droneRows": 3,
+    "aiEventRows": 6912,
+    "aiAlertRows": 6912,
+    "incidentRows": 6912,
+    "orphanEventRows": 6325,
+    "orphanAlertRows": 6325,
+    "orphanIncidentRows": 6325,
+    "recoverableSessions": [
+      {"hash": "00f8e3c30b9c8090", "droneId": 3, "rows": 164},
+      {"hash": "0357030df9335e8f", "droneId": 3, "rows": 611},
+      {"hash": "16ff415b3bef1bc4", "droneId": 3, "rows": 84},
+      {"hash": "33edb70b1f32a8b3", "droneId": 1, "rows": 1},
+      {"hash": "5bde2284faac2f13", "droneId": 1, "rows": 1},
+      {"hash": "7142c4f1de83951a", "droneId": 1, "rows": 19},
+      {"hash": "80ed40240394aeeb", "droneId": 1, "rows": 2},
+      {"hash": "a984c9277793114b", "droneId": 1, "rows": 2},
+      {"hash": "aa5d0d440c6692eb", "droneId": 1, "rows": 1},
+      {"hash": "c7914302e2a0d8c5", "droneId": 3, "rows": 341},
+      {"hash": "cdc3838d45810d6c", "droneId": 3, "rows": 173},
+      {"hash": "e2d09e7381220726", "droneId": 1, "rows": 1},
+      {"hash": "e9543a50daa0b1b7", "droneId": 2, "rows": 4925}
+    ],
+    "staleDronePointer": {
+      "hash": "dcb70f854484f2a6",
+      "droneId": 1,
+      "droneStatus": "OFFLINE",
+      "currentReferences": 1
+    },
+    "existingSessions": [
+      {"hash": "2e5bc5453dd334ed", "droneId": 3, "status": "COMPLETED", "aiEvents": 587},
+      {"hash": "4d3a3af3e2a3276b", "droneId": 3, "status": "ABORTED", "aiEvents": 0}
+    ]
+  },
+  "repair": {
+    "recoveredStatus": "COMPLETED",
+    "recoveredNamePrefix": "Recovered historical flight",
+    "recoveredDescription": "Recovered from preserved AI event correlation by the data integrity repair.",
+    "expectedSessionInserts": 13,
+    "expectedDroneUpdates": 1,
+    "expectedDeletes": 0
+  }
+}
