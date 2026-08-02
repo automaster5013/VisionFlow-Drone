@@ -43,6 +43,94 @@ REPOSITORY_PATTERN = re.compile(
 )
 
 
+def session_correlation_policy_drift(root: Path) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+    )
+    paths = {
+        "guard": backend_root
+        / "flight"
+        / "service"
+        / "FlightSessionCorrelationGuard.java",
+        "exception": backend_root
+        / "flight"
+        / "exception"
+        / "FlightSessionDroneMismatchException.java",
+        "telemetry": backend_root
+        / "drone"
+        / "service"
+        / "DroneService.java",
+        "ai-event": backend_root
+        / "ai"
+        / "service"
+        / "AiInferenceEventService.java",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "guard": [
+            "findById(normalizedSessionId)",
+            "Objects.equals(session.getDroneId(), droneId)",
+            "requireOptionalOwnedSession(",
+        ],
+        "exception": ["FLIGHT_SESSION_DRONE_MISMATCH"],
+        "telemetry": [
+            "sessionCorrelationGuard.requireOptionalOwnedSession(",
+            "drone.updateTelemetry(",
+        ],
+        "ai-event": [
+            "sessionCorrelationGuard.requireOwnedSession(",
+            "eventRepository",
+            ".findBySourceIdAndSessionIdAndFrameIndex(",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    ordering = {
+        "telemetry": (
+            "sessionCorrelationGuard.requireOptionalOwnedSession(",
+            "drone.updateTelemetry(",
+        ),
+        "ai-event": (
+            "sessionCorrelationGuard.requireOwnedSession(",
+            ".findBySourceIdAndSessionIdAndFrameIndex(",
+        ),
+    }
+    for key, (guard_token, persistence_token) in ordering.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        guard_index = source.find(guard_token)
+        persistence_index = source.find(persistence_token)
+        if (
+            guard_index < 0
+            or persistence_index < 0
+            or guard_index > persistence_index
+        ):
+            drift.append(f"ordering:{key}:guard-before-persistence")
+    return drift
+
+
 def read_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -329,6 +417,19 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not destructive_fk_drift
             else "Drone 삭제 시 물리 이력이 연쇄 삭제될 수 있습니다.",
             drift=destructive_fk_drift,
+        )
+    )
+
+    session_correlation_drift = session_correlation_policy_drift(root)
+    checks.append(
+        check(
+            "BLOCKED" if session_correlation_drift else "PASS",
+            "session-correlation-write-policy",
+            "비행 세션 상관관계 쓰기 정책",
+            "텔레메트리·AI 이벤트 입력이 세션 존재와 Drone 소유권을 영속화 전에 검증합니다."
+            if not session_correlation_drift
+            else "외부 입력에서 비행 세션 상관관계 검증이 누락됐습니다.",
+            drift=session_correlation_drift,
         )
     )
     count_drift = {

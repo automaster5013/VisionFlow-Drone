@@ -20,6 +20,7 @@
   "expectedTraceabilityChecks": [
     "source-inventory",
     "drone-history-delete-policy",
+    "session-correlation-write-policy",
     "baseline-counts",
     "migration-tables",
     "entity-repository-mapping",

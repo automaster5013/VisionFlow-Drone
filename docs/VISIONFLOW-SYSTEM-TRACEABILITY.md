@@ -86,6 +86,12 @@ operation 수는 하나의 API가 둘 이상의 기능 흐름에 참여할 경�
 7. snapshot 파일은 파일시스템에 저장되고 경로·크기·해시는 `ai_inference_event`에 기록된다.
 8. 경보가 생성되면 `ai_alert`, 필요 시 `incident`와 `incident_action_history`로 이어진다.
 
+텔레메트리와 AI 이벤트가 `session_id`를 포함하면 Backend는 저장 전에 해당
+세션의 존재 여부와 `drone_id` 소유권을 공통 Guard로 검증한다. 존재하지 않는
+세션은 `RESOURCE_NOT_FOUND`, 다른 Drone 소유 세션은
+`FLIGHT_SESSION_DRONE_MISMATCH`로 거부한다. 세션을 포함하지 않는 일반
+텔레메트리는 기존과 동일하게 허용한다.
+
 ### 4.2 비행 품질에서 정비 작업까지
 
 ```mermaid
@@ -221,6 +227,7 @@ Data model: Tables=16, Entities=15, Repositories=15, ForeignKeys=12
 
 - `session_id`, `drone_id`, `source_type + source_id` 고아·불일치 읽기 전용 감사
 - historical flight session 복구와 Drone 이력 삭제 재발 방지
+- 텔레메트리·AI 이벤트 외부 입력의 세션 존재·Drone 소유권 쓰기 방어
 - 운영 가드 기반 정기 감시와 자동 복구 금지
 
 다음 후보는 아래 순서로 검토한다.

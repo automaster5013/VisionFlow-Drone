@@ -10,6 +10,7 @@ import com.visionflow.api.ai.repository.AiDetectionRepository;
 import com.visionflow.api.ai.repository.AiInferenceEventRepository;
 import com.visionflow.api.common.exception.ResourceNotFoundException;
 import com.visionflow.api.drone.repository.DroneRepository;
+import com.visionflow.api.flight.service.FlightSessionCorrelationGuard;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class AiInferenceEventService {
     private final AiInferenceEventRepository eventRepository;
     private final AiDetectionRepository detectionRepository;
     private final DroneRepository droneRepository;
+    private final FlightSessionCorrelationGuard sessionCorrelationGuard;
     private final AiRealtimePublisher realtimePublisher;
     private final AiSnapshotStorageService snapshotStorageService;
     private final AiAlertService alertService;
@@ -32,6 +34,7 @@ public class AiInferenceEventService {
             AiInferenceEventRepository eventRepository,
             AiDetectionRepository detectionRepository,
             DroneRepository droneRepository,
+            FlightSessionCorrelationGuard sessionCorrelationGuard,
             AiRealtimePublisher realtimePublisher,
             AiSnapshotStorageService snapshotStorageService,
             AiAlertService alertService
@@ -39,6 +42,7 @@ public class AiInferenceEventService {
         this.eventRepository = eventRepository;
         this.detectionRepository = detectionRepository;
         this.droneRepository = droneRepository;
+        this.sessionCorrelationGuard = sessionCorrelationGuard;
         this.realtimePublisher = realtimePublisher;
         this.snapshotStorageService = snapshotStorageService;
         this.alertService = alertService;
@@ -48,14 +52,19 @@ public class AiInferenceEventService {
     public AiInferenceEventResponse create(
             AiInferenceEventCreateRequest request
     ) {
+        String sessionId = sessionCorrelationGuard.requireOwnedSession(
+                request.sessionId(),
+                request.droneId()
+        );
+
         return eventRepository
                 .findBySourceIdAndSessionIdAndFrameIndex(
                         request.sourceId(),
-                        request.sessionId(),
+                        sessionId,
                         request.frameIndex()
                 )
                 .map(this::toResponse)
-                .orElseGet(() -> createNew(request));
+                .orElseGet(() -> createNew(request, sessionId));
     }
 
     @Transactional(readOnly = true)
@@ -132,7 +141,8 @@ public class AiInferenceEventService {
     }
 
     private AiInferenceEventResponse createNew(
-            AiInferenceEventCreateRequest request
+            AiInferenceEventCreateRequest request,
+            String sessionId
     ) {
         if (!droneRepository.existsById(request.droneId())) {
             throw new ResourceNotFoundException(
@@ -142,7 +152,7 @@ public class AiInferenceEventService {
 
         AiInferenceEvent event = AiInferenceEvent.create(
                 request.sourceId().trim(),
-                request.sessionId().trim(),
+                sessionId,
                 request.sourceType(),
                 request.droneId(),
                 request.frameIndex(),

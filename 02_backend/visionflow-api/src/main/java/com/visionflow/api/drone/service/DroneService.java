@@ -14,6 +14,7 @@ import com.visionflow.api.drone.exception.DroneHistoryDeleteDeniedException;
 import com.visionflow.api.drone.repository.DroneRepository;
 import com.visionflow.api.drone.dto.DroneTelemetryUpdateRequest;
 import com.visionflow.api.geofence.service.GeofenceService;
+import com.visionflow.api.flight.service.FlightSessionCorrelationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +30,20 @@ public class DroneService {
     private final DroneRealtimePublisher realtimePublisher;
     private final DroneTelemetryHistoryService telemetryHistoryService;
     private final GeofenceService geofenceService;
+    private final FlightSessionCorrelationGuard sessionCorrelationGuard;
 
     public DroneService(
             DroneRepository droneRepository,
             DroneRealtimePublisher realtimePublisher,
             DroneTelemetryHistoryService telemetryHistoryService,
-            GeofenceService geofenceService
+            GeofenceService geofenceService,
+            FlightSessionCorrelationGuard sessionCorrelationGuard
     ) {
         this.droneRepository = droneRepository;
         this.realtimePublisher = realtimePublisher;
         this.telemetryHistoryService = telemetryHistoryService;
         this.geofenceService = geofenceService;
+        this.sessionCorrelationGuard = sessionCorrelationGuard;
     }
 
     @Transactional
@@ -240,6 +244,12 @@ public class DroneService {
                         )
                 );
 
+        String flightSessionId =
+                sessionCorrelationGuard.requireOptionalOwnedSession(
+                        request.flightSessionId(),
+                        id
+                );
+
         LocalDateTime connectedAt =
                 request.lastConnectedAt() != null
                         ? request.lastConnectedAt()
@@ -260,7 +270,7 @@ public class DroneService {
                         ? request.telemetrySource()
                         : DroneTelemetrySource.API,
                 normalizeNullable(request.sourceDeviceId()),
-                normalizeNullable(request.flightSessionId()),
+                flightSessionId,
                 connectedAt
         );
 

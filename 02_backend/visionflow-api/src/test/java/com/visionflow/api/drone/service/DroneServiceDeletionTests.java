@@ -5,6 +5,7 @@ import com.visionflow.api.drone.exception.DroneHistoryDeleteDeniedException;
 import com.visionflow.api.drone.realtime.DroneRealtimePublisher;
 import com.visionflow.api.drone.repository.DroneRepository;
 import com.visionflow.api.geofence.service.GeofenceService;
+import com.visionflow.api.flight.service.FlightSessionCorrelationGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,8 @@ class DroneServiceDeletionTests {
             mock(DroneTelemetryHistoryService.class);
     private final GeofenceService geofenceService =
             mock(GeofenceService.class);
+    private final FlightSessionCorrelationGuard sessionCorrelationGuard =
+            mock(FlightSessionCorrelationGuard.class);
 
     private DroneService service;
 
@@ -37,7 +40,8 @@ class DroneServiceDeletionTests {
                 droneRepository,
                 realtimePublisher,
                 telemetryHistoryService,
-                geofenceService
+                geofenceService,
+                sessionCorrelationGuard
         );
     }
 
