@@ -127,7 +127,7 @@ public class DemoScenarioService {
 
     @Transactional
     public DemoScenarioResponse detect(String scenarioId) {
-        DemoScenario scenario = findScenario(scenarioId);
+        DemoScenario scenario = findScenarioForUpdate(scenarioId);
         requireStage(scenario, DemoScenarioStage.READY);
         Instant capturedAt = Instant.now();
         AiInferenceEventResponse event = inferenceEventService.create(
@@ -184,7 +184,7 @@ public class DemoScenarioService {
 
     @Transactional
     public DemoScenarioResponse escalate(String scenarioId) {
-        DemoScenario scenario = findScenario(scenarioId);
+        DemoScenario scenario = findScenarioForUpdate(scenarioId);
         requireStage(scenario, DemoScenarioStage.DETECTED);
         Long incidentId = requireIncidentId(scenario);
         LocalDateTime overdueAt = LocalDateTime.now(ZoneOffset.UTC)
@@ -232,7 +232,7 @@ public class DemoScenarioService {
 
     @Transactional
     public DemoScenarioResponse resolve(String scenarioId) {
-        DemoScenario scenario = findScenario(scenarioId);
+        DemoScenario scenario = findScenarioForUpdate(scenarioId);
         requireStage(scenario, DemoScenarioStage.ESCALATED);
         Long alertId = scenario.getAiAlertId();
         if (alertId == null) {
@@ -252,7 +252,7 @@ public class DemoScenarioService {
 
     @Transactional
     public DemoScenarioResponse complete(String scenarioId) {
-        DemoScenario scenario = findScenario(scenarioId);
+        DemoScenario scenario = findScenarioForUpdate(scenarioId);
         requireStage(scenario, DemoScenarioStage.RESOLVED);
         flightSessionService.complete(
                 scenario.getDroneId(),
@@ -296,6 +296,22 @@ public class DemoScenarioService {
     }
 
     private DemoScenario findScenario(String scenarioId) {
+        String normalized = normalizeScenarioId(scenarioId);
+        return scenarioRepository.findById(normalized)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "시연 시나리오를 찾을 수 없습니다: " + normalized
+                ));
+    }
+
+    private DemoScenario findScenarioForUpdate(String scenarioId) {
+        String normalized = normalizeScenarioId(scenarioId);
+        return scenarioRepository.findByIdForUpdate(normalized)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "시연 시나리오를 찾을 수 없습니다: " + normalized
+                ));
+    }
+
+    private String normalizeScenarioId(String scenarioId) {
         String normalized = scenarioId == null ? "" : scenarioId.trim();
         if (normalized.isEmpty() || normalized.length() > 36) {
             throw new IllegalArgumentException(
@@ -303,10 +319,7 @@ public class DemoScenarioService {
             );
         }
 
-        return scenarioRepository.findById(normalized)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "시연 시나리오를 찾을 수 없습니다: " + normalized
-                ));
+        return normalized;
     }
 
     private Long requireIncidentId(DemoScenario scenario) {

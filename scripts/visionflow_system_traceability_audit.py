@@ -545,6 +545,110 @@ def geofence_event_lifecycle_concurrency_policy_drift(
     return drift
 
 
+def demo_scenario_lifecycle_concurrency_policy_drift(
+    root: Path,
+) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java/com/visionflow/api/demo"
+    )
+    paths = {
+        "repository": backend_root
+        / "repository/DemoScenarioRepository.java",
+        "service": backend_root
+        / "service/DemoScenarioService.java",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "service": [
+            "findScenarioForUpdate(scenarioId)",
+            "inferenceEventService.create(",
+            "lockIncidentForDemoEscalation(incidentId)",
+            "alertService.resolve(",
+            "flightSessionService.complete(",
+            "scenarioRepository.findById(normalized)",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("repository")
+    if repository is not None and repository.count(
+        "@Lock(LockModeType.PESSIMISTIC_WRITE)"
+    ) < 1:
+        drift.append("usage:repository:lock-demo-scenario-id")
+
+    service = sources.get("service")
+    if service is not None:
+        if service.count("findScenarioForUpdate(scenarioId)") < 4:
+            drift.append(
+                "usage:service:lock-detect-escalate-resolve-complete"
+            )
+        transition_tokens = {
+            "detect": "inferenceEventService.create(",
+            "escalate": "lockIncidentForDemoEscalation(incidentId)",
+            "resolve": "alertService.resolve(",
+            "complete": "flightSessionService.complete(",
+        }
+        for method, mutation_token in transition_tokens.items():
+            method_at = service.find(
+                f"public DemoScenarioResponse {method}("
+            )
+            next_method_at = service.find(
+                "\n    @Transactional",
+                method_at + 1,
+            )
+            method_source = (
+                service[method_at:next_method_at]
+                if method_at >= 0 and next_method_at >= 0
+                else service[method_at:]
+                if method_at >= 0
+                else ""
+            )
+            lock_at = method_source.find(
+                "findScenarioForUpdate(scenarioId)"
+            )
+            mutation_at = method_source.find(mutation_token)
+            if not (0 <= lock_at < mutation_at):
+                drift.append(
+                    f"ordering:service:{method}-lock-before-mutation"
+                )
+
+        find_at = service.find("public DemoScenarioResponse find(")
+        detect_at = service.find("public DemoScenarioResponse detect(")
+        find_source = (
+            service[find_at:detect_at]
+            if 0 <= find_at < detect_at
+            else ""
+        )
+        if (
+            "findScenario(scenarioId)" not in find_source
+            or "findScenarioForUpdate(scenarioId)" in find_source
+        ):
+            drift.append("usage:service:read-remains-non-locking")
+    return drift
+
+
 def read_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -898,6 +1002,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not geofence_event_lifecycle_drift
             else "Geofence 위반 이벤트의 행 잠금 또는 ACTIVE 중복 방어가 누락됐습니다.",
             drift=geofence_event_lifecycle_drift,
+        )
+    )
+    demo_scenario_lifecycle_drift = (
+        demo_scenario_lifecycle_concurrency_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if demo_scenario_lifecycle_drift else "PASS",
+            "demo-scenario-lifecycle-concurrency-policy",
+            "Demo Scenario 수명주기 동시성 정책",
+            "탐지·에스컬레이션·해결·완료 전이가 시나리오 행 잠금으로 직렬화되며 읽기 조회는 비잠금으로 유지됩니다."
+            if not demo_scenario_lifecycle_drift
+            else "Demo Scenario 단계 전이의 행 잠금 또는 비잠금 읽기 경계가 누락됐습니다.",
+            drift=demo_scenario_lifecycle_drift,
         )
     )
     count_drift = {

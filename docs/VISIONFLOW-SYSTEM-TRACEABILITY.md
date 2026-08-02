@@ -164,6 +164,16 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
+### 4.7 Demo Scenario 단계 전이 직렬화
+
+- 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
+  `PESSIMISTIC_WRITE`로 잠근다.
+- 같은 단계가 동시에 요청돼도 첫 트랜잭션이 다음 단계와 외부 연쇄 쓰기를 완료한
+  뒤 후속 요청이 현재 단계를 다시 검증하므로 AI 이벤트·경보·Incident·비행 세션
+  변경을 중복 실행하지 않는다.
+- 단계별 외부 쓰기는 시나리오 잠금 획득 뒤에만 실행한다.
+- 시나리오 단건 조회는 기존 비잠금 읽기를 유지한다.
+
 ## 5. DB 테이블·Entity·Repository 현황
 
 | Table | Flyway | Entity | Repository | 분류 |
