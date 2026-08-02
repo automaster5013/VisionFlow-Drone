@@ -52,7 +52,7 @@ scripts\run-visionflow-ai-operational-guard.bat --root "C:\VisionFlow-Drone" --s
 출력에 다음 항목이 있어야 한다.
 
 ```text
-[HEALTHY] data_integrity: 40개 DB 관계와 5개 snapshot 규칙이 정상입니다.
+[HEALTHY] data_integrity: 41개 DB 관계와 5개 snapshot 규칙이 정상입니다.
 ```
 
 기존 예약 작업을 확인하거나 즉시 실행하려면 다음 명령을 사용한다.

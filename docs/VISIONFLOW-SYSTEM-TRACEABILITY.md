@@ -152,6 +152,18 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
+### 4.6 Geofence 위반 이벤트 직렬화
+
+- 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
+  `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
+- 비활성화와 위반 평가가 동시에 실행돼도 잠금 획득 뒤 활성 상태를 다시 확인하므로
+  비활성 지오펜스에 새 위반 이벤트를 만들지 않는다.
+- 동일 Drone·Geofence 조합의 미해결 이벤트는 V23의 generated column 기반
+  `uq_geofence_event_one_active_per_drone_zone` UNIQUE 제약으로 한 건만 허용한다.
+- V23 적용 전 읽기 전용 데이터 정합성 감사가 기존 ACTIVE 중복을 검사하며,
+  발견 시 migration 적용 전에 차단한다.
+- 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
+
 ## 5. DB 테이블·Entity·Repository 현황
 
 | Table | Flyway | Entity | Repository | 분류 |
@@ -203,7 +215,7 @@ flowchart LR
 | `source_type + source_id` | Incident 다형 소스 | source type별 대상 테이블 존재 여부와 UNIQUE 계약 검사 |
 | `snapshot_path` | DB와 파일시스템 | DB 참조·실제 JPG 수·크기·SHA-256 일치 검사 |
 
-40개 DB 상관관계·수명주기 규칙과 5개 snapshot 규칙은 읽기 전용 데이터 정합성 감사로 통합되어 있으며, 기존 운영 가드의 기본 30분 주기에서도 함께 실행된다. 기체별 ACTIVE 비행 세션 중복도 이 범위에서 차단한다. 문제를 발견해도 자동 복구하거나 행을 삭제하지 않는다.
+41개 DB 상관관계·수명주기 규칙과 5개 snapshot 규칙은 읽기 전용 데이터 정합성 감사로 통합되어 있으며, 기존 운영 가드의 기본 30분 주기에서도 함께 실행된다. 기체별 ACTIVE 비행 세션 중복과 Drone·Geofence 조합별 미해결 위반 이벤트 중복도 이 범위에서 차단한다. 문제를 발견해도 자동 복구하거나 행을 삭제하지 않는다.
 
 ## 8. 런타임 전용 상태
 

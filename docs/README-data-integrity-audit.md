@@ -16,9 +16,10 @@
 
 ## 감사 범위
 
-총 40개 DB 상관관계·수명주기 규칙과 5개 스냅샷 규칙을 검사한다.
+총 41개 DB 상관관계·수명주기 규칙과 5개 스냅샷 규칙을 검사한다.
 
 - 기체별 `ACTIVE` 비행 세션은 최대 한 건
+- Drone·Geofence 조합별 미해결 위반 이벤트는 최대 한 건
 - `session_id`: Drone 현재 세션, telemetry, AI event·alert, geofence event, Incident, Demo, 작업지시
 - 세션 소유 기체: 각 참조 행의 `drone_id`와 `flight_session.drone_id` 일치
 - 비FK `drone_id`: AI event·alert, geofence event, Incident, Demo의 기체 존재
@@ -42,7 +43,7 @@ scripts\run-visionflow-data-integrity-audit.bat
 
 ```text
 VisionFlow data integrity audit: DATA_INTEGRITY_HEALTHY
-Rules: Database=40, Snapshots=5, Findings=0
+Rules: Database=41, Snapshots=5, Findings=0
 ```
 
 보고서는 `artifacts\data-integrity-audit\audit-*`에 JSON·HTML·Markdown으로 생성된다.

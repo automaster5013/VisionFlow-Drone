@@ -30,6 +30,16 @@ DATABASE_RULES: dict[str, str] = {
             HAVING COUNT(*) > 1
         ) duplicate_active_sessions
     """,
+    "geofence-event-multiple-active-per-drone-zone": """
+        SELECT COUNT(*) AS issue_count
+        FROM (
+            SELECT event.drone_id, event.geofence_id
+            FROM drone_geofence_event event
+            WHERE event.resolved_at IS NULL
+            GROUP BY event.drone_id, event.geofence_id
+            HAVING COUNT(*) > 1
+        ) duplicate_active_geofence_events
+    """,
     "session-orphan-drone": """
         SELECT COUNT(*) AS issue_count
         FROM drone d

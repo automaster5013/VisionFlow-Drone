@@ -109,7 +109,7 @@ public class GeofenceService {
             Long id,
             GeofenceUpdateRequest request
     ) {
-        DroneGeofence geofence = findGeofence(id);
+        DroneGeofence geofence = findGeofenceForUpdate(id);
         String normalizedName = request.name().trim();
 
         if (geofenceRepository
@@ -141,7 +141,7 @@ public class GeofenceService {
             Long id,
             GeofenceActiveUpdateRequest request
     ) {
-        DroneGeofence geofence = findGeofence(id);
+        DroneGeofence geofence = findGeofenceForUpdate(id);
         boolean nextActive = request.active();
 
         if (geofence.isActive() && !nextActive) {
@@ -186,6 +186,15 @@ public class GeofenceService {
                 );
     }
 
+    private DroneGeofence findGeofenceForUpdate(Long id) {
+        return geofenceRepository.findByIdForUpdate(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "지오펜스를 찾을 수 없습니다: " + id
+                        )
+                );
+    }
+
     @Transactional
     public void evaluate(Drone drone, LocalDateTime detectedAt) {
         if (drone.getLatitude() == null ||
@@ -193,9 +202,16 @@ public class GeofenceService {
             return;
         }
 
-        for (DroneGeofence geofence :
+        for (DroneGeofence candidate :
                 geofenceRepository
                         .findAllByActiveTrueOrderByCreatedAtDesc()) {
+
+            DroneGeofence geofence = findGeofenceForUpdate(
+                    candidate.getId()
+            );
+            if (!geofence.isActive()) {
+                continue;
+            }
 
             BigDecimal distanceMeters =
                     calculateDistanceMeters(drone, geofence);

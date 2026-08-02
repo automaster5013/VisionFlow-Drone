@@ -118,6 +118,33 @@ class DataIntegrityAuditTest(unittest.TestCase):
         )
         self.assertEqual(active_rule["status"], "CRITICAL")
 
+    def test_multiple_active_geofence_events_for_one_pair_blocks(self) -> None:
+        counts = {key: 0 for key in audit.DATABASE_RULES}
+        counts["geofence-event-multiple-active-per-drone-zone"] = 1
+        counts.update(
+            {
+                "snapshot-invalid-reference": 0,
+                "snapshot-missing-file": 0,
+                "snapshot-size-mismatch": 0,
+                "snapshot-duplicate-reference": 0,
+                "snapshot-unreferenced-file": 0,
+            }
+        )
+        status, rules = audit.evaluate(
+            self.policy,
+            {"missingRequiredTables": []},
+            counts,
+            {},
+        )
+        self.assertEqual(status, "DATA_INTEGRITY_BLOCKED")
+        active_rule = next(
+            row
+            for row in rules
+            if row["key"]
+            == "geofence-event-multiple-active-per-drone-zone"
+        )
+        self.assertEqual(active_rule["status"], "CRITICAL")
+
     def test_unreferenced_snapshot_is_advisory(self) -> None:
         counts = {key: 0 for key in audit.DATABASE_RULES}
         counts.update(

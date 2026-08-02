@@ -16,8 +16,8 @@
   추가해 여러 Backend 인스턴스나 직접 SQL 경합도 차단한다.
 - 중복 시작은 HTTP 409 `ACTIVE_FLIGHT_SESSION_EXISTS`로 반환한다.
 - 읽기 전용 데이터 정합성 감사는
-  `flight-session-multiple-active-per-drone` 규칙을 추가해 총 40개 DB 규칙을
-  검사한다.
+  `flight-session-multiple-active-per-drone` 규칙을 유지하며, 현행 감사는
+  Geofence 수명주기 규칙을 포함한 총 41개 DB 규칙을 검사한다.
 
 ## 적용 전 안전 조건
 

@@ -24,6 +24,7 @@
     "flight-session-lifecycle-concurrency-policy",
     "incident-lifecycle-concurrency-policy",
     "ai-alert-lifecycle-concurrency-policy",
+    "geofence-event-lifecycle-concurrency-policy",
     "baseline-counts",
     "migration-tables",
     "entity-repository-mapping",

@@ -4,6 +4,7 @@
   "snapshotDirectory": "artifacts/backend-data/ai-snapshots",
   "rules": [
     {"key": "flight-session-multiple-active-per-drone", "category": "flight-session-lifecycle", "severity": "CRITICAL", "maxFindings": 0},
+    {"key": "geofence-event-multiple-active-per-drone-zone", "category": "geofence-event-lifecycle", "severity": "CRITICAL", "maxFindings": 0},
     {"key": "session-orphan-drone", "category": "session-reference", "severity": "CRITICAL", "maxFindings": 0},
     {"key": "session-orphan-telemetry", "category": "session-reference", "severity": "CRITICAL", "maxFindings": 0},
     {"key": "session-orphan-ai-event", "category": "session-reference", "severity": "CRITICAL", "maxFindings": 0},

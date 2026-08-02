@@ -449,6 +449,102 @@ def ai_alert_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def geofence_event_lifecycle_concurrency_policy_drift(
+    root: Path,
+) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+    )
+    paths = {
+        "repository": backend_root
+        / "java/com/visionflow/api/geofence/repository"
+        / "DroneGeofenceRepository.java",
+        "service": backend_root
+        / "java/com/visionflow/api/geofence/service/GeofenceService.java",
+        "migration": backend_root
+        / "resources/db/migration"
+        / "V23__enforce_single_active_geofence_event.sql",
+        "integrity-audit": root
+        / "scripts/visionflow_data_integrity_audit.py",
+        "integrity-policy": root
+        / "scripts/visionflow_data_integrity_policy.json",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "service": [
+            "findGeofenceForUpdate(id)",
+            "candidate.getId()",
+            "if (!geofence.isActive())",
+            ".findFirstByDroneIdAndGeofenceIdAndResolvedAtIsNullOrderByDetectedAtDesc(",
+        ],
+        "migration": [
+            "active_drone_id BIGINT",
+            "active_geofence_id BIGINT",
+            "resolved_at IS NULL",
+            "uq_geofence_event_one_active_per_drone_zone",
+            "UNIQUE (active_drone_id, active_geofence_id)",
+        ],
+        "integrity-audit": [
+            '"geofence-event-multiple-active-per-drone-zone"',
+            "GROUP BY event.drone_id, event.geofence_id",
+            "HAVING COUNT(*) > 1",
+        ],
+        "integrity-policy": [
+            '"key": "geofence-event-multiple-active-per-drone-zone"',
+            '"severity": "CRITICAL"',
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("repository")
+    if repository is not None and repository.count(
+        "@Lock(LockModeType.PESSIMISTIC_WRITE)"
+    ) < 1:
+        drift.append("usage:repository:lock-geofence-id")
+
+    service = sources.get("service")
+    if service is not None:
+        if service.count("findGeofenceForUpdate(id)") < 2:
+            drift.append("usage:service:lock-update-and-active-change")
+        evaluate_start = service.find("public void evaluate(")
+        evaluate_source = (
+            service[evaluate_start:] if evaluate_start >= 0 else ""
+        )
+        lock_at = evaluate_source.find("candidate.getId()")
+        active_check_at = evaluate_source.find(
+            "if (!geofence.isActive())"
+        )
+        event_lookup_at = evaluate_source.find(
+            ".findFirstByDroneIdAndGeofenceIdAndResolvedAtIsNullOrderByDetectedAtDesc("
+        )
+        if not (0 <= lock_at < active_check_at < event_lookup_at):
+            drift.append(
+                "ordering:service:geofence-lock-before-active-event-lookup"
+            )
+    return drift
+
+
 def read_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -788,6 +884,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not ai_alert_lifecycle_drift
             else "AI 경보 확인·해결 경로의 행 잠금이 누락됐습니다.",
             drift=ai_alert_lifecycle_drift,
+        )
+    )
+    geofence_event_lifecycle_drift = (
+        geofence_event_lifecycle_concurrency_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if geofence_event_lifecycle_drift else "PASS",
+            "geofence-event-lifecycle-concurrency-policy",
+            "Geofence 위반 이벤트 수명주기 동시성 정책",
+            "지오펜스 변경·비활성화·위반 평가가 행 잠금으로 직렬화되고 ACTIVE 이벤트 중복이 DB UNIQUE로 차단됩니다."
+            if not geofence_event_lifecycle_drift
+            else "Geofence 위반 이벤트의 행 잠금 또는 ACTIVE 중복 방어가 누락됐습니다.",
+            drift=geofence_event_lifecycle_drift,
         )
     )
     count_drift = {
