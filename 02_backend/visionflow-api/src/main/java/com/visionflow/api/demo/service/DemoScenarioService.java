@@ -189,6 +189,7 @@ public class DemoScenarioService {
         Long incidentId = requireIncidentId(scenario);
         LocalDateTime overdueAt = LocalDateTime.now(ZoneOffset.UTC)
                 .minusSeconds(1);
+        lockIncidentForDemoEscalation(incidentId);
         int updated = jdbcTemplate.update(
                 """
                 UPDATE incident
@@ -212,6 +213,21 @@ public class DemoScenarioService {
         escalationService.escalateIncidentIfOverdue(incidentId);
         scenario.markEscalated();
         return toResponse(scenarioRepository.saveAndFlush(scenario));
+    }
+
+    private void lockIncidentForDemoEscalation(Long incidentId) {
+        Long lockedId = jdbcTemplate.query(
+                "SELECT id FROM incident WHERE id = ? FOR UPDATE",
+                resultSet -> resultSet.next()
+                        ? resultSet.getLong("id")
+                        : null,
+                incidentId
+        );
+        if (lockedId == null) {
+            throw new ResourceNotFoundException(
+                    "시연 Incident를 찾을 수 없습니다: " + incidentId
+            );
+        }
     }
 
     @Transactional

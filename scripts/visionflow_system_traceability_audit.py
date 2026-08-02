@@ -256,6 +256,126 @@ def flight_session_lifecycle_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def incident_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+    )
+    paths = {
+        "repository": backend_root
+        / "incident/repository/IncidentRepository.java",
+        "operator": backend_root
+        / "incident/service/IncidentService.java",
+        "incident-sla": backend_root
+        / "incident/service/IncidentSlaEscalationService.java",
+        "quality-automation": backend_root
+        / "flight/quality/service/FlightQualityIncidentAutomationService.java",
+        "gate-automation": backend_root
+        / "maintenance/service/FlightGateIncidentAutomationService.java",
+        "maintenance-sla": backend_root
+        / "maintenance/service/MaintenanceSlaIncidentEscalationService.java",
+        "demo": backend_root / "demo/service/DemoScenarioService.java",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+            "findBySourceTypeAndSourceIdForUpdate(",
+            "findOverdueForEscalationForUpdate(",
+        ],
+        "operator": [
+            "findIncidentForUpdate(incidentId)",
+            "findBySourceTypeAndSourceIdForUpdate(",
+        ],
+        "incident-sla": [
+            "findOverdueForEscalationForUpdate(",
+            "findByIdForUpdate(incidentId)",
+        ],
+        "quality-automation": [
+            "droneRepository.findByIdForUpdate(",
+            "findBySourceTypeAndSourceIdForUpdate(",
+        ],
+        "gate-automation": [
+            "droneRepository.findByIdForUpdate(",
+            "findBySourceTypeAndSourceIdForUpdate(",
+        ],
+        "maintenance-sla": [
+            "findByIdForUpdate(order.getIncidentId())",
+            "existsByIncidentIdAndActionTypeAndActor(",
+        ],
+        "demo": [
+            "lockIncidentForDemoEscalation(incidentId)",
+            "SELECT id FROM incident WHERE id = ? FOR UPDATE",
+            "UPDATE incident",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("repository")
+    if repository is not None and repository.count(
+        "@Lock(LockModeType.PESSIMISTIC_WRITE)"
+    ) < 3:
+        drift.append("usage:repository:lock-id-source-overdue")
+
+    operator = sources.get("operator")
+    if operator is not None:
+        if operator.count("findIncidentForUpdate(incidentId)") < 4:
+            drift.append("usage:operator:lock-assign-priority-status-note")
+        if operator.count(
+            "findBySourceTypeAndSourceIdForUpdate("
+        ) < 3:
+            drift.append("usage:operator:lock-source-create-and-sync")
+
+    gate = sources.get("gate-automation")
+    if gate is not None and gate.count(
+        "findBySourceTypeAndSourceIdForUpdate("
+    ) < 2:
+        drift.append("usage:gate-automation:lock-open-and-resolve")
+
+    maintenance_sla = sources.get("maintenance-sla")
+    if maintenance_sla is not None:
+        lock_at = maintenance_sla.find(
+            "findByIdForUpdate(order.getIncidentId())"
+        )
+        dedup_at = maintenance_sla.find(
+            "existsByIncidentIdAndActionTypeAndActor("
+        )
+        if not (0 <= lock_at < dedup_at):
+            drift.append(
+                "ordering:maintenance-sla:incident-lock-before-history-dedup"
+            )
+    demo = sources.get("demo")
+    if demo is not None:
+        lock_at = demo.find(
+            "lockIncidentForDemoEscalation(incidentId)"
+        )
+        update_at = demo.find("jdbcTemplate.update(")
+        if not (0 <= lock_at < update_at):
+            drift.append("ordering:demo:incident-lock-before-update")
+    return drift
+
+
 def read_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -567,6 +687,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not lifecycle_drift
             else "비행 세션 시작·갱신 동시성 방어가 누락됐습니다.",
             drift=lifecycle_drift,
+        )
+    )
+    incident_lifecycle_drift = (
+        incident_lifecycle_concurrency_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if incident_lifecycle_drift else "PASS",
+            "incident-lifecycle-concurrency-policy",
+            "Incident 수명주기 동시성 정책",
+            "운영자 변경·SLA·품질·비행 게이트 자동화가 Incident 행 잠금으로 직렬화됩니다."
+            if not incident_lifecycle_drift
+            else "Incident 변경 경로의 행 잠금 또는 중복 방어가 누락됐습니다.",
+            drift=incident_lifecycle_drift,
         )
     )
     count_drift = {

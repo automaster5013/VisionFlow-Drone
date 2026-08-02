@@ -71,7 +71,7 @@ class FlightQualityIncidentAutomationServiceTests {
                 .thenReturn(Optional.of(reliability));
         when(droneRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(mock(Drone.class)));
-        when(incidentRepository.findBySourceTypeAndSourceId(
+        when(incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                 IncidentSourceType.FLIGHT_QUALITY,
                 1L
         )).thenReturn(Optional.empty());
@@ -104,7 +104,7 @@ class FlightQualityIncidentAutomationServiceTests {
                 .thenReturn(Optional.of(reliability));
         when(droneRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(mock(Drone.class)));
-        when(incidentRepository.findBySourceTypeAndSourceId(
+        when(incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                 IncidentSourceType.FLIGHT_QUALITY,
                 1L
         )).thenReturn(Optional.of(existing));
@@ -134,7 +134,7 @@ class FlightQualityIncidentAutomationServiceTests {
                 .thenReturn(Optional.of(reliability));
         when(droneRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(mock(Drone.class)));
-        when(incidentRepository.findBySourceTypeAndSourceId(
+        when(incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                 IncidentSourceType.FLIGHT_QUALITY,
                 1L
         )).thenReturn(Optional.of(existing));
@@ -159,7 +159,7 @@ class FlightQualityIncidentAutomationServiceTests {
                 .thenReturn(Optional.of(reliability));
         when(droneRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(mock(Drone.class)));
-        when(incidentRepository.findBySourceTypeAndSourceId(
+        when(incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                 IncidentSourceType.FLIGHT_QUALITY,
                 1L
         )).thenReturn(Optional.empty());

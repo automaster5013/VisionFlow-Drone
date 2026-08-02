@@ -125,6 +125,21 @@ flowchart LR
 - 보안상 중요한 조회·변경은 `audit_log`에 기록된다.
 - 강제 세션 종료와 현재 세션 보호는 Backend security API에서 수행한다.
 
+### 4.4 Incident 변경과 자동화 직렬화
+
+- 담당자·우선순위·상태·조치 메모 변경은 대상 `incident` 행을 먼저
+  `PESSIMISTIC_WRITE`로 잠근다.
+- 일반 SLA, 정비 SLA, 비행 품질, 반복 비행 차단 자동화도 같은 Incident
+  잠금 API를 사용하므로 운영자 변경과 자동화 결과가 서로 덮어쓰지 않는다.
+- 정비 SLA는 Incident 잠금을 획득한 뒤 기존 `SLA_ESCALATED` 이력을 다시
+  검사하여 예약 작업의 중복 실행에서도 이력을 한 번만 기록한다.
+- 원본 기반 생성은 `(source_type, source_id)` 잠금 조회와 기존
+  `uk_incident_source` UNIQUE 제약을 함께 사용해 중복 생성을 방어한다.
+- 보고서와 상세 조회는 읽기 전용 조회를 유지하여 불필요한 쓰기 잠금을
+  만들지 않는다.
+- 통합 시연의 SLA 초과 준비용 직접 SQL도 같은 트랜잭션에서 먼저
+  `SELECT ... FOR UPDATE`를 수행한다.
+
 ## 5. DB 테이블·Entity·Repository 현황
 
 | Table | Flyway | Entity | Repository | 분류 |

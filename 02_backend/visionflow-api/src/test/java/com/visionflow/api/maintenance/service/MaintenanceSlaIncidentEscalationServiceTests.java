@@ -79,7 +79,7 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                         MaintenanceSlaIncidentEscalationService.SYSTEM_ACTOR
                 ))
                 .thenReturn(false);
-        when(incidentRepository.findById(501L))
+        when(incidentRepository.findByIdForUpdate(501L))
                 .thenReturn(Optional.of(incident));
         when(incidentRepository.saveAndFlush(incident))
                 .thenReturn(incident);
@@ -136,7 +136,7 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                         MaintenanceSlaIncidentEscalationService.SYSTEM_ACTOR
                 ))
                 .thenReturn(false);
-        when(incidentRepository.findById(502L))
+        when(incidentRepository.findByIdForUpdate(502L))
                 .thenReturn(Optional.of(incident));
         when(incidentRepository.saveAndFlush(incident))
                 .thenReturn(incident);
@@ -163,8 +163,15 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                 503L,
                 now.minusSeconds(3 * 60 * 60L)
         );
+        Incident incident = incident(
+                503L,
+                IncidentStatus.OPEN,
+                IncidentPriority.CRITICAL
+        );
         when(workOrderRepository.findActiveForSlaEvaluation(any()))
                 .thenReturn(List.of(order));
+        when(incidentRepository.findByIdForUpdate(503L))
+                .thenReturn(Optional.of(incident));
         when(historyRepository
                 .existsByIncidentIdAndActionTypeAndActor(
                         503L,
@@ -178,7 +185,7 @@ class MaintenanceSlaIncidentEscalationServiceTests {
 
         assertThat(result.escalatedIncidents()).isZero();
         assertThat(result.alreadyEscalatedIncidents()).isEqualTo(1);
-        verify(incidentRepository, never()).findById(any());
+        verify(incidentRepository).findByIdForUpdate(503L);
         verify(realtimePublisher, never()).publishAfterCommit(
                 any(),
                 any()

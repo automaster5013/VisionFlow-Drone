@@ -115,7 +115,7 @@ public class FlightQualityIncidentAutomationService {
                 ));
 
         Optional<Incident> existing = incidentRepository
-                .findBySourceTypeAndSourceId(
+                .findBySourceTypeAndSourceIdForUpdate(
                         IncidentSourceType.FLIGHT_QUALITY,
                         reliability.droneId()
                 );

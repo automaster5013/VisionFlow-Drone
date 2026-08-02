@@ -22,6 +22,7 @@
     "drone-history-delete-policy",
     "session-correlation-write-policy",
     "flight-session-lifecycle-concurrency-policy",
+    "incident-lifecycle-concurrency-policy",
     "baseline-counts",
     "migration-tables",
     "entity-repository-mapping",

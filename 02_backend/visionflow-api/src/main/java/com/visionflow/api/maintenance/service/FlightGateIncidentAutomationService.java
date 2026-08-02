@@ -104,7 +104,7 @@ public class FlightGateIncidentAutomationService {
         }
 
         Optional<Incident> existing = incidentRepository
-                .findBySourceTypeAndSourceId(
+                .findBySourceTypeAndSourceIdForUpdate(
                         IncidentSourceType.FLIGHT_GATE,
                         clearance.droneId()
                 );
@@ -162,7 +162,7 @@ public class FlightGateIncidentAutomationService {
             String note
     ) {
         Optional<Incident> existing = incidentRepository
-                .findBySourceTypeAndSourceId(
+                .findBySourceTypeAndSourceIdForUpdate(
                         IncidentSourceType.FLIGHT_GATE,
                         droneId
                 );

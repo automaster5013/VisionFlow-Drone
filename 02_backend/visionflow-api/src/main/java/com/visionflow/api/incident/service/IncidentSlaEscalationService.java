@@ -43,7 +43,7 @@ public class IncidentSlaEscalationService {
     public int escalateOverdueIncidents() {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         List<Incident> overdue = incidentRepository
-                .findOverdueForEscalation(
+                .findOverdueForEscalationForUpdate(
                         now,
                         List.of(
                                 IncidentStatus.OPEN,
@@ -66,7 +66,7 @@ public class IncidentSlaEscalationService {
 
     @Transactional
     public IncidentResponse escalateIncidentIfOverdue(Long incidentId) {
-        Incident incident = incidentRepository.findById(incidentId)
+        Incident incident = incidentRepository.findByIdForUpdate(incidentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Incident를 찾을 수 없습니다: " + incidentId
                 ));

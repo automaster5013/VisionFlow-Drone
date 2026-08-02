@@ -6,8 +6,11 @@ import com.visionflow.api.incident.domain.IncidentSourceType;
 import com.visionflow.api.incident.domain.IncidentStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -19,6 +22,28 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     Optional<Incident> findBySourceTypeAndSourceId(
             IncidentSourceType sourceType,
             Long sourceId
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT incident
+            FROM Incident incident
+            WHERE incident.id = :incidentId
+            """)
+    Optional<Incident> findByIdForUpdate(
+            @Param("incidentId") Long incidentId
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT incident
+            FROM Incident incident
+            WHERE incident.sourceType = :sourceType
+              AND incident.sourceId = :sourceId
+            """)
+    Optional<Incident> findBySourceTypeAndSourceIdForUpdate(
+            @Param("sourceType") IncidentSourceType sourceType,
+            @Param("sourceId") Long sourceId
     );
 
     @Query("""
@@ -59,6 +84,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
             Pageable pageable
     );
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT incident
             FROM Incident incident
@@ -68,7 +94,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
               AND incident.status IN :activeStatuses
             ORDER BY incident.slaDueAt ASC, incident.id ASC
             """)
-    List<Incident> findOverdueForEscalation(
+    List<Incident> findOverdueForEscalationForUpdate(
             @Param("now") LocalDateTime now,
             @Param("activeStatuses")
             Collection<IncidentStatus> activeStatuses,

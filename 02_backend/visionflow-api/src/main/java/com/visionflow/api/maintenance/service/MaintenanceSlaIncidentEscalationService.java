@@ -85,20 +85,8 @@ public class MaintenanceSlaIncidentEscalationService {
             }
             overdue += 1;
 
-            if (
-                    historyRepository
-                            .existsByIncidentIdAndActionTypeAndActor(
-                                    order.getIncidentId(),
-                                    IncidentActionType.SLA_ESCALATED,
-                                    SYSTEM_ACTOR
-                            )
-            ) {
-                alreadyEscalated += 1;
-                continue;
-            }
-
             Incident incident = incidentRepository
-                    .findById(order.getIncidentId())
+                    .findByIdForUpdate(order.getIncidentId())
                     .orElse(null);
             if (
                     incident == null
@@ -112,6 +100,18 @@ public class MaintenanceSlaIncidentEscalationService {
                         order.getId(),
                         order.getIncidentId()
                 );
+                continue;
+            }
+
+            if (
+                    historyRepository
+                            .existsByIncidentIdAndActionTypeAndActor(
+                                    order.getIncidentId(),
+                                    IncidentActionType.SLA_ESCALATED,
+                                    SYSTEM_ACTOR
+                            )
+            ) {
+                alreadyEscalated += 1;
                 continue;
             }
 

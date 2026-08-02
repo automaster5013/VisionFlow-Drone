@@ -67,7 +67,7 @@ class FlightGateIncidentAutomationServiceTests {
     @Test
     void createsIncidentWhenRecentBlocksReachThreshold() {
         stubRecentBlockCount(3);
-        when(incidentRepository.findBySourceTypeAndSourceId(
+        when(incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                 IncidentSourceType.FLIGHT_GATE,
                 3L
         )).thenReturn(Optional.empty());
@@ -97,7 +97,7 @@ class FlightGateIncidentAutomationServiceTests {
 
         assertThat(result).isEmpty();
         verify(incidentRepository, never())
-                .findBySourceTypeAndSourceId(
+                .findBySourceTypeAndSourceIdForUpdate(
                         any(IncidentSourceType.class),
                         any(Long.class)
                 );
@@ -109,7 +109,7 @@ class FlightGateIncidentAutomationServiceTests {
     void reusesActiveIncidentInsteadOfCreatingDuplicate() {
         stubRecentBlockCount(5);
         Incident existing = activeIncident();
-        when(incidentRepository.findBySourceTypeAndSourceId(
+        when(incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                 IncidentSourceType.FLIGHT_GATE,
                 3L
         )).thenReturn(Optional.of(existing));
@@ -126,7 +126,7 @@ class FlightGateIncidentAutomationServiceTests {
     @Test
     void returnToServiceResolvesActiveIncident() {
         Incident existing = activeIncident();
-        when(incidentRepository.findBySourceTypeAndSourceId(
+        when(incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                 IncidentSourceType.FLIGHT_GATE,
                 3L
         )).thenReturn(Optional.of(existing));

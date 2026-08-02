@@ -55,7 +55,7 @@ public class IncidentService {
 
     @Transactional
     public IncidentResponse createFromAiAlert(AiAlert alert) {
-        return incidentRepository.findBySourceTypeAndSourceId(
+        return incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                         IncidentSourceType.AI_ALERT,
                         alert.getId()
                 )
@@ -96,7 +96,7 @@ public class IncidentService {
     public IncidentResponse createFromGeofenceEvent(
             DroneGeofenceEvent event
     ) {
-        return incidentRepository.findBySourceTypeAndSourceId(
+        return incidentRepository.findBySourceTypeAndSourceIdForUpdate(
                         IncidentSourceType.GEOFENCE,
                         event.getId()
                 )
@@ -187,7 +187,7 @@ public class IncidentService {
             String assignee,
             String actor
     ) {
-        Incident incident = findIncident(incidentId);
+        Incident incident = findIncidentForUpdate(incidentId);
         String safeAssignee = normalizeRequired(assignee, "담당자");
         String safeActor = normalizeRequired(actor, "처리자");
 
@@ -224,7 +224,7 @@ public class IncidentService {
             String actor,
             String note
     ) {
-        Incident incident = findIncident(incidentId);
+        Incident incident = findIncidentForUpdate(incidentId);
         String safeActor = normalizeRequired(actor, "처리자");
         IncidentPriority previousPriority = incident.getPriority();
 
@@ -266,7 +266,7 @@ public class IncidentService {
             String actor,
             String note
     ) {
-        Incident incident = findIncident(incidentId);
+        Incident incident = findIncidentForUpdate(incidentId);
         String safeActor = normalizeRequired(actor, "처리자");
         IncidentStatus previousStatus = incident.getStatus();
 
@@ -299,7 +299,7 @@ public class IncidentService {
             String actor,
             String note
     ) {
-        Incident incident = findIncident(incidentId);
+        Incident incident = findIncidentForUpdate(incidentId);
         String safeActor = normalizeRequired(actor, "작성자");
         String safeNote = normalizeRequired(note, "조치 메모");
         incident.touch(nowUtc());
@@ -373,7 +373,7 @@ public class IncidentService {
             String note
     ) {
         Incident incident = incidentRepository
-                .findBySourceTypeAndSourceId(sourceType, sourceId)
+                .findBySourceTypeAndSourceIdForUpdate(sourceType, sourceId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "원본 이벤트에 연결된 Incident를 찾을 수 없습니다: "
                                 + sourceType
@@ -426,6 +426,13 @@ public class IncidentService {
 
     private Incident findIncident(Long incidentId) {
         return incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Incident를 찾을 수 없습니다: " + incidentId
+                ));
+    }
+
+    private Incident findIncidentForUpdate(Long incidentId) {
+        return incidentRepository.findByIdForUpdate(incidentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Incident를 찾을 수 없습니다: " + incidentId
                 ));
