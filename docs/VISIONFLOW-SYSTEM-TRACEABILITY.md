@@ -227,7 +227,22 @@ flowchart LR
   Incident별 중복 작업 생성의 최종 방어선으로 유지한다.
 - 작업 목록·상세와 SLA 현황 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.12 AI 경보 확인·해결 직렬화
+### 4.12 정비 작전 현황 Frontend
+
+- `/maintenance` 상단은 기존 SLA Incident 추적 응답을 검증한 뒤 작업 접수,
+  점검 진행, SLA 대응, 운항 판정을 관제형 단계 카드로 표시한다.
+- 최신 작업의 `flightClearanceStatus`를 비행 가능·점검 대기·운항 중지로
+  집계하고 도넛 차트와 텍스트 범례를 함께 제공한다.
+- SLA 초과·임박, 담당자 지정 필요, 마감 정합성 경고를 우선순위로 정렬해
+  상위 3건을 해당 작업지시로 바로 연결한다.
+- 브라우저는 same-origin `/api/maintenance/sla/incidents`만 호출하고, Route
+  Handler가 기존 운영자 인증을 Backend로 전달한다.
+- 30초 자동 갱신과 수동 갱신을 지원하며, 일시적인 실패에서는 이전 정상
+  현황을 유지하고 운영자에게 경고한다.
+- 이 화면은 읽기 전용 집계이므로 Backend·DB·보안 권한과 기존 작업 전이
+  규칙을 변경하지 않는다.
+
+### 4.13 AI 경보 확인·해결 직렬화
 
 - 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
@@ -239,7 +254,7 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
-### 4.13 Geofence 위반 이벤트 직렬화
+### 4.14 Geofence 위반 이벤트 직렬화
 
 - 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
   `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
@@ -251,7 +266,7 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.14 Demo Scenario 단계 전이 직렬화
+### 4.15 Demo Scenario 단계 전이 직렬화
 
 - 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.

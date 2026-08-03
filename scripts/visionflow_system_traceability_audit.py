@@ -1285,6 +1285,113 @@ def maintenance_work_order_lifecycle_concurrency_policy_drift(
     return drift
 
 
+def maintenance_mission_control_ui_policy_drift(
+    root: Path,
+) -> list[str]:
+    frontend_root = root / "01_frontend" / "visionflow-web" / "src"
+    paths = {
+        "mission-control": frontend_root
+        / "components/maintenance/maintenance-mission-control.tsx",
+        "work-order-board": frontend_root
+        / "components/maintenance/maintenance-work-order-board.tsx",
+        "tracking-types": frontend_root
+        / "types/maintenance-sla-incident-tracking.ts",
+        "tracking-route": frontend_root
+        / "app/api/maintenance/sla/incidents/route.ts",
+        "proxy": frontend_root
+        / "lib/server/maintenance-work-order-proxy.ts",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "mission-control": [
+            '"use client";',
+            "data-maintenance-mission-control",
+            'fetch("/api/maintenance/sla/incidents"',
+            "parseMaintenanceSlaIncidentTracking(body)",
+            "const AUTO_REFRESH_MS = 30_000",
+            "window.setInterval(",
+            'aria-live="polite"',
+            "작전 단계 현황",
+            "비행 준비 상태",
+            "긴급 작업 큐",
+            "summarizeMission(tracking)",
+            "compareUrgency",
+            "/maintenance?droneId=",
+        ],
+        "work-order-board": [
+            'import { MaintenanceMissionControl } from '
+            '"@/components/maintenance/maintenance-mission-control";',
+            "<MaintenanceMissionControl refreshKey={metricsRevision} />",
+        ],
+        "tracking-types": [
+            "export function parseMaintenanceSlaIncidentTracking(",
+            "MaintenanceSlaIncidentTrackingItem",
+            "flightClearanceStatus",
+            "closureStatus",
+        ],
+        "tracking-route": [
+            "proxyMaintenanceRequest(",
+            "/api/maintenance/sla/incidents?windowDays=",
+            'method: "GET"',
+        ],
+        "proxy": [
+            'import "server-only";',
+            "withBackendOperatorAuth(",
+            'cache: "no-store"',
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    mission_control = sources.get("mission-control")
+    if mission_control is not None:
+        fetch_at = mission_control.find(
+            'fetch("/api/maintenance/sla/incidents"'
+        )
+        parse_at = mission_control.find(
+            "parseMaintenanceSlaIncidentTracking(body)"
+        )
+        summarize_at = mission_control.find(
+            "summarizeMission(tracking)"
+        )
+        render_at = mission_control.find(
+            'data-maintenance-mission-control'
+        )
+        if not (0 <= fetch_at < parse_at < summarize_at < render_at):
+            drift.append(
+                "ordering:mission-control:"
+                "fetch-before-parse-before-summary-before-render"
+            )
+
+    board = sources.get("work-order-board")
+    if board is not None:
+        header_at = board.find("</header>")
+        mission_at = board.find(
+            "<MaintenanceMissionControl refreshKey={metricsRevision} />"
+        )
+        metrics_at = board.find(
+            "<MaintenanceMetricsPanel refreshKey={metricsRevision} />"
+        )
+        if not (0 <= header_at < mission_at < metrics_at):
+            drift.append(
+                "ordering:work-order-board:"
+                "mission-control-before-detail-panels"
+            )
+    return drift
+
+
 def ai_alert_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -2107,6 +2214,22 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not maintenance_work_order_drift
             else "정비 작업지시 전이 또는 SLA 재평가의 행 잠금·재검증·DB UNIQUE 방어가 누락됐습니다.",
             drift=maintenance_work_order_drift,
+        )
+    )
+    maintenance_mission_control_drift = (
+        maintenance_mission_control_ui_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED"
+            if maintenance_mission_control_drift
+            else "PASS",
+            "maintenance-mission-control-ui-policy",
+            "정비 작전 현황 UI 정책",
+            "작업 단계·SLA 긴급 큐·비행 준비 상태가 인증 프록시 기반 관제 보드로 연결되고 30초 자동 갱신됩니다."
+            if not maintenance_mission_control_drift
+            else "정비 작전 현황 보드의 데이터 검증·자동 갱신·우선순위 또는 화면 연결이 누락됐습니다.",
+            drift=maintenance_mission_control_drift,
         )
     )
     ai_alert_lifecycle_drift = (

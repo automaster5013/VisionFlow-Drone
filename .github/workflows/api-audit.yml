@@ -5,7 +5,9 @@ on:
     paths:
       - ".github/workflows/api-audit.yml"
       - "01_frontend/visionflow-web/src/app/api/**"
+      - "01_frontend/visionflow-web/src/components/maintenance/**"
       - "01_frontend/visionflow-web/src/lib/**"
+      - "01_frontend/visionflow-web/src/types/maintenance-*.ts"
       - "02_backend/visionflow-api/src/main/java/**"
       - "02_backend/visionflow-api/src/main/resources/db/migration/**"
       - "03_ai-server/visionflow-ai/app/**"
@@ -27,7 +29,9 @@ on:
     paths:
       - ".github/workflows/api-audit.yml"
       - "01_frontend/visionflow-web/src/app/api/**"
+      - "01_frontend/visionflow-web/src/components/maintenance/**"
       - "01_frontend/visionflow-web/src/lib/**"
+      - "01_frontend/visionflow-web/src/types/maintenance-*.ts"
       - "02_backend/visionflow-api/src/main/java/**"
       - "02_backend/visionflow-api/src/main/resources/db/migration/**"
       - "03_ai-server/visionflow-ai/app/**"

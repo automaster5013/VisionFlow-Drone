@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { MaintenanceMissionControl } from "@/components/maintenance/maintenance-mission-control";
 import { MaintenanceMetricsPanel } from "@/components/maintenance/maintenance-metrics-panel";
 import { MaintenancePriorityPanel } from "@/components/maintenance/maintenance-priority-panel";
 import { useOperatorAccess } from "@/components/security/operator-access-provider";
@@ -493,6 +494,7 @@ export function MaintenanceWorkOrderBoard({
           </div>
         </header>
 
+        <MaintenanceMissionControl refreshKey={metricsRevision} />
         <MaintenanceMetricsPanel refreshKey={metricsRevision} />
         <MaintenancePriorityPanel refreshKey={metricsRevision} />
 
