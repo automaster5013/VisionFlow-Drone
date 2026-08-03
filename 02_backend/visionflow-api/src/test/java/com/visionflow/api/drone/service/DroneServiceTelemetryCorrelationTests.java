@@ -48,7 +48,7 @@ class DroneServiceTelemetryCorrelationTests {
     @Test
     void rejectsMismatchedSessionBeforeTelemetryMutation() {
         Drone drone = mock(Drone.class);
-        when(droneRepository.findById(7L))
+        when(droneRepository.findByIdForUpdate(7L))
                 .thenReturn(Optional.of(drone));
         when(correlationGuard.requireOptionalOwnedSession(
                 "session-2",
@@ -58,6 +58,8 @@ class DroneServiceTelemetryCorrelationTests {
         assertThatThrownBy(() -> service.updateTelemetry(7L, request()))
                 .isInstanceOf(FlightSessionDroneMismatchException.class);
 
+        verify(droneRepository).findByIdForUpdate(7L);
+        verify(droneRepository, never()).findById(7L);
         verify(droneRepository, never()).flush();
         verify(telemetryHistoryService, never()).record(
                 org.mockito.ArgumentMatchers.any(),

@@ -105,7 +105,7 @@ public class DroneService {
             Long id,
             DroneUpdateRequest request
     ) {
-        Drone drone = findDroneById(id);
+        Drone drone = findDroneForUpdate(id);
 
         String serialNumber = normalizeNullable(request.serialNumber());
 
@@ -129,7 +129,7 @@ public class DroneService {
             Long id,
             DroneStatusUpdateRequest request
     ) {
-        Drone drone = findDroneById(id);
+        Drone drone = findDroneForUpdate(id);
 
         drone.updateStatus(request.status());
 
@@ -140,10 +140,7 @@ public class DroneService {
     public void deleteDrone(
             Long id
     ) {
-        Drone drone = droneRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "ID가 " + id + "인 드론을 찾을 수 없습니다."
-                ));
+        Drone drone = findDroneForUpdate(id);
 
         if (droneRepository.countDeletionDependencies(id) > 0) {
             throw new DroneHistoryDeleteDeniedException(
@@ -160,6 +157,18 @@ public class DroneService {
     ) {
         return droneRepository
                 .findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "ID가 " + id + "인 드론을 찾을 수 없습니다."
+                        )
+                );
+    }
+
+    private Drone findDroneForUpdate(
+            Long id
+    ) {
+        return droneRepository
+                .findByIdForUpdate(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "ID가 " + id + "인 드론을 찾을 수 없습니다."
@@ -237,12 +246,7 @@ public class DroneService {
             Long id,
             DroneTelemetryUpdateRequest request
     ) {
-        Drone drone = droneRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "드론을 찾을 수 없습니다. id=" + id
-                        )
-                );
+        Drone drone = findDroneForUpdate(id);
 
         String flightSessionId =
                 sessionCorrelationGuard.requireOptionalOwnedSession(

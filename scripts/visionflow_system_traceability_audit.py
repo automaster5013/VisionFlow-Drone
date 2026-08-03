@@ -43,6 +43,151 @@ REPOSITORY_PATTERN = re.compile(
 )
 
 
+def drone_mutation_concurrency_policy_drift(root: Path) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+    )
+    paths = {
+        "repository": backend_root
+        / "java/com/visionflow/api/drone/repository/DroneRepository.java",
+        "service": backend_root
+        / "java/com/visionflow/api/drone/service/DroneService.java",
+        "migration": backend_root
+        / "resources/db/migration/V2__create_drone_table.sql",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "service": [
+            "findDroneForUpdate(id)",
+            "findDroneById(id)",
+            "drone.updateBasicInformation(",
+            "drone.updateStatus(",
+            "sessionCorrelationGuard.requireOptionalOwnedSession(",
+            "drone.updateTelemetry(",
+            "droneRepository.countDeletionDependencies(id)",
+        ],
+        "migration": [
+            "UNIQUE (drone_code)",
+            "UNIQUE (serial_number)",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("repository")
+    if repository is not None:
+        method_at = repository.find("findByIdForUpdate(")
+        annotation_at = repository.rfind(
+            "@Lock(LockModeType.PESSIMISTIC_WRITE)",
+            0,
+            method_at,
+        )
+        if not (0 <= annotation_at < method_at):
+            drift.append("usage:repository:lock-drone-id")
+
+    service = sources.get("service")
+    if service is not None:
+        if service.count("findDroneForUpdate(id)") < 4:
+            drift.append(
+                "usage:service:lock-basic-status-delete-telemetry"
+            )
+
+        transitions = (
+            (
+                "updateDrone",
+                "public DroneResponse updateDrone(",
+                "public DroneResponse updateStatus(",
+                "drone.updateBasicInformation(",
+            ),
+            (
+                "updateStatus",
+                "public DroneResponse updateStatus(",
+                "public void deleteDrone(",
+                "drone.updateStatus(",
+            ),
+            (
+                "deleteDrone",
+                "public void deleteDrone(",
+                "private Drone findDroneById(",
+                "droneRepository.countDeletionDependencies(id)",
+            ),
+        )
+        for method, start_token, end_token, mutation_token in transitions:
+            method_at = service.find(start_token)
+            next_at = service.find(end_token, method_at + 1)
+            method_source = (
+                service[method_at:next_at]
+                if 0 <= method_at < next_at
+                else ""
+            )
+            lock_at = method_source.find("findDroneForUpdate(id)")
+            mutation_at = method_source.find(mutation_token)
+            if not (0 <= lock_at < mutation_at):
+                drift.append(
+                    f"ordering:service:{method}-lock-before-mutation"
+                )
+
+        telemetry_at = service.find("public DroneResponse updateTelemetry(")
+        telemetry_source = (
+            service[telemetry_at:] if telemetry_at >= 0 else ""
+        )
+        telemetry_lock_at = telemetry_source.find(
+            "findDroneForUpdate(id)"
+        )
+        correlation_at = telemetry_source.find(
+            "sessionCorrelationGuard.requireOptionalOwnedSession("
+        )
+        telemetry_mutation_at = telemetry_source.find(
+            "drone.updateTelemetry("
+        )
+        persistence_at = telemetry_source.find(
+            "droneRepository.flush()"
+        )
+        if not (
+            0 <= telemetry_lock_at
+            < correlation_at
+            < telemetry_mutation_at
+            < persistence_at
+        ):
+            drift.append(
+                "ordering:service:updateTelemetry-lock-before-correlation-and-write"
+            )
+
+        get_at = service.find("public DroneResponse getDrone(")
+        update_at = service.find("public DroneResponse updateDrone(")
+        get_source = (
+            service[get_at:update_at]
+            if 0 <= get_at < update_at
+            else ""
+        )
+        if (
+            "findDroneById(id)" not in get_source
+            or "findDroneForUpdate(id)" in get_source
+        ):
+            drift.append("usage:service:read-remains-non-locking")
+    return drift
+
+
 def session_correlation_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -1064,6 +1209,19 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not destructive_fk_drift
             else "Drone 삭제 시 물리 이력이 연쇄 삭제될 수 있습니다.",
             drift=destructive_fk_drift,
+        )
+    )
+
+    drone_mutation_drift = drone_mutation_concurrency_policy_drift(root)
+    checks.append(
+        check(
+            "BLOCKED" if drone_mutation_drift else "PASS",
+            "drone-mutation-concurrency-policy",
+            "Drone 변경 동시성 정책",
+            "기본정보·상태·삭제·텔레메트리 변경이 Drone 행 잠금으로 직렬화되며 읽기 조회는 비잠금으로 유지됩니다."
+            if not drone_mutation_drift
+            else "Drone 변경 경로의 행 잠금 또는 비잠금 읽기 경계가 누락됐습니다.",
+            drift=drone_mutation_drift,
         )
     )
 

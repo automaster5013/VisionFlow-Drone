@@ -20,6 +20,7 @@
   "expectedTraceabilityChecks": [
     "source-inventory",
     "drone-history-delete-policy",
+    "drone-mutation-concurrency-policy",
     "session-correlation-write-policy",
     "flight-session-lifecycle-concurrency-policy",
     "flight-quality-assessment-concurrency-policy",
