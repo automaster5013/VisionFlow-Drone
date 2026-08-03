@@ -1,6 +1,7 @@
 package com.visionflow.api.audit.service;
 
 import com.visionflow.api.audit.config.AuditRetentionProperties;
+import com.visionflow.api.audit.domain.AuditLog;
 import com.visionflow.api.audit.dto.AuditRetentionExecutionResponse;
 import com.visionflow.api.audit.dto.AuditRetentionStatusResponse;
 import com.visionflow.api.audit.repository.AuditLogRepository;
@@ -56,10 +57,14 @@ public class AuditRetentionService {
         Instant executedAt = Instant.now();
         Instant cutoff = cutoffAt(executedAt);
         LocalDateTime cutoffDateTime = toUtcDateTime(cutoff);
-        List<Long> ids = auditLogRepository.findRetentionCandidateIds(
-                cutoffDateTime,
-                PageRequest.of(0, properties.getBatchSize())
-        );
+        List<AuditLog> candidates =
+                auditLogRepository.findRetentionCandidatesForUpdate(
+                        cutoffDateTime,
+                        PageRequest.of(0, properties.getBatchSize())
+                );
+        List<Long> ids = candidates.stream()
+                .map(AuditLog::getId)
+                .toList();
         if (!ids.isEmpty()) {
             auditLogRepository.deleteAllByIdInBatch(ids);
             auditLogRepository.flush();

@@ -3,9 +3,11 @@ package com.visionflow.api.audit.repository;
 import com.visionflow.api.audit.domain.AuditAction;
 import com.visionflow.api.audit.domain.AuditEntityType;
 import com.visionflow.api.audit.domain.AuditLog;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -36,13 +38,14 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     long countByOccurredAtBefore(LocalDateTime cutoff);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-            SELECT auditLog.id
+            SELECT auditLog
             FROM AuditLog auditLog
             WHERE auditLog.occurredAt < :cutoff
             ORDER BY auditLog.occurredAt ASC, auditLog.id ASC
             """)
-    List<Long> findRetentionCandidateIds(
+    List<AuditLog> findRetentionCandidatesForUpdate(
             @Param("cutoff") LocalDateTime cutoff,
             Pageable pageable
     );

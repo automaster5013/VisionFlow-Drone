@@ -148,7 +148,18 @@ flowchart LR
 - 보안상 중요한 조회·변경은 `audit_log`에 기록된다.
 - 강제 세션 종료와 현재 세션 보호는 Backend security API에서 수행한다.
 
-### 4.6 비행 품질 평가 재계산 직렬화
+### 4.6 감사 로그 보존 정리 직렬화
+
+- 수동 관리자 실행과 UTC 예약 실행은 공통 `AuditRetentionService.cleanup`
+  경로를 사용한다.
+- 정리는 오래된 `audit_log` 대상 행을 발생 시각·ID 순서로 조회하면서
+  `PESSIMISTIC_WRITE` 잠금을 먼저 획득한 뒤 같은 트랜잭션에서 삭제한다.
+- 두 실행이 겹쳐도 같은 행 배치를 동시에 삭제하거나 각 실행의 삭제 건수를
+  중복 집계하지 않고, 앞선 배치가 끝난 뒤 남은 대상을 처리한다.
+- 보존 상태 조회는 기존 비잠금 개수 조회를 유지한다.
+- 활성화·CSV 백업 확인·보존 일수·배치 크기·수동 확인 게이트는 변경하지 않는다.
+
+### 4.7 비행 품질 평가 재계산 직렬화
 
 - 수동 재계산, 비행 세션 종료 후 자동 평가, 강제 백필은 모두 공통
   `FlightQualityAssessmentService.recalculate` 경로를 사용한다.
@@ -160,7 +171,7 @@ flowchart LR
   `(session_id, rule_version)` 중복 생성의 최종 방어선으로 유지한다.
 - 품질 평가 단건·이력 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.7 Incident 변경과 자동화 직렬화
+### 4.8 Incident 변경과 자동화 직렬화
 
 - 담당자·우선순위·상태·조치 메모 변경은 대상 `incident` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.
@@ -175,7 +186,7 @@ flowchart LR
 - 통합 시연의 SLA 초과 준비용 직접 SQL도 같은 트랜잭션에서 먼저
   `SELECT ... FOR UPDATE`를 수행한다.
 
-### 4.8 AI 경보 확인·해결 직렬화
+### 4.9 AI 경보 확인·해결 직렬화
 
 - 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
@@ -187,7 +198,7 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
-### 4.9 Geofence 위반 이벤트 직렬화
+### 4.10 Geofence 위반 이벤트 직렬화
 
 - 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
   `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
@@ -199,7 +210,7 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.10 Demo Scenario 단계 전이 직렬화
+### 4.11 Demo Scenario 단계 전이 직렬화
 
 - 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.

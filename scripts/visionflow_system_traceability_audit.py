@@ -306,6 +306,122 @@ def ai_snapshot_concurrency_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def audit_retention_concurrency_policy_drift(root: Path) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+        / "audit"
+    )
+    paths = {
+        "repository": backend_root
+        / "repository/AuditLogRepository.java",
+        "service": backend_root
+        / "service/AuditRetentionService.java",
+        "scheduler": backend_root
+        / "scheduler/AuditRetentionScheduler.java",
+        "controller": backend_root
+        / "controller/AuditLogController.java",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findRetentionCandidatesForUpdate(",
+            "SELECT auditLog",
+            "ORDER BY auditLog.occurredAt ASC, auditLog.id ASC",
+        ],
+        "service": [
+            "findRetentionCandidatesForUpdate(",
+            ".map(AuditLog::getId)",
+            "deleteAllByIdInBatch(ids)",
+            "countByOccurredAtBefore(",
+        ],
+        "scheduler": ['retentionService.cleanup("SCHEDULED")'],
+        "controller": ['retentionService.cleanup("MANUAL")'],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("repository")
+    if repository is not None:
+        method_at = repository.find(
+            "findRetentionCandidatesForUpdate("
+        )
+        annotation_at = repository.rfind(
+            "@Lock(LockModeType.PESSIMISTIC_WRITE)",
+            0,
+            method_at,
+        )
+        if not (0 <= annotation_at < method_at):
+            drift.append("usage:repository:lock-retention-candidates")
+
+    service = sources.get("service")
+    if service is not None:
+        cleanup_at = service.find(
+            "public AuditRetentionExecutionResponse cleanup("
+        )
+        helper_at = service.find(
+            "private void requireEnabled()",
+            cleanup_at + 1,
+        )
+        cleanup_source = (
+            service[cleanup_at:helper_at]
+            if 0 <= cleanup_at < helper_at
+            else ""
+        )
+        lock_at = cleanup_source.find(
+            "findRetentionCandidatesForUpdate("
+        )
+        id_at = cleanup_source.find(".map(AuditLog::getId)")
+        delete_at = cleanup_source.find("deleteAllByIdInBatch(ids)")
+        flush_at = cleanup_source.find("auditLogRepository.flush()")
+        remaining_at = cleanup_source.find(
+            "countByOccurredAtBefore("
+        )
+        if not (
+            0 <= lock_at < id_at < delete_at < flush_at < remaining_at
+        ):
+            drift.append(
+                "ordering:service:lock-before-retention-delete-and-count"
+            )
+
+        inspect_at = service.find(
+            "public AuditRetentionStatusResponse inspect()"
+        )
+        inspect_source = (
+            service[inspect_at:cleanup_at]
+            if 0 <= inspect_at < cleanup_at
+            else ""
+        )
+        if (
+            "countByOccurredAtBefore(" not in inspect_source
+            or "findRetentionCandidatesForUpdate(" in inspect_source
+        ):
+            drift.append(
+                "usage:service:retention-inspection-remains-non-locking"
+            )
+    return drift
+
+
 def session_correlation_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -1365,6 +1481,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not ai_snapshot_drift
             else "AI 스냅샷 첨부의 이벤트 행 잠금 또는 비잠금 읽기 경계가 누락됐습니다.",
             drift=ai_snapshot_drift,
+        )
+    )
+    audit_retention_drift = audit_retention_concurrency_policy_drift(
+        root
+    )
+    checks.append(
+        check(
+            "BLOCKED" if audit_retention_drift else "PASS",
+            "audit-retention-concurrency-policy",
+            "감사 로그 보존 정리 동시성 정책",
+            "수동·예약 보존 정리가 오래된 Audit Log 행 잠금으로 직렬화되며 상태 조회는 비잠금으로 유지됩니다."
+            if not audit_retention_drift
+            else "감사 로그 보존 정리의 행 잠금 또는 비잠금 상태 조회 경계가 누락됐습니다.",
+            drift=audit_retention_drift,
         )
     )
     lifecycle_drift = flight_session_lifecycle_policy_drift(root)
