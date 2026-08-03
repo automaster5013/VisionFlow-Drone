@@ -211,7 +211,23 @@ flowchart LR
 - 통합 시연의 SLA 초과 준비용 직접 SQL도 같은 트랜잭션에서 먼저
   `SELECT ... FOR UPDATE`를 수행한다.
 
-### 4.11 AI 경보 확인·해결 직렬화
+### 4.11 정비 작업지시와 SLA 재평가 직렬화
+
+- 비행 품질 Incident 기반 작업 자동 동기화는 `incident_id`로 작업지시 행을
+  `PESSIMISTIC_WRITE` 잠근 뒤 생성·위험 동기화·재개를 수행한다.
+- 점검 시작과 완료는 대상 `maintenance_work_order` 행을 ID로 잠근 뒤 상태를
+  전이하고 history·감사 로그를 저장한다.
+- 정비 SLA 후보 스캔은 작업지시 Entity 대신 ID만 비잠금으로 읽고, 실제 판단
+  직전에 `Incident → Maintenance Work Order` 순서로 두 행을 잠근다.
+- 잠금 획득 뒤 작업이 여전히 `OPEN`·`IN_PROGRESS`인지 확인하고 SLA를 다시
+  계산하므로, 후보 조회 직후 완료된 작업의 Incident를 오래된 상태로 다시
+  상향하지 않는다.
+- 이 잠금 순서는 비행 품질 자동화의 Incident→작업지시 순서와 일치하여 교착
+  가능성을 줄이며, V19 `uk_maintenance_work_order_incident` UNIQUE 제약은
+  Incident별 중복 작업 생성의 최종 방어선으로 유지한다.
+- 작업 목록·상세와 SLA 현황 조회는 기존 비잠금 읽기를 유지한다.
+
+### 4.12 AI 경보 확인·해결 직렬화
 
 - 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
@@ -223,7 +239,7 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
-### 4.12 Geofence 위반 이벤트 직렬화
+### 4.13 Geofence 위반 이벤트 직렬화
 
 - 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
   `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
@@ -235,7 +251,7 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.13 Demo Scenario 단계 전이 직렬화
+### 4.14 Demo Scenario 단계 전이 직렬화
 
 - 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.

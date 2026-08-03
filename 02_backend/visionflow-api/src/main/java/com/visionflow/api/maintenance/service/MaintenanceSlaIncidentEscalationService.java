@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class MaintenanceSlaIncidentEscalationService {
@@ -65,8 +66,8 @@ public class MaintenanceSlaIncidentEscalationService {
     MaintenanceSlaEscalationResultResponse escalateOverdueAt(
             Instant evaluatedAt
     ) {
-        List<MaintenanceWorkOrder> candidates =
-                workOrderRepository.findActiveForSlaEvaluation(
+        List<Long> candidateIds =
+                workOrderRepository.findActiveIdsForSlaEvaluation(
                         List.of(
                                 MaintenanceWorkOrderStatus.OPEN,
                                 MaintenanceWorkOrderStatus.IN_PROGRESS
@@ -77,7 +78,35 @@ public class MaintenanceSlaIncidentEscalationService {
         int alreadyEscalated = 0;
         int skipped = 0;
 
-        for (MaintenanceWorkOrder order : candidates) {
+        for (Long workOrderId : candidateIds) {
+            Optional<Long> incidentId =
+                    workOrderRepository.findIncidentIdById(workOrderId);
+            if (incidentId.isEmpty()) {
+                skipped += 1;
+                continue;
+            }
+
+            Incident incident = incidentRepository
+                    .findByIdForUpdate(incidentId.get())
+                    .orElse(null);
+            if (incident == null) {
+                skipped += 1;
+                log.warn(
+                        "정비 SLA Incident 에스컬레이션 생략: "
+                                + "workOrderId={}, incidentId={}",
+                        workOrderId,
+                        incidentId.get()
+                );
+                continue;
+            }
+
+            MaintenanceWorkOrder order = workOrderRepository
+                    .findByIdForUpdate(workOrderId)
+                    .orElse(null);
+            if (order == null || !isActive(order.getStatus())) {
+                continue;
+            }
+
             MaintenanceSlaPolicy.Evaluation sla =
                     MaintenanceSlaPolicy.evaluate(order, evaluatedAt);
             if (sla.status() != MaintenanceSlaStatus.OVERDUE) {
@@ -85,14 +114,7 @@ public class MaintenanceSlaIncidentEscalationService {
             }
             overdue += 1;
 
-            Incident incident = incidentRepository
-                    .findByIdForUpdate(order.getIncidentId())
-                    .orElse(null);
-            if (
-                    incident == null
-                            || incident.getStatus()
-                            == IncidentStatus.CLOSED
-            ) {
+            if (incident.getStatus() == IncidentStatus.CLOSED) {
                 skipped += 1;
                 log.warn(
                         "정비 SLA Incident 에스컬레이션 생략: "
@@ -121,12 +143,17 @@ public class MaintenanceSlaIncidentEscalationService {
 
         return new MaintenanceSlaEscalationResultResponse(
                 evaluatedAt,
-                candidates.size(),
+                candidateIds.size(),
                 overdue,
                 escalated,
                 alreadyEscalated,
                 skipped
         );
+    }
+
+    private boolean isActive(MaintenanceWorkOrderStatus status) {
+        return status == MaintenanceWorkOrderStatus.OPEN
+                || status == MaintenanceWorkOrderStatus.IN_PROGRESS;
     }
 
     private void escalate(

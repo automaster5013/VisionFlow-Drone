@@ -43,15 +43,22 @@ public interface MaintenanceWorkOrderRepository
     List<MaintenanceWorkOrder> findLatestForAllDrones();
 
     @Query("""
-            SELECT workOrder
+            SELECT workOrder.id
             FROM MaintenanceWorkOrder workOrder
             WHERE workOrder.status IN :statuses
             ORDER BY workOrder.openedAt ASC, workOrder.id ASC
             """)
-    List<MaintenanceWorkOrder> findActiveForSlaEvaluation(
+    List<Long> findActiveIdsForSlaEvaluation(
             @Param("statuses")
             Collection<MaintenanceWorkOrderStatus> statuses
     );
+
+    @Query("""
+            SELECT workOrder.incidentId
+            FROM MaintenanceWorkOrder workOrder
+            WHERE workOrder.id = :id
+            """)
+    Optional<Long> findIncidentIdById(@Param("id") Long id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

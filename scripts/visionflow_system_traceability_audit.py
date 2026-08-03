@@ -1008,7 +1008,7 @@ def incident_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
             "findBySourceTypeAndSourceIdForUpdate(",
         ],
         "maintenance-sla": [
-            "findByIdForUpdate(order.getIncidentId())",
+            "findByIdForUpdate(incidentId.get())",
             "existsByIncidentIdAndActionTypeAndActor(",
         ],
         "demo": [
@@ -1049,7 +1049,7 @@ def incident_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     maintenance_sla = sources.get("maintenance-sla")
     if maintenance_sla is not None:
         lock_at = maintenance_sla.find(
-            "findByIdForUpdate(order.getIncidentId())"
+            "findByIdForUpdate(incidentId.get())"
         )
         dedup_at = maintenance_sla.find(
             "existsByIncidentIdAndActionTypeAndActor("
@@ -1066,6 +1066,222 @@ def incident_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
         update_at = demo.find("jdbcTemplate.update(")
         if not (0 <= lock_at < update_at):
             drift.append("ordering:demo:incident-lock-before-update")
+    return drift
+
+
+def maintenance_work_order_lifecycle_concurrency_policy_drift(
+    root: Path,
+) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+    )
+    paths = {
+        "work-order-repository": backend_root
+        / "java/com/visionflow/api/maintenance/repository"
+        / "MaintenanceWorkOrderRepository.java",
+        "incident-repository": backend_root
+        / "java/com/visionflow/api/incident/repository"
+        / "IncidentRepository.java",
+        "work-order-service": backend_root
+        / "java/com/visionflow/api/maintenance/service"
+        / "MaintenanceWorkOrderService.java",
+        "sla-service": backend_root
+        / "java/com/visionflow/api/maintenance/service"
+        / "MaintenanceSlaIncidentEscalationService.java",
+        "migration": backend_root
+        / "resources/db/migration"
+        / "V19__create_maintenance_work_order.sql",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "work-order-repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+            "findByIncidentIdForUpdate(",
+            "SELECT workOrder.id",
+            "findActiveIdsForSlaEvaluation(",
+            "SELECT workOrder.incidentId",
+            "findIncidentIdById(",
+        ],
+        "incident-repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "work-order-service": [
+            "findByIncidentIdForUpdate(",
+            "requireWorkOrderForUpdate(workOrderId)",
+            "order.startInspection(",
+            "order.complete(",
+            "workOrderRepository.findById(workOrderId)",
+        ],
+        "sla-service": [
+            "findActiveIdsForSlaEvaluation(",
+            "findIncidentIdById(workOrderId)",
+            "findByIdForUpdate(incidentId.get())",
+            "findByIdForUpdate(workOrderId)",
+            "!isActive(order.getStatus())",
+            "MaintenanceSlaPolicy.evaluate(order, evaluatedAt)",
+            "existsByIncidentIdAndActionTypeAndActor(",
+        ],
+        "migration": [
+            "UNIQUE KEY uk_maintenance_work_order_incident (incident_id)",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("work-order-repository")
+    if repository is not None:
+        if repository.count(
+            "@Lock(LockModeType.PESSIMISTIC_WRITE)"
+        ) < 2:
+            drift.append(
+                "usage:work-order-repository:lock-id-and-incident"
+            )
+        candidate_at = repository.find(
+            "findActiveIdsForSlaEvaluation("
+        )
+        previous_method_at = repository.find(
+            "findLatestForAllDrones();"
+        )
+        candidate_source = (
+            repository[previous_method_at:candidate_at]
+            if 0 <= previous_method_at < candidate_at
+            else ""
+        )
+        if "@Lock(LockModeType.PESSIMISTIC_WRITE)" in (
+            candidate_source
+        ):
+            drift.append(
+                "usage:work-order-repository:"
+                "candidate-id-scan-remains-non-locking"
+            )
+
+    work_order_service = sources.get("work-order-service")
+    if work_order_service is not None:
+        synchronize_at = work_order_service.find(
+            "public MaintenanceWorkOrderResponse synchronizeRequired("
+        )
+        find_many_at = work_order_service.find(
+            "public List<MaintenanceWorkOrderResponse> findWorkOrders("
+        )
+        synchronize_source = (
+            work_order_service[synchronize_at:find_many_at]
+            if 0 <= synchronize_at < find_many_at
+            else ""
+        )
+        sync_lock_at = synchronize_source.find(
+            "findByIncidentIdForUpdate("
+        )
+        sync_create_at = synchronize_source.find(
+            "MaintenanceWorkOrder.open("
+        )
+        if not (0 <= sync_lock_at < sync_create_at):
+            drift.append(
+                "ordering:work-order-service:"
+                "incident-work-order-lock-before-create-or-sync"
+            )
+
+        transitions = (
+            (
+                "startInspection",
+                "public MaintenanceWorkOrderResponse startInspection(",
+                "public MaintenanceWorkOrderResponse completeInspection(",
+                "order.startInspection(",
+            ),
+            (
+                "completeInspection",
+                "public MaintenanceWorkOrderResponse completeInspection(",
+                "private MaintenanceWorkOrder requireWorkOrder(",
+                "order.complete(",
+            ),
+        )
+        for method, start_token, end_token, mutation_token in transitions:
+            method_at = work_order_service.find(start_token)
+            next_at = work_order_service.find(end_token, method_at + 1)
+            method_source = (
+                work_order_service[method_at:next_at]
+                if 0 <= method_at < next_at
+                else ""
+            )
+            lock_at = method_source.find(
+                "requireWorkOrderForUpdate(workOrderId)"
+            )
+            mutation_at = method_source.find(mutation_token)
+            if not (0 <= lock_at < mutation_at):
+                drift.append(
+                    f"ordering:work-order-service:"
+                    f"{method}-lock-before-mutation"
+                )
+
+        read_at = work_order_service.find(
+            "public List<MaintenanceWorkOrderResponse> findWorkOrders("
+        )
+        start_at = work_order_service.find(
+            "public MaintenanceWorkOrderResponse startInspection("
+        )
+        read_source = (
+            work_order_service[read_at:start_at]
+            if 0 <= read_at < start_at
+            else ""
+        )
+        if "requireWorkOrderForUpdate(" in read_source:
+            drift.append(
+                "usage:work-order-service:reads-remain-non-locking"
+            )
+
+    sla_service = sources.get("sla-service")
+    if sla_service is not None:
+        candidate_at = sla_service.find(
+            "findActiveIdsForSlaEvaluation("
+        )
+        incident_id_at = sla_service.find(
+            "findIncidentIdById(workOrderId)"
+        )
+        incident_lock_at = sla_service.find(
+            "findByIdForUpdate(incidentId.get())"
+        )
+        work_order_lock_at = sla_service.find(
+            "findByIdForUpdate(workOrderId)"
+        )
+        active_check_at = sla_service.find(
+            "!isActive(order.getStatus())"
+        )
+        evaluation_at = sla_service.find(
+            "MaintenanceSlaPolicy.evaluate(order, evaluatedAt)"
+        )
+        dedup_at = sla_service.find(
+            "existsByIncidentIdAndActionTypeAndActor("
+        )
+        if not (
+            0 <= candidate_at
+            < incident_id_at
+            < incident_lock_at
+            < work_order_lock_at
+            < active_check_at
+            < evaluation_at
+            < dedup_at
+        ):
+            drift.append(
+                "ordering:sla-service:"
+                "incident-before-work-order-lock-before-reevaluation"
+            )
     return drift
 
 
@@ -1877,6 +2093,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not incident_lifecycle_drift
             else "Incident 변경 경로의 행 잠금 또는 중복 방어가 누락됐습니다.",
             drift=incident_lifecycle_drift,
+        )
+    )
+    maintenance_work_order_drift = (
+        maintenance_work_order_lifecycle_concurrency_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if maintenance_work_order_drift else "PASS",
+            "maintenance-work-order-lifecycle-concurrency-policy",
+            "정비 작업지시 수명주기 동시성 정책",
+            "점검 작업 동기화·시작·완료와 SLA 재평가가 Incident→Work Order 잠금 순서 및 V19 UNIQUE 제약으로 보호됩니다."
+            if not maintenance_work_order_drift
+            else "정비 작업지시 전이 또는 SLA 재평가의 행 잠금·재검증·DB UNIQUE 방어가 누락됐습니다.",
+            drift=maintenance_work_order_drift,
         )
     )
     ai_alert_lifecycle_drift = (

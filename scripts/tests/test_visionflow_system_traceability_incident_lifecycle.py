@@ -69,7 +69,7 @@ class SystemTraceabilityIncidentLifecycleTest(unittest.TestCase):
                 backend
                 / "maintenance/service"
                 / "MaintenanceSlaIncidentEscalationService.java": """
-                    findByIdForUpdate(order.getIncidentId())
+                    findByIdForUpdate(incidentId.get())
                     existsByIncidentIdAndActionTypeAndActor(
                 """,
                 backend / "demo/service/DemoScenarioService.java": """

@@ -70,8 +70,7 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                 IncidentStatus.OPEN,
                 IncidentPriority.HIGH
         );
-        when(workOrderRepository.findActiveForSlaEvaluation(any()))
-                .thenReturn(List.of(order));
+        stubCandidate(order, incident);
         when(historyRepository
                 .existsByIncidentIdAndActionTypeAndActor(
                         501L,
@@ -79,8 +78,6 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                         MaintenanceSlaIncidentEscalationService.SYSTEM_ACTOR
                 ))
                 .thenReturn(false);
-        when(incidentRepository.findByIdForUpdate(501L))
-                .thenReturn(Optional.of(incident));
         when(incidentRepository.saveAndFlush(incident))
                 .thenReturn(incident);
 
@@ -127,8 +124,7 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                 IncidentStatus.RESOLVED,
                 IncidentPriority.MEDIUM
         );
-        when(workOrderRepository.findActiveForSlaEvaluation(any()))
-                .thenReturn(List.of(order));
+        stubCandidate(order, incident);
         when(historyRepository
                 .existsByIncidentIdAndActionTypeAndActor(
                         502L,
@@ -136,8 +132,6 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                         MaintenanceSlaIncidentEscalationService.SYSTEM_ACTOR
                 ))
                 .thenReturn(false);
-        when(incidentRepository.findByIdForUpdate(502L))
-                .thenReturn(Optional.of(incident));
         when(incidentRepository.saveAndFlush(incident))
                 .thenReturn(incident);
 
@@ -168,10 +162,7 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                 IncidentStatus.OPEN,
                 IncidentPriority.CRITICAL
         );
-        when(workOrderRepository.findActiveForSlaEvaluation(any()))
-                .thenReturn(List.of(order));
-        when(incidentRepository.findByIdForUpdate(503L))
-                .thenReturn(Optional.of(incident));
+        stubCandidate(order, incident);
         when(historyRepository
                 .existsByIncidentIdAndActionTypeAndActor(
                         503L,
@@ -200,8 +191,12 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                 504L,
                 now.minusSeconds(60 * 60L)
         );
-        when(workOrderRepository.findActiveForSlaEvaluation(any()))
-                .thenReturn(List.of(order));
+        Incident incident = incident(
+                504L,
+                IncidentStatus.OPEN,
+                IncidentPriority.HIGH
+        );
+        stubCandidate(order, incident);
 
         MaintenanceSlaEscalationResultResponse result =
                 service.escalateOverdueAt(now);
@@ -214,6 +209,22 @@ class MaintenanceSlaIncidentEscalationServiceTests {
                         any(),
                         any()
                 );
+    }
+
+    private void stubCandidate(
+            MaintenanceWorkOrder order,
+            Incident incident
+    ) {
+        Long workOrderId = order.getId();
+        Long incidentId = order.getIncidentId();
+        when(workOrderRepository.findActiveIdsForSlaEvaluation(any()))
+                .thenReturn(List.of(workOrderId));
+        when(workOrderRepository.findIncidentIdById(workOrderId))
+                .thenReturn(Optional.of(incidentId));
+        when(incidentRepository.findByIdForUpdate(incidentId))
+                .thenReturn(Optional.of(incident));
+        when(workOrderRepository.findByIdForUpdate(workOrderId))
+                .thenReturn(Optional.of(order));
     }
 
     private MaintenanceWorkOrder order(
