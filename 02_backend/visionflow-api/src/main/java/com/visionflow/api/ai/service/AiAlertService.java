@@ -62,7 +62,8 @@ public class AiAlertService {
             return;
         }
 
-        if (alertRepository.findByEventId(event.getId()).isPresent()) {
+        AiInferenceEvent lockedEvent = findEventForUpdate(event.getId());
+        if (alertRepository.findByEventId(lockedEvent.getId()).isPresent()) {
             return;
         }
 
@@ -70,7 +71,7 @@ public class AiAlertService {
                 riskEvaluator.evaluate(detections);
 
         AiAlert alert = AiAlert.create(
-                event,
+                lockedEvent,
                 assessment.severity(),
                 assessment.title(),
                 assessment.summary(),
@@ -83,7 +84,7 @@ public class AiAlertService {
 
         realtimePublisher.publishAfterCommit(
                 AiAlertRealtimeAction.CREATED,
-                AiAlertResponse.from(alert, event)
+                AiAlertResponse.from(alert, lockedEvent)
         );
     }
 
@@ -230,6 +231,13 @@ public class AiAlertService {
 
     private AiInferenceEvent findEvent(Long eventId) {
         return eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "AI 추론 이벤트를 찾을 수 없습니다: " + eventId
+                ));
+    }
+
+    private AiInferenceEvent findEventForUpdate(Long eventId) {
+        return eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "AI 추론 이벤트를 찾을 수 없습니다: " + eventId
                 ));

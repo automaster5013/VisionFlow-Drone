@@ -188,6 +188,154 @@ def drone_mutation_concurrency_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def ai_alert_creation_concurrency_policy_drift(
+    root: Path,
+) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+    )
+    paths = {
+        "event-repository": backend_root
+        / "java/com/visionflow/api/ai/repository"
+        / "AiInferenceEventRepository.java",
+        "alert-repository": backend_root
+        / "java/com/visionflow/api/ai/repository"
+        / "AiAlertRepository.java",
+        "alert-service": backend_root
+        / "java/com/visionflow/api/ai/service"
+        / "AiAlertService.java",
+        "migration": backend_root
+        / "resources/db/migration"
+        / "V10__create_ai_alert.sql",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "event-repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "alert-repository": [
+            "findByEventId(",
+        ],
+        "alert-service": [
+            "findEventForUpdate(event.getId())",
+            "alertRepository.findByEventId(lockedEvent.getId())",
+            "riskEvaluator.evaluate(detections)",
+            "AiAlert.create(",
+            "alertRepository.saveAndFlush(alert)",
+            "incidentService.createFromAiAlert(alert)",
+            "AiAlertRealtimeAction.CREATED",
+            "eventRepository.findByIdForUpdate(eventId)",
+            "eventRepository.findById(eventId)",
+        ],
+        "migration": [
+            "UNIQUE KEY uk_ai_alert_event (event_id)",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    event_repository = sources.get("event-repository")
+    if event_repository is not None:
+        method_at = event_repository.find("findByIdForUpdate(")
+        annotation_at = event_repository.rfind(
+            "@Lock(LockModeType.PESSIMISTIC_WRITE)",
+            0,
+            method_at,
+        )
+        if not (0 <= annotation_at < method_at):
+            drift.append("usage:event-repository:lock-event-id")
+
+    alert_service = sources.get("alert-service")
+    if alert_service is not None:
+        create_at = alert_service.find("public void createForEvent(")
+        read_at = alert_service.find(
+            "public List<AiAlertResponse> findAlerts(",
+            create_at + 1,
+        )
+        create_source = (
+            alert_service[create_at:read_at]
+            if 0 <= create_at < read_at
+            else ""
+        )
+        lock_at = create_source.find(
+            "findEventForUpdate(event.getId())"
+        )
+        idempotency_at = create_source.find(
+            "alertRepository.findByEventId(lockedEvent.getId())"
+        )
+        evaluate_at = create_source.find(
+            "riskEvaluator.evaluate(detections)"
+        )
+        save_at = create_source.find(
+            "alertRepository.saveAndFlush(alert)"
+        )
+        incident_at = create_source.find(
+            "incidentService.createFromAiAlert(alert)"
+        )
+        realtime_at = create_source.find(
+            "realtimePublisher.publishAfterCommit("
+        )
+        if not (
+            0 <= lock_at
+            < idempotency_at
+            < evaluate_at
+            < save_at
+            < incident_at
+            < realtime_at
+        ):
+            drift.append(
+                "ordering:alert-service:"
+                "event-lock-before-idempotency-and-side-effects"
+            )
+
+        helper_at = alert_service.find(
+            "private AiAlert findAlert(",
+            read_at + 1,
+        )
+        read_source = (
+            alert_service[read_at:helper_at]
+            if 0 <= read_at < helper_at
+            else ""
+        )
+        if "findEventForUpdate(" in read_source:
+            drift.append(
+                "usage:alert-service:alert-reads-remain-non-locking"
+            )
+
+        locked_helper_at = alert_service.find(
+            "private AiInferenceEvent findEventForUpdate("
+        )
+        locked_helper_source = (
+            alert_service[locked_helper_at:]
+            if locked_helper_at >= 0
+            else ""
+        )
+        if "eventRepository.findByIdForUpdate(eventId)" not in (
+            locked_helper_source
+        ):
+            drift.append(
+                "usage:alert-service:locked-helper-uses-event-lock"
+            )
+    return drift
+
+
 def ai_snapshot_concurrency_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -1649,6 +1797,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not ai_ingest_drift
             else "AI 이벤트 수집의 세션 잠금, 멱등 조회 또는 DB UNIQUE 방어가 누락됐습니다.",
             drift=ai_ingest_drift,
+        )
+    )
+    ai_alert_creation_drift = (
+        ai_alert_creation_concurrency_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if ai_alert_creation_drift else "PASS",
+            "ai-alert-creation-concurrency-policy",
+            "AI Alert 생성 동시성 정책",
+            "동일 AI 이벤트의 경보 멱등 조회·생성이 추론 이벤트 행 잠금으로 직렬화되고 V10 event UNIQUE 제약이 최종 방어선으로 유지됩니다."
+            if not ai_alert_creation_drift
+            else "AI 경보 생성의 이벤트 행 잠금, 멱등 조회 또는 DB UNIQUE 방어가 누락됐습니다.",
+            drift=ai_alert_creation_drift,
         )
     )
     ai_snapshot_drift = ai_snapshot_concurrency_policy_drift(root)
