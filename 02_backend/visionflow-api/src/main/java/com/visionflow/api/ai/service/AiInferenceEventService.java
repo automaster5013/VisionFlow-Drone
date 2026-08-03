@@ -94,7 +94,7 @@ public class AiInferenceEventService {
             Long eventId,
             MultipartFile file
     ) {
-        AiInferenceEvent event = findEvent(eventId);
+        AiInferenceEvent event = findEventForUpdate(eventId);
         AiSnapshotStorageService.StoredSnapshot stored =
                 snapshotStorageService.store(eventId, file);
 
@@ -135,6 +135,13 @@ public class AiInferenceEventService {
 
     private AiInferenceEvent findEvent(Long eventId) {
         return eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "AI 추론 이벤트를 찾을 수 없습니다: " + eventId
+                ));
+    }
+
+    private AiInferenceEvent findEventForUpdate(Long eventId) {
+        return eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "AI 추론 이벤트를 찾을 수 없습니다: " + eventId
                 ));

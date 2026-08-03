@@ -92,7 +92,17 @@ operation 수는 하나의 API가 둘 이상의 기능 흐름에 참여할 경�
 `FLIGHT_SESSION_DRONE_MISMATCH`로 거부한다. 세션을 포함하지 않는 일반
 텔레메트리는 기존과 동일하게 허용한다.
 
-### 4.2 Drone 변경 직렬화
+### 4.2 AI 추론 이벤트 스냅샷 첨부 직렬화
+
+- 스냅샷 첨부는 대상 `ai_inference_event` 행을 먼저
+  `PESSIMISTIC_WRITE`로 잠근 뒤 파일 저장과 메타데이터 변경을 수행한다.
+- 같은 이벤트에 첨부 요청이 동시에 도착해도 앞선 파일·메타데이터 갱신이 끝난 뒤
+  후속 요청이 처리되므로 서로의 영속 상태를 비동기적으로 덮어쓰지 않는다.
+- 이벤트·스냅샷 조회는 기존 비잠금 읽기를 유지한다.
+- 이벤트 수집의 `(source_id, session_id, frame_index)` V5 UNIQUE 제약은
+  프레임 중복 생성의 최종 방어선으로 유지한다.
+
+### 4.3 Drone 변경 직렬화
 
 - 기본정보·운영 상태·삭제·텔레메트리 변경은 대상 `drone` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.
@@ -105,7 +115,7 @@ operation 수는 하나의 API가 둘 이상의 기능 흐름에 참여할 경�
 - V2의 `drone_code`·`serial_number` UNIQUE 제약은 생성·변경 충돌의 최종
   방어선으로 유지한다.
 
-### 4.3 비행 품질에서 정비 작업까지
+### 4.4 비행 품질에서 정비 작업까지
 
 ```mermaid
 flowchart LR
@@ -130,7 +140,7 @@ flowchart LR
 - Incident는 정비 작업지시와 비행 허가 상태의 근거가 된다.
 - 작업 상태 변경은 별도 history에 누적된다.
 
-### 4.4 운영자 인증과 감사
+### 4.5 운영자 인증과 감사
 
 - VIEWER·OPERATOR·ADMIN 원본 KEY는 환경 설정에서만 사용한다.
 - 성공한 로그인은 만료형 Backend 세션과 Secure·HttpOnly cookie로 전환된다.
@@ -138,7 +148,7 @@ flowchart LR
 - 보안상 중요한 조회·변경은 `audit_log`에 기록된다.
 - 강제 세션 종료와 현재 세션 보호는 Backend security API에서 수행한다.
 
-### 4.5 비행 품질 평가 재계산 직렬화
+### 4.6 비행 품질 평가 재계산 직렬화
 
 - 수동 재계산, 비행 세션 종료 후 자동 평가, 강제 백필은 모두 공통
   `FlightQualityAssessmentService.recalculate` 경로를 사용한다.
@@ -150,7 +160,7 @@ flowchart LR
   `(session_id, rule_version)` 중복 생성의 최종 방어선으로 유지한다.
 - 품질 평가 단건·이력 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.6 Incident 변경과 자동화 직렬화
+### 4.7 Incident 변경과 자동화 직렬화
 
 - 담당자·우선순위·상태·조치 메모 변경은 대상 `incident` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.
@@ -165,7 +175,7 @@ flowchart LR
 - 통합 시연의 SLA 초과 준비용 직접 SQL도 같은 트랜잭션에서 먼저
   `SELECT ... FOR UPDATE`를 수행한다.
 
-### 4.7 AI 경보 확인·해결 직렬화
+### 4.8 AI 경보 확인·해결 직렬화
 
 - 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
@@ -177,7 +187,7 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
-### 4.8 Geofence 위반 이벤트 직렬화
+### 4.9 Geofence 위반 이벤트 직렬화
 
 - 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
   `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
@@ -189,7 +199,7 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.9 Demo Scenario 단계 전이 직렬화
+### 4.10 Demo Scenario 단계 전이 직렬화
 
 - 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.

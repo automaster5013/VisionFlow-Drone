@@ -2,8 +2,10 @@ package com.visionflow.api.ai.repository;
 
 import com.visionflow.api.ai.domain.AiInferenceEvent;
 import com.visionflow.api.flight.dto.AiFlightSessionSummaryProjection;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,6 +20,16 @@ public interface AiInferenceEventRepository
             String sourceId,
             String sessionId,
             Long frameIndex
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT inferenceEvent
+            FROM AiInferenceEvent inferenceEvent
+            WHERE inferenceEvent.id = :id
+            """)
+    Optional<AiInferenceEvent> findByIdForUpdate(
+            @Param("id") Long id
     );
 
     List<AiInferenceEvent> findAllByOrderByCapturedAtDesc(

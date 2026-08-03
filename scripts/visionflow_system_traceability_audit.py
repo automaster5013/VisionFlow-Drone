@@ -188,6 +188,124 @@ def drone_mutation_concurrency_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def ai_snapshot_concurrency_policy_drift(root: Path) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "visionflow"
+        / "api"
+        / "ai"
+    )
+    paths = {
+        "repository": backend_root
+        / "repository/AiInferenceEventRepository.java",
+        "service": backend_root
+        / "service/AiInferenceEventService.java",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findByIdForUpdate(",
+        ],
+        "service": [
+            "findEventForUpdate(eventId)",
+            "snapshotStorageService.store(eventId, file)",
+            "event.attachSnapshot(",
+            "eventRepository.saveAndFlush(event)",
+            "findEvent(eventId)",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    repository = sources.get("repository")
+    if repository is not None:
+        method_at = repository.find("findByIdForUpdate(")
+        annotation_at = repository.rfind(
+            "@Lock(LockModeType.PESSIMISTIC_WRITE)",
+            0,
+            method_at,
+        )
+        if not (0 <= annotation_at < method_at):
+            drift.append("usage:repository:lock-ai-event-id")
+
+    service = sources.get("service")
+    if service is not None:
+        attach_at = service.find(
+            "public AiInferenceEventResponse attachSnapshot("
+        )
+        read_at = service.find(
+            "public AiSnapshotDownload findSnapshot(",
+            attach_at + 1,
+        )
+        attach_source = (
+            service[attach_at:read_at]
+            if 0 <= attach_at < read_at
+            else ""
+        )
+        lock_at = attach_source.find("findEventForUpdate(eventId)")
+        store_at = attach_source.find(
+            "snapshotStorageService.store(eventId, file)"
+        )
+        mutation_at = attach_source.find("event.attachSnapshot(")
+        persistence_at = attach_source.find(
+            "eventRepository.saveAndFlush(event)"
+        )
+        if not (
+            0 <= lock_at < store_at < mutation_at < persistence_at
+        ):
+            drift.append(
+                "ordering:service:attachSnapshot-lock-before-storage-and-write"
+            )
+
+        helper_at = service.find(
+            "private AiInferenceEvent findEvent(",
+            read_at + 1,
+        )
+        read_source = (
+            service[read_at:helper_at]
+            if 0 <= read_at < helper_at
+            else ""
+        )
+        if (
+            "findEvent(eventId)" not in read_source
+            or "findEventForUpdate(eventId)" in read_source
+        ):
+            drift.append("usage:service:snapshot-read-remains-non-locking")
+
+        locked_helper_at = service.find(
+            "private AiInferenceEvent findEventForUpdate("
+        )
+        locked_helper_source = (
+            service[locked_helper_at:]
+            if locked_helper_at >= 0
+            else ""
+        )
+        if "eventRepository.findByIdForUpdate(eventId)" not in (
+            locked_helper_source
+        ):
+            drift.append("usage:service:locked-helper-uses-repository-lock")
+    return drift
+
+
 def session_correlation_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -1235,6 +1353,18 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not session_correlation_drift
             else "외부 입력에서 비행 세션 상관관계 검증이 누락됐습니다.",
             drift=session_correlation_drift,
+        )
+    )
+    ai_snapshot_drift = ai_snapshot_concurrency_policy_drift(root)
+    checks.append(
+        check(
+            "BLOCKED" if ai_snapshot_drift else "PASS",
+            "ai-snapshot-concurrency-policy",
+            "AI 추론 이벤트 스냅샷 동시성 정책",
+            "스냅샷 첨부가 AI 추론 이벤트 행 잠금으로 직렬화되며 조회는 비잠금으로 유지됩니다."
+            if not ai_snapshot_drift
+            else "AI 스냅샷 첨부의 이벤트 행 잠금 또는 비잠금 읽기 경계가 누락됐습니다.",
+            drift=ai_snapshot_drift,
         )
     )
     lifecycle_drift = flight_session_lifecycle_policy_drift(root)
