@@ -472,7 +472,6 @@ def session_correlation_policy_drift(root: Path) -> list[str]:
             "drone.updateTelemetry(",
         ],
         "ai-event": [
-            "sessionCorrelationGuard.requireOwnedSession(",
             "eventRepository",
             ".findBySourceIdAndSessionIdAndFrameIndex(",
         ],
@@ -485,28 +484,195 @@ def session_correlation_policy_drift(root: Path) -> list[str]:
             if token not in source:
                 drift.append(f"missing-token:{key}:{token}")
 
-    ordering = {
-        "telemetry": (
-            "sessionCorrelationGuard.requireOptionalOwnedSession(",
-            "drone.updateTelemetry(",
-        ),
-        "ai-event": (
-            "sessionCorrelationGuard.requireOwnedSession(",
-            ".findBySourceIdAndSessionIdAndFrameIndex(",
-        ),
-    }
-    for key, (guard_token, persistence_token) in ordering.items():
-        source = sources.get(key)
-        if source is None:
-            continue
-        guard_index = source.find(guard_token)
-        persistence_index = source.find(persistence_token)
+    telemetry = sources.get("telemetry")
+    if telemetry is not None:
+        guard_index = telemetry.find(
+            "sessionCorrelationGuard.requireOptionalOwnedSession("
+        )
+        persistence_index = telemetry.find("drone.updateTelemetry(")
         if (
             guard_index < 0
             or persistence_index < 0
             or guard_index > persistence_index
         ):
-            drift.append(f"ordering:{key}:guard-before-persistence")
+            drift.append(
+                "ordering:telemetry:guard-before-persistence"
+            )
+
+    ai_event = sources.get("ai-event")
+    if ai_event is not None:
+        guard_indexes = [
+            index
+            for token in (
+                "sessionCorrelationGuard.requireOwnedSessionForUpdate(",
+                "sessionCorrelationGuard.requireOwnedSession(",
+            )
+            if (index := ai_event.find(token)) >= 0
+        ]
+        if not guard_indexes:
+            drift.append(
+                "missing-token:ai-event:"
+                "sessionCorrelationGuard.requireOwnedSession("
+            )
+        guard_index = min(guard_indexes, default=-1)
+        persistence_index = ai_event.find(
+            ".findBySourceIdAndSessionIdAndFrameIndex("
+        )
+        if (
+            guard_index < 0
+            or persistence_index < 0
+            or guard_index > persistence_index
+        ):
+            drift.append(
+                "ordering:ai-event:guard-before-persistence"
+            )
+    return drift
+
+
+def ai_inference_ingest_concurrency_policy_drift(
+    root: Path,
+) -> list[str]:
+    backend_root = (
+        root
+        / "02_backend"
+        / "visionflow-api"
+        / "src"
+        / "main"
+    )
+    paths = {
+        "session-repository": backend_root
+        / "java/com/visionflow/api/flight/repository"
+        / "FlightSessionRepository.java",
+        "correlation-guard": backend_root
+        / "java/com/visionflow/api/flight/service"
+        / "FlightSessionCorrelationGuard.java",
+        "event-repository": backend_root
+        / "java/com/visionflow/api/ai/repository"
+        / "AiInferenceEventRepository.java",
+        "event-service": backend_root
+        / "java/com/visionflow/api/ai/service"
+        / "AiInferenceEventService.java",
+        "migration": backend_root
+        / "resources/db/migration"
+        / "V5__create_ai_inference_event_tables.sql",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "session-repository": [
+            "LockModeType.PESSIMISTIC_WRITE",
+            "findBySessionIdAndDroneIdForUpdate(",
+        ],
+        "correlation-guard": [
+            "requireOwnedSessionForUpdate(",
+            "findBySessionIdAndDroneIdForUpdate(",
+            "requireOwnedSession(",
+        ],
+        "event-repository": [
+            "findBySourceIdAndSessionIdAndFrameIndex(",
+        ],
+        "event-service": [
+            "sessionCorrelationGuard.requireOwnedSessionForUpdate(",
+            ".findBySourceIdAndSessionIdAndFrameIndex(",
+            ".orElseGet(() -> createNew(request, sessionId))",
+            "eventRepository.saveAndFlush(event)",
+        ],
+        "migration": [
+            "UNIQUE KEY uk_ai_event_frame",
+            "source_id",
+            "session_id",
+            "frame_index",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    session_repository = sources.get("session-repository")
+    if session_repository is not None:
+        method_at = session_repository.find(
+            "findBySessionIdAndDroneIdForUpdate("
+        )
+        annotation_at = session_repository.rfind(
+            "@Lock(LockModeType.PESSIMISTIC_WRITE)",
+            0,
+            method_at,
+        )
+        if not (0 <= annotation_at < method_at):
+            drift.append("usage:session-repository:lock-owned-session")
+
+    correlation_guard = sources.get("correlation-guard")
+    if correlation_guard is not None:
+        locked_at = correlation_guard.find(
+            "public String requireOwnedSessionForUpdate("
+        )
+        optional_at = correlation_guard.find(
+            "public String requireOptionalOwnedSession(",
+            locked_at + 1,
+        )
+        locked_source = (
+            correlation_guard[locked_at:optional_at]
+            if 0 <= locked_at < optional_at
+            else ""
+        )
+        repository_lock_at = locked_source.find(
+            "findBySessionIdAndDroneIdForUpdate("
+        )
+        fallback_at = locked_source.find("requireOwnedSession(")
+        if not (0 <= repository_lock_at < fallback_at):
+            drift.append(
+                "ordering:correlation-guard:session-lock-before-fallback"
+            )
+
+    event_service = sources.get("event-service")
+    if event_service is not None:
+        create_at = event_service.find(
+            "public AiInferenceEventResponse create("
+        )
+        read_at = event_service.find(
+            "public List<AiInferenceEventResponse> findRecent(",
+            create_at + 1,
+        )
+        create_source = (
+            event_service[create_at:read_at]
+            if 0 <= create_at < read_at
+            else ""
+        )
+        session_lock_at = create_source.find(
+            "sessionCorrelationGuard.requireOwnedSessionForUpdate("
+        )
+        idempotency_at = create_source.find(
+            ".findBySourceIdAndSessionIdAndFrameIndex("
+        )
+        create_new_at = create_source.find(
+            ".orElseGet(() -> createNew(request, sessionId))"
+        )
+        if not (
+            0 <= session_lock_at < idempotency_at < create_new_at
+        ):
+            drift.append(
+                "ordering:event-service:session-lock-before-idempotency-and-insert"
+            )
+
+        read_source = (
+            event_service[read_at:]
+            if read_at >= 0
+            else ""
+        )
+        if "requireOwnedSessionForUpdate(" in read_source:
+            drift.append(
+                "usage:event-service:event-reads-remain-non-locking"
+            )
     return drift
 
 
@@ -1469,6 +1635,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not session_correlation_drift
             else "외부 입력에서 비행 세션 상관관계 검증이 누락됐습니다.",
             drift=session_correlation_drift,
+        )
+    )
+    ai_ingest_drift = ai_inference_ingest_concurrency_policy_drift(
+        root
+    )
+    checks.append(
+        check(
+            "BLOCKED" if ai_ingest_drift else "PASS",
+            "ai-inference-ingest-concurrency-policy",
+            "AI 추론 이벤트 수집 동시성 정책",
+            "동일 세션의 AI 이벤트 멱등 조회·생성이 Flight Session 행 잠금으로 직렬화되고 V5 프레임 UNIQUE 제약이 최종 방어선으로 유지됩니다."
+            if not ai_ingest_drift
+            else "AI 이벤트 수집의 세션 잠금, 멱등 조회 또는 DB UNIQUE 방어가 누락됐습니다.",
+            drift=ai_ingest_drift,
         )
     )
     ai_snapshot_drift = ai_snapshot_concurrency_policy_drift(root)

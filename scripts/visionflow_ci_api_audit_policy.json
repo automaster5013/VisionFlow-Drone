@@ -22,6 +22,7 @@
     "drone-history-delete-policy",
     "drone-mutation-concurrency-policy",
     "session-correlation-write-policy",
+    "ai-inference-ingest-concurrency-policy",
     "ai-snapshot-concurrency-policy",
     "audit-retention-concurrency-policy",
     "flight-session-lifecycle-concurrency-policy",

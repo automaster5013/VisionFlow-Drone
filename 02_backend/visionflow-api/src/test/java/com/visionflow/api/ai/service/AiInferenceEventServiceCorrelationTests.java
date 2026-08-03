@@ -56,7 +56,10 @@ class AiInferenceEventServiceCorrelationTests {
     @Test
     void rejectsMismatchedSessionBeforeIdempotencyLookupOrPersistence() {
         AiInferenceEventCreateRequest request = request();
-        when(correlationGuard.requireOwnedSession("session-1", 7L))
+        when(correlationGuard.requireOwnedSessionForUpdate(
+                "session-1",
+                7L
+        ))
                 .thenThrow(new FlightSessionDroneMismatchException(
                         "mismatch"
                 ));

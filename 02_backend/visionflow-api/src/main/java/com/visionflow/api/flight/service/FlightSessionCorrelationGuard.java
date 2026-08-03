@@ -44,6 +44,23 @@ public class FlightSessionCorrelationGuard {
         return normalizedSessionId;
     }
 
+    public String requireOwnedSessionForUpdate(
+            String sessionId,
+            Long droneId
+    ) {
+        String normalizedSessionId = normalizeRequired(sessionId);
+        return sessionRepository
+                .findBySessionIdAndDroneIdForUpdate(
+                        normalizedSessionId,
+                        droneId
+                )
+                .map(FlightSession::getSessionId)
+                .orElseGet(() -> requireOwnedSession(
+                        normalizedSessionId,
+                        droneId
+                ));
+    }
+
     public String requireOptionalOwnedSession(
             String sessionId,
             Long droneId

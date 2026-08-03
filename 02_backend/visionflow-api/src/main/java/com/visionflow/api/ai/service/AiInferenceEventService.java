@@ -52,10 +52,11 @@ public class AiInferenceEventService {
     public AiInferenceEventResponse create(
             AiInferenceEventCreateRequest request
     ) {
-        String sessionId = sessionCorrelationGuard.requireOwnedSession(
-                request.sessionId(),
-                request.droneId()
-        );
+        String sessionId =
+                sessionCorrelationGuard.requireOwnedSessionForUpdate(
+                        request.sessionId(),
+                        request.droneId()
+                );
 
         return eventRepository
                 .findBySourceIdAndSessionIdAndFrameIndex(
