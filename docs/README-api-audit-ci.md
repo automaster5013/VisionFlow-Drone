@@ -22,7 +22,9 @@
 - 비행 세션 생명주기 검사는 Drone·Session 행 잠금, ACTIVE 세션 DB UNIQUE 제약, 읽기 전용 중복 탐지 규칙을 함께 확인
 - 비행 품질 평가 검사는 수동·종료 이벤트·백필 재계산의 Session 행 잠금, V16 평가 UNIQUE 제약, 비잠금 읽기 경계를 함께 확인
 - 정비 작업지시 검사는 자동 동기화·점검 시작·완료의 Work Order 잠금과 정비 SLA의 Incident→Work Order 잠금·재평가 순서, V19 UNIQUE 최종 방어를 함께 확인
-- 정비 작전 현황 UI 검사는 인증 프록시, 응답 파서, 30초 자동 갱신, 단계·비행 준비·긴급 큐 시각화와 작업 링크를 함께 확인
+- 정비 작전 현황 UI 검사는 SLA·전체 함대 인증 프록시, 두 응답 파서,
+  30초 자동 갱신, 단계·함대 비행 준비·긴급 큐 시각화와 작업 링크를
+  함께 확인
 - AI OpenAPI inventory는 `streaming.py`의 정적 FastAPI decorator에서 매번 생성하므로 실행 중인 AI 서버가 필요하지 않음
 
 허용 정책은 `scripts/visionflow_ci_api_audit_policy.json`에 있습니다. 정책이나 기준선을 바꾸는 작업은 API 변경 검토와 함께 별도 커밋으로 진행하세요.

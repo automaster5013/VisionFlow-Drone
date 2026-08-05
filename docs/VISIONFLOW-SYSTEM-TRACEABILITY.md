@@ -231,12 +231,14 @@ flowchart LR
 
 - `/maintenance` 상단은 기존 SLA Incident 추적 응답을 검증한 뒤 작업 접수,
   점검 진행, SLA 대응, 운항 판정을 관제형 단계 카드로 표시한다.
-- 최신 작업의 `flightClearanceStatus`를 비행 가능·점검 대기·운항 중지로
-  집계하고 도넛 차트와 텍스트 범례를 함께 제공한다.
+- 전체 함대 비행 허가 응답을 함께 검증하고 각 기체의 `flightAllowed`와
+  `attentionRequired`를 비행 가능·점검 대기·운항 중지의 상호 배타적
+  구간으로 집계해 도넛 차트와 텍스트 범례를 제공한다.
 - SLA 초과·임박, 담당자 지정 필요, 마감 정합성 경고를 우선순위로 정렬해
   상위 3건을 해당 작업지시로 바로 연결한다.
-- 브라우저는 same-origin `/api/maintenance/sla/incidents`만 호출하고, Route
-  Handler가 기존 운영자 인증을 Backend로 전달한다.
+- 브라우저는 same-origin `/api/maintenance/sla/incidents`와
+  `/api/maintenance/flight-clearance`만 호출하고, 각 Route Handler가 기존
+  운영자 인증을 Backend로 전달한다.
 - 30초 자동 갱신과 수동 갱신을 지원하며, 일시적인 실패에서는 이전 정상
   현황을 유지하고 운영자에게 경고한다.
 - 이 화면은 읽기 전용 집계이므로 Backend·DB·보안 권한과 기존 작업 전이

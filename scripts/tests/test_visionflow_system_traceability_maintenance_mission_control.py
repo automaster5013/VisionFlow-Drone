@@ -90,6 +90,41 @@ class SystemTraceabilityMaintenanceMissionControlTest(
             drift,
         )
 
+    def test_missing_fleet_clearance_integration_is_detected(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.copy_policy_sources(root)
+            component = (
+                root
+                / "01_frontend/visionflow-web/src/components"
+                / "maintenance/maintenance-mission-control.tsx"
+            )
+            source = component.read_text(encoding="utf-8")
+            source = source.replace(
+                'fetch("/api/maintenance/flight-clearance"',
+                'fetch("/api/maintenance/sla/incidents"',
+                1,
+            )
+            component.write_text(source, encoding="utf-8")
+
+            drift = (
+                traceability
+                .maintenance_mission_control_ui_policy_drift(root)
+            )
+
+        self.assertIn(
+            "missing-token:mission-control:"
+            'fetch("/api/maintenance/flight-clearance"',
+            drift,
+        )
+        self.assertIn(
+            "ordering:mission-control:tracking-and-fleet-fetch-"
+            "before-parse-before-summary-before-render",
+            drift,
+        )
+
     def copy_policy_sources(self, target_root: Path) -> None:
         source_root = SCRIPT_DIR.parent
         relative_paths = [
@@ -106,8 +141,16 @@ class SystemTraceabilityMaintenanceMissionControlTest(
                 "/maintenance-sla-incident-tracking.ts"
             ),
             Path(
+                "01_frontend/visionflow-web/src/types"
+                "/maintenance-flight-clearance.ts"
+            ),
+            Path(
                 "01_frontend/visionflow-web/src/app/api/maintenance"
                 "/sla/incidents/route.ts"
+            ),
+            Path(
+                "01_frontend/visionflow-web/src/app/api/maintenance"
+                "/flight-clearance/route.ts"
             ),
             Path(
                 "01_frontend/visionflow-web/src/lib/server"

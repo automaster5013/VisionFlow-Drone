@@ -1296,8 +1296,12 @@ def maintenance_mission_control_ui_policy_drift(
         / "components/maintenance/maintenance-work-order-board.tsx",
         "tracking-types": frontend_root
         / "types/maintenance-sla-incident-tracking.ts",
+        "clearance-types": frontend_root
+        / "types/maintenance-flight-clearance.ts",
         "tracking-route": frontend_root
         / "app/api/maintenance/sla/incidents/route.ts",
+        "clearance-route": frontend_root
+        / "app/api/maintenance/flight-clearance/route.ts",
         "proxy": frontend_root
         / "lib/server/maintenance-work-order-proxy.ts",
     }
@@ -1314,14 +1318,18 @@ def maintenance_mission_control_ui_policy_drift(
             '"use client";',
             "data-maintenance-mission-control",
             'fetch("/api/maintenance/sla/incidents"',
-            "parseMaintenanceSlaIncidentTracking(body)",
+            'fetch("/api/maintenance/flight-clearance"',
+            "parseMaintenanceSlaIncidentTracking(trackingBody)",
+            "parseMaintenanceFleetFlightClearance(clearanceBody)",
             "const AUTO_REFRESH_MS = 30_000",
             "window.setInterval(",
             'aria-live="polite"',
             "작전 단계 현황",
             "비행 준비 상태",
             "긴급 작업 큐",
-            "summarizeMission(tracking)",
+            "summarizeMission(tracking, fleetClearance)",
+            "clearance.flightAllowed && !clearance.attentionRequired",
+            "fleetClearance.blockedDrones > 0",
             "compareUrgency",
             "/maintenance?droneId=",
         ],
@@ -1336,9 +1344,20 @@ def maintenance_mission_control_ui_policy_drift(
             "flightClearanceStatus",
             "closureStatus",
         ],
+        "clearance-types": [
+            "export interface MaintenanceFleetFlightClearance",
+            "export function parseMaintenanceFleetFlightClearance(",
+            "totalDrones",
+            "clearances",
+        ],
         "tracking-route": [
             "proxyMaintenanceRequest(",
             "/api/maintenance/sla/incidents?windowDays=",
+            'method: "GET"',
+        ],
+        "clearance-route": [
+            "proxyMaintenanceRequest(",
+            '"/api/maintenance/flight-clearance"',
             'method: "GET"',
         ],
         "proxy": [
@@ -1357,22 +1376,37 @@ def maintenance_mission_control_ui_policy_drift(
 
     mission_control = sources.get("mission-control")
     if mission_control is not None:
-        fetch_at = mission_control.find(
+        tracking_fetch_at = mission_control.find(
             'fetch("/api/maintenance/sla/incidents"'
         )
-        parse_at = mission_control.find(
-            "parseMaintenanceSlaIncidentTracking(body)"
+        clearance_fetch_at = mission_control.find(
+            'fetch("/api/maintenance/flight-clearance"'
+        )
+        tracking_parse_at = mission_control.find(
+            "parseMaintenanceSlaIncidentTracking(trackingBody)"
+        )
+        clearance_parse_at = mission_control.find(
+            "parseMaintenanceFleetFlightClearance(clearanceBody)"
         )
         summarize_at = mission_control.find(
-            "summarizeMission(tracking)"
+            "summarizeMission(tracking, fleetClearance)"
         )
         render_at = mission_control.find(
             'data-maintenance-mission-control'
         )
-        if not (0 <= fetch_at < parse_at < summarize_at < render_at):
+        if not (
+            0
+            <= tracking_fetch_at
+            < clearance_fetch_at
+            < tracking_parse_at
+            < clearance_parse_at
+            < summarize_at
+            < render_at
+        ):
             drift.append(
                 "ordering:mission-control:"
-                "fetch-before-parse-before-summary-before-render"
+                "tracking-and-fleet-fetch-before-parse-before-summary"
+                "-before-render"
             )
 
     board = sources.get("work-order-board")
@@ -2226,7 +2260,7 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             else "PASS",
             "maintenance-mission-control-ui-policy",
             "정비 작전 현황 UI 정책",
-            "작업 단계·SLA 긴급 큐·비행 준비 상태가 인증 프록시 기반 관제 보드로 연결되고 30초 자동 갱신됩니다."
+            "작업 단계·SLA 긴급 큐와 전체 함대 비행 준비 상태가 인증 프록시 기반 관제 보드로 연결되고 30초 자동 갱신됩니다."
             if not maintenance_mission_control_drift
             else "정비 작전 현황 보드의 데이터 검증·자동 갱신·우선순위 또는 화면 연결이 누락됐습니다.",
             drift=maintenance_mission_control_drift,

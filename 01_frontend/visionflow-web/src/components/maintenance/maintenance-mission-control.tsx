@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { formatKoreanDateTime } from "@/lib/date";
 import {
+  parseMaintenanceFleetFlightClearance,
+  type MaintenanceFleetFlightClearance,
+} from "@/types/maintenance-flight-clearance";
+import {
   parseMaintenanceSlaIncidentTracking,
   type MaintenanceSlaIncidentTracking,
   type MaintenanceSlaIncidentTrackingItem,
@@ -70,6 +74,8 @@ export function MaintenanceMissionControl({
 }: MaintenanceMissionControlProps) {
   const [tracking, setTracking] =
     useState<MaintenanceSlaIncidentTracking | null>(null);
+  const [fleetClearance, setFleetClearance] =
+    useState<MaintenanceFleetFlightClearance | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshRevision, setRefreshRevision] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,25 +87,49 @@ export function MaintenanceMissionControl({
 
     async function loadMissionControl(): Promise<void> {
       try {
-        const response = await fetch("/api/maintenance/sla/incidents", {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) {
+        const [trackingResponse, clearanceResponse] = await Promise.all([
+          fetch("/api/maintenance/sla/incidents", {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+          fetch("/api/maintenance/flight-clearance", {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+        ]);
+        if (!trackingResponse.ok) {
           throw new Error(
-            `정비 작전 현황 조회 실패: HTTP ${response.status}`,
+            `정비 작전 현황 조회 실패: HTTP ${trackingResponse.status}`,
+          );
+        }
+        if (!clearanceResponse.ok) {
+          throw new Error(
+            `함대 비행 준비 상태 조회 실패: HTTP ${clearanceResponse.status}`,
           );
         }
 
-        const body = (await response.json()) as unknown;
-        const parsed = parseMaintenanceSlaIncidentTracking(body);
-        if (!parsed) {
+        const [trackingBody, clearanceBody] = await Promise.all([
+          trackingResponse.json() as Promise<unknown>,
+          clearanceResponse.json() as Promise<unknown>,
+        ]);
+        const parsedTracking =
+          parseMaintenanceSlaIncidentTracking(trackingBody);
+        const parsedClearance =
+          parseMaintenanceFleetFlightClearance(clearanceBody);
+        if (!parsedTracking) {
           throw new Error("정비 작전 현황 응답 형식이 올바르지 않습니다.");
+        }
+        if (!parsedClearance) {
+          throw new Error(
+            "함대 비행 준비 상태 응답 형식이 올바르지 않습니다.",
+          );
         }
 
         if (active) {
-          setTracking(parsed);
+          setTracking(parsedTracking);
+          setFleetClearance(parsedClearance);
           setErrorMessage(null);
         }
       } catch (error) {
@@ -132,8 +162,11 @@ export function MaintenanceMissionControl({
   }, [refreshKey, refreshRevision]);
 
   const mission = useMemo(
-    () => (tracking ? summarizeMission(tracking) : null),
-    [tracking],
+    () =>
+      tracking && fleetClearance
+        ? summarizeMission(tracking, fleetClearance)
+        : null,
+    [fleetClearance, tracking],
   );
 
   function refresh(): void {
@@ -141,11 +174,11 @@ export function MaintenanceMissionControl({
     setRefreshRevision((current) => current + 1);
   }
 
-  if (loading && !tracking) {
+  if (loading && (!tracking || !fleetClearance)) {
     return <MissionControlSkeleton />;
   }
 
-  if (!tracking || !mission) {
+  if (!tracking || !fleetClearance || !mission) {
     return (
       <section
         data-maintenance-mission-control
@@ -279,12 +312,13 @@ export function MaintenanceMissionControl({
           <div className="rounded-2xl border border-slate-700/80 bg-slate-900/65 p-4 sm:p-5">
             <h3 className="text-sm font-black text-white">비행 준비 상태</h3>
             <p className="mt-1 text-xs text-slate-400">
-              최신 작업지시의 비행 허가 판정
+              전체 함대의 최신 비행 허가 판정 · 총{" "}
+              {fleetClearance.totalDrones}대
             </p>
             <div className="mt-5 flex items-center gap-5">
               <div
                 role="img"
-                aria-label={`비행 가능 ${mission.clearance.cleared}건, 점검 대기 ${mission.clearance.pending}건, 운항 중지 ${mission.clearance.grounded}건`}
+                aria-label={`비행 가능 ${mission.clearance.cleared}대, 점검 대기 ${mission.clearance.pending}대, 운항 중지 ${mission.clearance.grounded}대`}
                 className="grid h-28 w-28 shrink-0 place-items-center rounded-full"
                 style={{ background: mission.clearance.gradient }}
               >
@@ -387,7 +421,10 @@ export function MaintenanceMissionControl({
   );
 }
 
-function summarizeMission(tracking: MaintenanceSlaIncidentTracking) {
+function summarizeMission(
+  tracking: MaintenanceSlaIncidentTracking,
+  fleetClearance: MaintenanceFleetFlightClearance,
+) {
   const responseStatuses = new Set([
     "ESCALATION_PENDING",
     "ASSIGNMENT_REQUIRED",
@@ -411,14 +448,16 @@ function summarizeMission(tracking: MaintenanceSlaIncidentTracking) {
             ).length,
   }));
 
-  const cleared = tracking.items.filter(
-    (item) => item.flightClearanceStatus === "CLEARED",
+  const cleared = fleetClearance.clearances.filter(
+    (clearance) =>
+      clearance.flightAllowed && !clearance.attentionRequired,
   ).length;
-  const pending = tracking.items.filter(
-    (item) => item.flightClearanceStatus === "PENDING_INSPECTION",
+  const pending = fleetClearance.clearances.filter(
+    (clearance) =>
+      clearance.flightAllowed && clearance.attentionRequired,
   ).length;
-  const grounded = tracking.items.filter(
-    (item) => item.flightClearanceStatus === "GROUNDED",
+  const grounded = fleetClearance.clearances.filter(
+    (clearance) => !clearance.flightAllowed,
   ).length;
   const total = Math.max(cleared + pending + grounded, 1);
   const clearedEnd = (cleared / total) * 100;
@@ -448,8 +487,10 @@ function summarizeMission(tracking: MaintenanceSlaIncidentTracking) {
   ).length;
   const hasCritical =
     tracking.overdueWorkOrders > 0 ||
-    tracking.closureConsistencyAlerts > 0;
-  const hasWarning = attentionCount > 0;
+    tracking.closureConsistencyAlerts > 0 ||
+    fleetClearance.blockedDrones > 0;
+  const hasWarning =
+    attentionCount > 0 || fleetClearance.attentionDrones > 0;
 
   return {
     stages,
@@ -531,7 +572,7 @@ function ClearanceLegend({
         <span aria-hidden="true" className={`h-2 w-2 rounded-full ${color}`} />
         {label}
       </dt>
-      <dd className="font-black text-white">{value}건</dd>
+      <dd className="font-black text-white">{value}대</dd>
     </div>
   );
 }
