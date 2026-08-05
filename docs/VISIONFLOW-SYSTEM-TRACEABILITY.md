@@ -372,6 +372,16 @@ flowchart LR
 - `frontend-output-file-tracing-policy`는 경로 범위, 세 개의 추적 제외 표식,
   Docker 읽기 전용 마운트와 standalone 설정을 CI에서 함께 고정한다.
 
+### 8.2 GitHub Actions Node.js 24 실행 경계
+
+- API·보안·시스템 추적성 workflow는 `actions/checkout@v6`,
+  `actions/setup-python@v6`, `actions/upload-artifact@v7`만 사용한다.
+- Node.js 20 강제 허용 변수는 사용하지 않으며, 추적성 정책 단위 테스트를
+  정적 감사 전에 실행한다.
+- 추적성 테스트 파일 변경은 pull request와 `main` push 모두 workflow를
+  실행하며 `github-actions-node24-runtime-policy`가 Action 버전·실행 단계·
+  경로 trigger를 함께 고정한다.
+
 ## 9. 자동 감사 실행
 
 저장소 루트에서 실행한다.

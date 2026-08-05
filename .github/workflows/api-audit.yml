@@ -22,6 +22,7 @@ on:
       - "scripts/visionflow_data_integrity_policy.json"
       - "scripts/visionflow_system_traceability_audit.py"
       - "scripts/visionflow_system_traceability_baseline.json"
+      - "scripts/tests/test_visionflow_system_traceability_*.py"
       - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
   push:
     branches:
@@ -46,6 +47,7 @@ on:
       - "scripts/visionflow_data_integrity_policy.json"
       - "scripts/visionflow_system_traceability_audit.py"
       - "scripts/visionflow_system_traceability_baseline.json"
+      - "scripts/tests/test_visionflow_system_traceability_*.py"
       - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
   workflow_dispatch:
 
@@ -67,10 +69,10 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -88,6 +90,13 @@ jobs:
           python -m json.tool scripts/visionflow_ci_api_audit_policy.json >/dev/null
           python -m json.tool scripts/visionflow_data_integrity_policy.json >/dev/null
           python -m json.tool scripts/visionflow_system_traceability_baseline.json >/dev/null
+
+      - name: Run system traceability policy tests
+        run: |
+          python -m unittest discover \
+            -s scripts/tests \
+            -p "test_visionflow_system_traceability_*.py" \
+            -v
 
       - name: Generate source-derived AI OpenAPI inventory
         run: |
@@ -128,7 +137,7 @@ jobs:
 
       - name: Upload audit reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: visionflow-api-and-traceability-audit-reports
           path: artifacts/ci-api-audit

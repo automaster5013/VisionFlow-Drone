@@ -1285,6 +1285,51 @@ def maintenance_work_order_lifecycle_concurrency_policy_drift(
     return drift
 
 
+def github_actions_node24_runtime_policy_drift(root: Path) -> list[str]:
+    workflow = root / ".github/workflows/api-audit.yml"
+    if not workflow.is_file():
+        return ["missing:github-actions:.github/workflows/api-audit.yml"]
+
+    source = workflow.read_text(encoding="utf-8")
+    drift: list[str] = []
+    required_versions = {
+        "actions/checkout": "v6",
+        "actions/setup-python": "v6",
+        "actions/upload-artifact": "v7",
+    }
+    for action, expected in required_versions.items():
+        versions = re.findall(
+            rf"uses:\s*{re.escape(action)}@([^\s#]+)",
+            source,
+        )
+        if versions != [expected]:
+            actual = ",".join(versions) if versions else "missing"
+            drift.append(
+                f"version:github-actions:{action}:"
+                f"expected-{expected}:actual-{actual}"
+            )
+
+    if "ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION" in source:
+        drift.append(
+            "override:github-actions:insecure-node-runtime-opt-out"
+        )
+
+    required_tokens = [
+        '"scripts/tests/test_visionflow_system_traceability_*.py"',
+        "name: Run system traceability policy tests",
+        "python -m unittest discover",
+        '-p "test_visionflow_system_traceability_*.py"',
+    ]
+    for token in required_tokens:
+        if token not in source:
+            drift.append(f"missing-token:github-actions:{token}")
+    if source.count(required_tokens[0]) != 2:
+        drift.append(
+            "trigger:github-actions:traceability-tests-on-push-and-pr"
+        )
+    return drift
+
+
 def frontend_output_file_tracing_policy_drift(root: Path) -> list[str]:
     frontend_root = root / "01_frontend" / "visionflow-web"
     paths = {
@@ -2409,6 +2454,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not maintenance_work_order_drift
             else "정비 작업지시 전이 또는 SLA 재평가의 행 잠금·재검증·DB UNIQUE 방어가 누락됐습니다.",
             drift=maintenance_work_order_drift,
+        )
+    )
+    github_actions_runtime_drift = (
+        github_actions_node24_runtime_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if github_actions_runtime_drift else "PASS",
+            "github-actions-node24-runtime-policy",
+            "GitHub Actions Node.js 24 런타임 정책",
+            "checkout·Python 설정·감사 보고서 업로드가 Node.js 24 기반 Action으로 실행되고 추적성 회귀 테스트가 push·PR에서 강제됩니다."
+            if not github_actions_runtime_drift
+            else "감사 workflow에 Node.js 20 Action, 비보안 런타임 우회 또는 추적성 회귀 테스트 누락이 있습니다.",
+            drift=github_actions_runtime_drift,
         )
     )
     frontend_output_tracing_drift = (
