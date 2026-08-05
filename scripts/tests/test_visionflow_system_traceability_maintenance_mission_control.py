@@ -159,6 +159,40 @@ class SystemTraceabilityMaintenanceMissionControlTest(
             "detail-before-drone-link",
             drift,
         )
+
+    def test_missing_data_freshness_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.copy_policy_sources(root)
+            component = (
+                root
+                / "01_frontend/visionflow-web/src/components"
+                / "maintenance/maintenance-mission-control.tsx"
+            )
+            source = component.read_text(encoding="utf-8")
+            source = source.replace(
+                "data-maintenance-data-freshness",
+                "data-maintenance-data-age",
+                1,
+            )
+            component.write_text(source, encoding="utf-8")
+
+            drift = (
+                traceability
+                .maintenance_mission_control_ui_policy_drift(root)
+            )
+
+        self.assertIn(
+            "missing-token:mission-control:"
+            "data-maintenance-data-freshness",
+            drift,
+        )
+        self.assertIn(
+            "ordering:mission-control:freshness-clock-before-"
+            "summary-before-panel",
+            drift,
+        )
+
     def copy_policy_sources(self, target_root: Path) -> None:
         source_root = SCRIPT_DIR.parent
         relative_paths = [

@@ -16,6 +16,9 @@ import {
 } from "@/types/maintenance-sla-incident-tracking";
 
 const AUTO_REFRESH_MS = 30_000;
+const DATA_FRESH_MS = 90_000;
+const DATA_STALE_MS = 300_000;
+const DATA_SOURCE_SKEW_WARNING_MS = 60_000;
 
 const stageDefinitions = [
   {
@@ -82,8 +85,27 @@ const gateModeLabels = {
   ENFORCED: "강제 차단",
 } as const;
 
+const freshnessDefinitions = {
+  FRESH: {
+    label: "최신",
+    dot: "bg-emerald-400",
+    badge: "border-emerald-300/40 bg-emerald-400/15 text-emerald-100",
+  },
+  DELAYED: {
+    label: "지연",
+    dot: "bg-amber-400",
+    badge: "border-amber-300/40 bg-amber-400/15 text-amber-100",
+  },
+  STALE: {
+    label: "오래됨",
+    dot: "bg-rose-400",
+    badge: "border-rose-300/40 bg-rose-400/15 text-rose-100",
+  },
+} as const;
+
 type ReadinessCategory = keyof typeof readinessDefinitions;
 type ReadinessFilter = "ALL" | ReadinessCategory;
+type FreshnessStatus = keyof typeof freshnessDefinitions;
 
 interface MaintenanceMissionControlProps {
   refreshKey: number;
@@ -102,6 +124,12 @@ interface MissionClearanceItem {
   category: ReadinessCategory;
 }
 
+interface DataFreshness {
+  status: FreshnessStatus;
+  ageMs: number;
+  evaluatedAt: string;
+}
+
 export function MaintenanceMissionControl({
   refreshKey,
 }: MaintenanceMissionControlProps) {
@@ -112,6 +140,7 @@ export function MaintenanceMissionControl({
   const [loading, setLoading] = useState(true);
   const [refreshRevision, setRefreshRevision] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [observedAt, setObservedAt] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [readinessFilter, setReadinessFilter] =
     useState<ReadinessFilter>("ALL");
@@ -177,6 +206,7 @@ export function MaintenanceMissionControl({
         }
       } finally {
         if (active) {
+          setObservedAt(Date.now());
           setLoading(false);
           setRefreshing(false);
         }
@@ -199,9 +229,10 @@ export function MaintenanceMissionControl({
   const mission = useMemo(
     () =>
       tracking && fleetClearance
-        ? summarizeMission(tracking, fleetClearance)
+        && observedAt !== null
+        ? summarizeMission(tracking, fleetClearance, observedAt)
         : null,
-    [fleetClearance, tracking],
+    [fleetClearance, observedAt, tracking],
   );
   const visibleClearances = useMemo(
     () =>
@@ -311,6 +342,55 @@ export function MaintenanceMissionControl({
             최신 값 갱신 실패 · 이전 현황을 표시합니다: {errorMessage}
           </p>
         )}
+
+        <div
+          data-maintenance-data-freshness
+          aria-live="polite"
+          className="mt-5 rounded-2xl border border-slate-700/80 bg-slate-900/65 p-4 sm:p-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-black text-white">데이터 신선도</h3>
+              <p className="mt-1 text-xs text-slate-400">
+                SLA와 함대 판정 시각을 현재 관제 시각과 비교합니다.
+              </p>
+            </div>
+            <p className="rounded-full bg-slate-800 px-3 py-1 text-[11px] font-black text-slate-300">
+              최신 90초 · 오래됨 5분
+            </p>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <FreshnessCard
+              label="SLA Incident 판정"
+              freshness={mission.freshness.tracking}
+            />
+            <FreshnessCard
+              label="함대 비행 판정"
+              freshness={mission.freshness.clearance}
+            />
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-black text-slate-200">소스 정렬</p>
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${
+                    mission.freshness.sourceSkewWarning
+                      ? "border-amber-300/40 bg-amber-400/15 text-amber-100"
+                      : "border-emerald-300/40 bg-emerald-400/15 text-emerald-100"
+                  }`}
+                >
+                  {mission.freshness.sourceSkewWarning ? "시차 주의" : "정렬됨"}
+                </span>
+              </div>
+              <p className="mt-3 text-lg font-black text-white">
+                {formatDuration(mission.freshness.sourceSkewMs)} 차이
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                두 판정 시각의 차이가 60초를 넘으면 주의 상태로 전환합니다.
+              </p>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(19rem,0.75fr)]">
           <div className="rounded-2xl border border-slate-700/80 bg-slate-900/65 p-4 sm:p-5">
@@ -578,6 +658,7 @@ export function MaintenanceMissionControl({
 function summarizeMission(
   tracking: MaintenanceSlaIncidentTracking,
   fleetClearance: MaintenanceFleetFlightClearance,
+  observedAt: number,
 ) {
   const responseStatuses = new Set([
     "ESCALATION_PENDING",
@@ -649,12 +730,35 @@ function summarizeMission(
       item.slaStatus === "DUE_SOON" ||
       item.closureStatus === "REVIEW_REQUIRED",
   ).length;
-  const hasCritical =
+  const trackingFreshness = evaluateFreshness(
+    tracking.evaluatedAt,
+    observedAt,
+  );
+  const clearanceFreshness = evaluateFreshness(
+    fleetClearance.evaluatedAt,
+    observedAt,
+  );
+  const sourceSkewMs = Math.abs(
+    Date.parse(tracking.evaluatedAt) -
+      Date.parse(fleetClearance.evaluatedAt),
+  );
+  const sourceSkewWarning =
+    sourceSkewMs > DATA_SOURCE_SKEW_WARNING_MS;
+  const hasStaleData =
+    trackingFreshness.status === "STALE" ||
+    clearanceFreshness.status === "STALE";
+  const hasDelayedData =
+    trackingFreshness.status === "DELAYED" ||
+    clearanceFreshness.status === "DELAYED" ||
+    sourceSkewWarning;
+  const hasOperationalCritical =
     tracking.overdueWorkOrders > 0 ||
     tracking.closureConsistencyAlerts > 0 ||
     fleetClearance.blockedDrones > 0;
-  const hasWarning =
+  const hasOperationalWarning =
     attentionCount > 0 || fleetClearance.attentionDrones > 0;
+  const hasCritical = hasOperationalCritical || hasStaleData;
+  const hasWarning = hasOperationalWarning || hasDelayedData;
 
   return {
     stages,
@@ -667,11 +771,21 @@ function summarizeMission(
       gradient,
       items: clearanceItems,
     },
-    healthLabel: hasCritical
+    freshness: {
+      tracking: trackingFreshness,
+      clearance: clearanceFreshness,
+      sourceSkewMs,
+      sourceSkewWarning,
+    },
+    healthLabel: hasOperationalCritical
       ? "즉시 대응 필요"
-      : hasWarning
-        ? "주의 관제"
-        : "운영 안정",
+      : hasStaleData
+        ? "데이터 갱신 필요"
+        : hasOperationalWarning
+          ? "주의 관제"
+          : hasDelayedData
+            ? "데이터 지연 관제"
+            : "운영 안정",
     healthStyle: hasCritical
       ? "border-rose-300/50 bg-rose-400/15 text-rose-100"
       : hasWarning
@@ -683,6 +797,78 @@ function summarizeMission(
         ? "bg-amber-300"
         : "bg-emerald-300",
   };
+}
+
+function evaluateFreshness(
+  evaluatedAt: string,
+  observedAt: number,
+): DataFreshness {
+  const ageMs = observedAt - Date.parse(evaluatedAt);
+  const absoluteAgeMs = Math.abs(ageMs);
+  const status: FreshnessStatus =
+    absoluteAgeMs <= DATA_FRESH_MS
+      ? "FRESH"
+      : absoluteAgeMs <= DATA_STALE_MS
+        ? "DELAYED"
+        : "STALE";
+  return { status, ageMs, evaluatedAt };
+}
+
+function FreshnessCard({
+  label,
+  freshness,
+}: {
+  label: string;
+  freshness: DataFreshness;
+}) {
+  const definition = freshnessDefinitions[freshness.status];
+  return (
+    <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-black text-slate-200">{label}</p>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black ${definition.badge}`}
+        >
+          <span
+            aria-hidden="true"
+            className={`h-1.5 w-1.5 rounded-full ${definition.dot}`}
+          />
+          {definition.label}
+        </span>
+      </div>
+      <p className="mt-3 text-lg font-black text-white">
+        {formatFreshnessAge(freshness.ageMs)}
+      </p>
+      <p className="mt-1 text-[11px] text-slate-500">
+        {formatKoreanDateTime(freshness.evaluatedAt)} 판정
+      </p>
+    </div>
+  );
+}
+
+function formatFreshnessAge(ageMs: number): string {
+  const absoluteAgeMs = Math.abs(ageMs);
+  if (absoluteAgeMs < 10_000) return "방금 판정";
+  return ageMs < 0
+    ? `관제 시각보다 ${formatDuration(absoluteAgeMs)} 빠름`
+    : `${formatDuration(absoluteAgeMs)} 경과`;
+}
+
+function formatDuration(durationMs: number): string {
+  const seconds = Math.max(0, Math.round(durationMs / 1_000));
+  if (seconds < 60) return `${seconds}초`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  if (minutes < 60) {
+    return remainingSeconds === 0
+      ? `${minutes}분`
+      : `${minutes}분 ${remainingSeconds}초`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes === 0
+    ? `${hours}시간`
+    : `${hours}시간 ${remainingMinutes}분`;
 }
 
 function classifyClearance(

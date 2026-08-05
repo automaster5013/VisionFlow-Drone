@@ -1322,13 +1322,24 @@ def maintenance_mission_control_ui_policy_drift(
             "parseMaintenanceSlaIncidentTracking(trackingBody)",
             "parseMaintenanceFleetFlightClearance(clearanceBody)",
             "const AUTO_REFRESH_MS = 30_000",
+            "const DATA_FRESH_MS = 90_000",
+            "const DATA_STALE_MS = 300_000",
+            "const DATA_SOURCE_SKEW_WARNING_MS = 60_000",
             "window.setInterval(",
+            "setObservedAt(Date.now())",
             'aria-live="polite"',
+            "data-maintenance-data-freshness",
+            "데이터 신선도",
             "작전 단계 현황",
             "비행 준비 상태",
             "함대 판정 상세",
             "긴급 작업 큐",
-            "summarizeMission(tracking, fleetClearance)",
+            "summarizeMission(tracking, fleetClearance, observedAt)",
+            "evaluateFreshness(",
+            "sourceSkewMs > DATA_SOURCE_SKEW_WARNING_MS",
+            'trackingFreshness.status === "STALE"',
+            'clearanceFreshness.status === "STALE"',
+            '"데이터 갱신 필요"',
             'useState<ReadinessFilter>("ALL")',
             'id="maintenance-readiness-detail"',
             'data-readiness-category={category}',
@@ -1397,7 +1408,7 @@ def maintenance_mission_control_ui_policy_drift(
             "parseMaintenanceFleetFlightClearance(clearanceBody)"
         )
         summarize_at = mission_control.find(
-            "summarizeMission(tracking, fleetClearance)"
+            "summarizeMission(tracking, fleetClearance, observedAt)"
         )
         render_at = mission_control.find(
             'data-maintenance-mission-control'
@@ -1415,6 +1426,26 @@ def maintenance_mission_control_ui_policy_drift(
                 "ordering:mission-control:"
                 "tracking-and-fleet-fetch-before-parse-before-summary"
                 "-before-render"
+            )
+        observed_state_at = mission_control.find(
+            "const [observedAt, setObservedAt] = useState<number | null>(null)"
+        )
+        observed_update_at = mission_control.find(
+            "setObservedAt(Date.now())"
+        )
+        freshness_panel_at = mission_control.find(
+            "data-maintenance-data-freshness"
+        )
+        if not (
+            0
+            <= observed_state_at
+            < observed_update_at
+            < summarize_at
+            < freshness_panel_at
+        ):
+            drift.append(
+                "ordering:mission-control:freshness-clock-before-"
+                "summary-before-panel"
             )
         filter_state_at = mission_control.find(
             'useState<ReadinessFilter>("ALL")'
@@ -2291,9 +2322,9 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             else "PASS",
             "maintenance-mission-control-ui-policy",
             "정비 작전 현황 UI 정책",
-            "작업 단계·SLA 긴급 큐와 전체 함대 비행 준비 상태·기체별 판정 사유가 인증 프록시 기반 관제 보드로 연결되고 30초 자동 갱신됩니다."
+            "작업 단계·SLA 긴급 큐와 전체 함대 비행 준비 상태·기체별 판정 사유·두 소스의 신선도가 인증 프록시 기반 관제 보드로 연결되고 30초 자동 갱신됩니다."
             if not maintenance_mission_control_drift
-            else "정비 작전 현황 보드의 데이터 검증·자동 갱신·우선순위 또는 화면 연결이 누락됐습니다.",
+            else "정비 작전 현황 보드의 데이터 검증·신선도·자동 갱신·우선순위 또는 화면 연결이 누락됐습니다.",
             drift=maintenance_mission_control_drift,
         )
     )
