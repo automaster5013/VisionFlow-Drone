@@ -1,9 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { formatKoreanDateTime } from "@/lib/date";
+import {
+  MaintenanceReadinessDetailDrawer,
+  type MaintenanceReadinessCategory,
+  type MaintenanceReadinessFreshnessStatus,
+} from "@/components/maintenance/maintenance-readiness-detail-drawer";
 import {
   parseMaintenanceFleetFlightClearance,
   type MaintenanceFlightClearance,
@@ -103,9 +113,9 @@ const freshnessDefinitions = {
   },
 } as const;
 
-type ReadinessCategory = keyof typeof readinessDefinitions;
+type ReadinessCategory = MaintenanceReadinessCategory;
 type ReadinessFilter = "ALL" | ReadinessCategory;
-type FreshnessStatus = keyof typeof freshnessDefinitions;
+type FreshnessStatus = MaintenanceReadinessFreshnessStatus;
 
 interface MaintenanceMissionControlProps {
   refreshKey: number;
@@ -144,6 +154,11 @@ export function MaintenanceMissionControl({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [readinessFilter, setReadinessFilter] =
     useState<ReadinessFilter>("ALL");
+  const [selectedDroneId, setSelectedDroneId] = useState<number | null>(
+    null,
+  );
+  const [readinessDrawerTrigger, setReadinessDrawerTrigger] =
+    useState<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -245,6 +260,33 @@ export function MaintenanceMissionControl({
         : [],
     [mission, readinessFilter],
   );
+  const selectedClearanceItem = useMemo(
+    () =>
+      mission?.clearance.items.find(
+        (item) => item.clearance.droneId === selectedDroneId,
+      ) ?? null,
+    [mission, selectedDroneId],
+  );
+  const selectedTrackingItem = useMemo(() => {
+    const workOrderId = selectedClearanceItem?.clearance.workOrderId;
+    if (workOrderId === null || workOrderId === undefined) return null;
+    return (
+      tracking?.items.find((item) => item.workOrderId === workOrderId) ??
+      null
+    );
+  }, [selectedClearanceItem, tracking]);
+
+  const closeReadinessDrawer = useCallback(() => {
+    setSelectedDroneId(null);
+  }, []);
+
+  function openReadinessDrawer(
+    droneId: number,
+    trigger: HTMLButtonElement,
+  ): void {
+    setReadinessDrawerTrigger(trigger);
+    setSelectedDroneId(droneId);
+  }
 
   function refresh(): void {
     setRefreshing(true);
@@ -565,6 +607,20 @@ export function MaintenanceMissionControl({
                         {clearance.reason}
                       </p>
                       <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          data-open-maintenance-readiness-drawer
+                          aria-haspopup="dialog"
+                          onClick={(event) =>
+                            openReadinessDrawer(
+                              clearance.droneId,
+                              event.currentTarget,
+                            )
+                          }
+                          className="rounded-lg border border-violet-300/50 bg-violet-400/10 px-3 py-2 text-xs font-black text-violet-100 transition hover:bg-violet-400/20"
+                        >
+                          관제 상세
+                        </button>
                         <Link
                           href={`/drones/${clearance.droneId}`}
                           className="rounded-lg border border-slate-600 px-3 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-300 hover:text-cyan-200"
@@ -651,6 +707,22 @@ export function MaintenanceMissionControl({
           )}
         </div>
       </div>
+
+      {selectedClearanceItem && (
+        <MaintenanceReadinessDetailDrawer
+          clearance={selectedClearanceItem.clearance}
+          category={selectedClearanceItem.category}
+          trackingItem={selectedTrackingItem}
+          mode={fleetClearance.mode}
+          enforced={fleetClearance.enforced}
+          trackingEvaluatedAt={tracking.evaluatedAt}
+          clearanceEvaluatedAt={fleetClearance.evaluatedAt}
+          trackingFreshness={mission.freshness.tracking.status}
+          clearanceFreshness={mission.freshness.clearance.status}
+          returnFocusElement={readinessDrawerTrigger}
+          onClose={closeReadinessDrawer}
+        />
+      )}
     </section>
   );
 }

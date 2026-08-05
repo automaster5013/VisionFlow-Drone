@@ -1436,6 +1436,8 @@ def maintenance_mission_control_ui_policy_drift(
     paths = {
         "mission-control": frontend_root
         / "components/maintenance/maintenance-mission-control.tsx",
+        "readiness-drawer": frontend_root
+        / "components/maintenance/maintenance-readiness-detail-drawer.tsx",
         "work-order-board": frontend_root
         / "components/maintenance/maintenance-work-order-board.tsx",
         "tracking-types": frontend_root
@@ -1491,10 +1493,34 @@ def maintenance_mission_control_ui_policy_drift(
             "clearance.flightAllowed && !clearance.attentionRequired",
             "fleetClearance.blockedDrones > 0",
             "{clearance.reason}",
+            "data-open-maintenance-readiness-drawer",
+            "selectedTrackingItem",
+            "<MaintenanceReadinessDetailDrawer",
             'href={`/drones/${clearance.droneId}`}',
             "aria-pressed={active}",
             "compareUrgency",
             "/maintenance?droneId=",
+        ],
+        "readiness-drawer": [
+            '"use client";',
+            "data-maintenance-readiness-drawer",
+            'role="dialog"',
+            'aria-modal="true"',
+            'aria-labelledby="maintenance-readiness-drawer-title"',
+            'event.key === "Escape"',
+            'event.key === "Tab"',
+            "drawerRef.current?.querySelectorAll<HTMLElement>(",
+            'document.body.style.overflow = "hidden"',
+            "closeButtonRef.current?.focus()",
+            "returnFocusElement?.focus()",
+            "{clearance.reason}",
+            "trackingItem.recommendedAction",
+            "trackingItem.closureRecommendedAction",
+            "trackingFreshness",
+            "clearanceFreshness",
+            'href={`/drones/${clearance.droneId}`}',
+            "/maintenance?droneId=",
+            'href={`/incidents/${trackingItem.incidentId}/report`}',
         ],
         "work-order-board": [
             'import { MaintenanceMissionControl } from '
@@ -1614,6 +1640,35 @@ def maintenance_mission_control_ui_policy_drift(
                 "ordering:mission-control:readiness-filter-before-"
                 "detail-before-drone-link"
             )
+        drawer_trigger_at = mission_control.find(
+            "data-open-maintenance-readiness-drawer"
+        )
+        drawer_render_at = mission_control.find(
+            "<MaintenanceReadinessDetailDrawer"
+        )
+        if not (
+            0
+            <= detail_at
+            < drawer_trigger_at
+            < drawer_render_at
+        ):
+            drift.append(
+                "ordering:mission-control:readiness-detail-before-"
+                "drawer-trigger-before-drawer-render"
+            )
+
+    readiness_drawer = sources.get("readiness-drawer")
+    if readiness_drawer is not None:
+        if "fetch(" in readiness_drawer:
+            drift.append(
+                "usage:readiness-drawer:existing-validated-data-only"
+            )
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            if f'method: "{method}"' in readiness_drawer:
+                drift.append(
+                    "usage:readiness-drawer:read-only-no-mutation"
+                )
+                break
 
     board = sources.get("work-order-board")
     if board is not None:
@@ -2494,9 +2549,9 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             else "PASS",
             "maintenance-mission-control-ui-policy",
             "정비 작전 현황 UI 정책",
-            "작업 단계·SLA 긴급 큐와 전체 함대 비행 준비 상태·기체별 판정 사유·두 소스의 신선도가 인증 프록시 기반 관제 보드로 연결되고 30초 자동 갱신됩니다."
+            "작업 단계·SLA 긴급 큐와 전체 함대 비행 준비 상태·기체별 판정 사유·두 소스의 신선도·읽기 전용 관제 상세 드로어가 인증 프록시 기반 보드로 연결되고 30초 자동 갱신됩니다."
             if not maintenance_mission_control_drift
-            else "정비 작전 현황 보드의 데이터 검증·신선도·자동 갱신·우선순위 또는 화면 연결이 누락됐습니다.",
+            else "정비 작전 현황 보드의 데이터 검증·신선도·자동 갱신·우선순위·상세 드로어 또는 화면 연결이 누락됐습니다.",
             drift=maintenance_mission_control_drift,
         )
     )

@@ -193,9 +193,77 @@ class SystemTraceabilityMaintenanceMissionControlTest(
             drift,
         )
 
+    def test_missing_readiness_drawer_mount_is_detected(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.copy_policy_sources(root)
+            component = (
+                root
+                / "01_frontend/visionflow-web/src/components"
+                / "maintenance/maintenance-mission-control.tsx"
+            )
+            source = component.read_text(encoding="utf-8")
+            source = source.replace(
+                "<MaintenanceReadinessDetailDrawer",
+                "<MaintenanceReadinessSummary",
+                1,
+            )
+            component.write_text(source, encoding="utf-8")
+
+            drift = (
+                traceability
+                .maintenance_mission_control_ui_policy_drift(root)
+            )
+
+        self.assertIn(
+            "missing-token:mission-control:"
+            "<MaintenanceReadinessDetailDrawer",
+            drift,
+        )
+        self.assertIn(
+            "ordering:mission-control:readiness-detail-before-"
+            "drawer-trigger-before-drawer-render",
+            drift,
+        )
+
+    def test_missing_readiness_drawer_accessibility_is_detected(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.copy_policy_sources(root)
+            drawer = (
+                root
+                / "01_frontend/visionflow-web/src/components"
+                / "maintenance/maintenance-readiness-detail-drawer.tsx"
+            )
+            source = drawer.read_text(encoding="utf-8")
+            source = source.replace(
+                'aria-modal="true"',
+                'aria-modal="false"',
+                1,
+            )
+            drawer.write_text(source, encoding="utf-8")
+
+            drift = (
+                traceability
+                .maintenance_mission_control_ui_policy_drift(root)
+            )
+
+        self.assertIn(
+            "missing-token:readiness-drawer:aria-modal=\"true\"",
+            drift,
+        )
+
     def copy_policy_sources(self, target_root: Path) -> None:
         source_root = SCRIPT_DIR.parent
         relative_paths = [
+            Path(
+                "01_frontend/visionflow-web/src/components/maintenance"
+                "/maintenance-readiness-detail-drawer.tsx"
+            ),
             Path(
                 "01_frontend/visionflow-web/src/components/maintenance"
                 "/maintenance-mission-control.tsx"
