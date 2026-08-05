@@ -125,6 +125,40 @@ class SystemTraceabilityMaintenanceMissionControlTest(
             drift,
         )
 
+    def test_missing_readiness_drilldown_is_detected(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.copy_policy_sources(root)
+            component = (
+                root
+                / "01_frontend/visionflow-web/src/components"
+                / "maintenance/maintenance-mission-control.tsx"
+            )
+            source = component.read_text(encoding="utf-8")
+            source = source.replace(
+                'id="maintenance-readiness-detail"',
+                'id="maintenance-readiness-summary"',
+                1,
+            )
+            component.write_text(source, encoding="utf-8")
+
+            drift = (
+                traceability
+                .maintenance_mission_control_ui_policy_drift(root)
+            )
+
+        self.assertIn(
+            "missing-token:mission-control:"
+            'id="maintenance-readiness-detail"',
+            drift,
+        )
+        self.assertIn(
+            "ordering:mission-control:readiness-filter-before-"
+            "detail-before-drone-link",
+            drift,
+        )
     def copy_policy_sources(self, target_root: Path) -> None:
         source_root = SCRIPT_DIR.parent
         relative_paths = [

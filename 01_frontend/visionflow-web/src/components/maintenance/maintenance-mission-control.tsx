@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatKoreanDateTime } from "@/lib/date";
 import {
   parseMaintenanceFleetFlightClearance,
+  type MaintenanceFlightClearance,
   type MaintenanceFleetFlightClearance,
 } from "@/types/maintenance-flight-clearance";
 import {
@@ -57,6 +58,33 @@ const slaStyles = {
   NOT_APPLICABLE: "border-slate-400/40 bg-slate-400/15 text-slate-200",
 } as const;
 
+const readinessDefinitions = {
+  CLEARED: {
+    label: "비행 가능",
+    dot: "bg-emerald-400",
+    badge: "border-emerald-300/40 bg-emerald-400/15 text-emerald-100",
+  },
+  ATTENTION: {
+    label: "점검 대기",
+    dot: "bg-amber-400",
+    badge: "border-amber-300/40 bg-amber-400/15 text-amber-100",
+  },
+  BLOCKED: {
+    label: "운항 중지",
+    dot: "bg-rose-400",
+    badge: "border-rose-300/40 bg-rose-400/15 text-rose-100",
+  },
+} as const;
+
+const gateModeLabels = {
+  OFF: "비활성",
+  ADVISORY: "주의 모드",
+  ENFORCED: "강제 차단",
+} as const;
+
+type ReadinessCategory = keyof typeof readinessDefinitions;
+type ReadinessFilter = "ALL" | ReadinessCategory;
+
 interface MaintenanceMissionControlProps {
   refreshKey: number;
 }
@@ -67,6 +95,11 @@ interface MissionStage {
   description: string;
   accent: string;
   count: number;
+}
+
+interface MissionClearanceItem {
+  clearance: MaintenanceFlightClearance;
+  category: ReadinessCategory;
 }
 
 export function MaintenanceMissionControl({
@@ -80,6 +113,8 @@ export function MaintenanceMissionControl({
   const [refreshRevision, setRefreshRevision] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [readinessFilter, setReadinessFilter] =
+    useState<ReadinessFilter>("ALL");
 
   useEffect(() => {
     let active = true;
@@ -167,6 +202,17 @@ export function MaintenanceMissionControl({
         ? summarizeMission(tracking, fleetClearance)
         : null,
     [fleetClearance, tracking],
+  );
+  const visibleClearances = useMemo(
+    () =>
+      mission
+        ? mission.clearance.items.filter(
+            (item) =>
+              readinessFilter === "ALL" ||
+              item.category === readinessFilter,
+          )
+        : [],
+    [mission, readinessFilter],
   );
 
   function refresh(): void {
@@ -333,24 +379,132 @@ export function MaintenanceMissionControl({
                   </div>
                 </div>
               </div>
-              <dl className="min-w-0 flex-1 space-y-3 text-xs">
+              <div className="min-w-0 flex-1 space-y-2 text-xs">
                 <ClearanceLegend
                   color="bg-emerald-400"
                   label="비행 가능"
                   value={mission.clearance.cleared}
+                  active={readinessFilter === "CLEARED"}
+                  onSelect={() => setReadinessFilter("CLEARED")}
                 />
                 <ClearanceLegend
                   color="bg-amber-400"
                   label="점검 대기"
                   value={mission.clearance.pending}
+                  active={readinessFilter === "ATTENTION"}
+                  onSelect={() => setReadinessFilter("ATTENTION")}
                 />
                 <ClearanceLegend
                   color="bg-rose-400"
                   label="운항 중지"
                   value={mission.clearance.grounded}
+                  active={readinessFilter === "BLOCKED"}
+                  onSelect={() => setReadinessFilter("BLOCKED")}
                 />
-              </dl>
+              </div>
             </div>
+          </div>
+        </div>
+
+        <div
+          id="maintenance-readiness-detail"
+          className="mt-5 rounded-2xl border border-slate-700/80 bg-slate-900/65 p-4 sm:p-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-black text-white">
+                함대 판정 상세
+              </h3>
+              <p className="mt-1 text-xs text-slate-400">
+                기체별 비행 허가와 점검 사유 · {gateModeLabels[fleetClearance.mode]}
+              </p>
+            </div>
+            <div
+              aria-label="함대 판정 필터"
+              className="flex flex-wrap gap-2"
+            >
+              <ReadinessFilterButton
+                label="전체"
+                count={fleetClearance.totalDrones}
+                active={readinessFilter === "ALL"}
+                onSelect={() => setReadinessFilter("ALL")}
+              />
+              {(Object.keys(readinessDefinitions) as ReadinessCategory[]).map(
+                (category) => {
+                  const definition = readinessDefinitions[category];
+                  const count = mission.clearance.items.filter(
+                    (item) => item.category === category,
+                  ).length;
+                  return (
+                    <ReadinessFilterButton
+                      key={category}
+                      label={definition.label}
+                      count={count}
+                      active={readinessFilter === category}
+                      onSelect={() => setReadinessFilter(category)}
+                    />
+                  );
+                },
+              )}
+            </div>
+          </div>
+
+          <div aria-live="polite" className="mt-4">
+            {visibleClearances.length === 0 ? (
+              <p className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-4 text-sm font-bold text-slate-300">
+                선택한 판정에 해당하는 기체가 없습니다.
+              </p>
+            ) : (
+              <div className="grid max-h-72 gap-3 overflow-y-auto pr-1 lg:grid-cols-2 xl:grid-cols-3">
+                {visibleClearances.map(({ clearance, category }) => {
+                  const definition = readinessDefinitions[category];
+                  return (
+                    <article
+                      key={clearance.droneId}
+                      data-readiness-category={category}
+                      className="rounded-xl border border-slate-700 bg-slate-950/75 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h4 className="text-base font-black text-white">
+                            Drone #{clearance.droneId}
+                          </h4>
+                          <p className="mt-1 text-[11px] font-bold text-slate-500">
+                            {clearance.workOrderId
+                              ? `작업 #${clearance.workOrderId}`
+                              : "연결된 점검 작업 없음"}
+                          </p>
+                        </div>
+                        <span
+                          className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${definition.badge}`}
+                        >
+                          {definition.label}
+                        </span>
+                      </div>
+                      <p className="mt-3 min-h-10 text-xs leading-5 text-slate-300">
+                        {clearance.reason}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Link
+                          href={`/drones/${clearance.droneId}`}
+                          className="rounded-lg border border-slate-600 px-3 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-300 hover:text-cyan-200"
+                        >
+                          기체 상세
+                        </Link>
+                        {clearance.workOrderId !== null && (
+                          <Link
+                            href={`/maintenance?droneId=${clearance.droneId}&workOrderId=${clearance.workOrderId}#maintenance-work-order-${clearance.workOrderId}`}
+                            className="rounded-lg bg-cyan-400 px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-300"
+                          >
+                            작업 열기
+                          </Link>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -448,16 +602,26 @@ function summarizeMission(
             ).length,
   }));
 
-  const cleared = fleetClearance.clearances.filter(
-    (clearance) =>
-      clearance.flightAllowed && !clearance.attentionRequired,
+  const clearanceItems: MissionClearanceItem[] = fleetClearance.clearances
+    .map((clearance) => ({
+      clearance,
+      category: classifyClearance(clearance),
+    }))
+    .sort((left, right) => {
+      const rank = { BLOCKED: 0, ATTENTION: 1, CLEARED: 2 } as const;
+      return (
+        rank[left.category] - rank[right.category] ||
+        left.clearance.droneId - right.clearance.droneId
+      );
+    });
+  const cleared = clearanceItems.filter(
+    (item) => item.category === "CLEARED",
   ).length;
-  const pending = fleetClearance.clearances.filter(
-    (clearance) =>
-      clearance.flightAllowed && clearance.attentionRequired,
+  const pending = clearanceItems.filter(
+    (item) => item.category === "ATTENTION",
   ).length;
-  const grounded = fleetClearance.clearances.filter(
-    (clearance) => !clearance.flightAllowed,
+  const grounded = clearanceItems.filter(
+    (item) => item.category === "BLOCKED",
   ).length;
   const total = Math.max(cleared + pending + grounded, 1);
   const clearedEnd = (cleared / total) * 100;
@@ -496,7 +660,13 @@ function summarizeMission(
     stages,
     urgentItems,
     attentionCount,
-    clearance: { cleared, pending, grounded, gradient },
+    clearance: {
+      cleared,
+      pending,
+      grounded,
+      gradient,
+      items: clearanceItems,
+    },
     healthLabel: hasCritical
       ? "즉시 대응 필요"
       : hasWarning
@@ -513,6 +683,18 @@ function summarizeMission(
         ? "bg-amber-300"
         : "bg-emerald-300",
   };
+}
+
+function classifyClearance(
+  clearance: MaintenanceFlightClearance,
+): ReadinessCategory {
+  if (clearance.flightAllowed && !clearance.attentionRequired) {
+    return "CLEARED";
+  }
+  if (clearance.flightAllowed && clearance.attentionRequired) {
+    return "ATTENTION";
+  }
+  return "BLOCKED";
 }
 
 function compareUrgency(
@@ -561,19 +743,60 @@ function ClearanceLegend({
   color,
   label,
   value,
+  active,
+  onSelect,
 }: {
   color: string;
   label: string;
   value: number;
+  active: boolean;
+  onSelect: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="flex items-center gap-2 text-slate-300">
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-controls="maintenance-readiness-detail"
+      onClick={onSelect}
+      className={`flex w-full items-center justify-between gap-3 rounded-lg border px-2.5 py-2 text-left transition ${
+        active
+          ? "border-cyan-300/60 bg-cyan-300/10"
+          : "border-transparent hover:border-slate-600 hover:bg-slate-800/70"
+      }`}
+    >
+      <span className="flex items-center gap-2 text-slate-300">
         <span aria-hidden="true" className={`h-2 w-2 rounded-full ${color}`} />
         {label}
-      </dt>
-      <dd className="font-black text-white">{value}대</dd>
-    </div>
+      </span>
+      <span className="font-black text-white">{value}대</span>
+    </button>
+  );
+}
+
+function ReadinessFilterButton({
+  label,
+  count,
+  active,
+  onSelect,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onSelect}
+      className={`rounded-full border px-3 py-1.5 text-[11px] font-black transition ${
+        active
+          ? "border-cyan-300 bg-cyan-300 text-slate-950"
+          : "border-slate-600 bg-slate-950/60 text-slate-300 hover:border-cyan-300/60 hover:text-cyan-100"
+      }`}
+    >
+      {label} {count}대
+    </button>
   );
 }
 
