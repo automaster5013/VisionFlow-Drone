@@ -13,7 +13,7 @@
 - 런타임 보안 검사는 CI에서 `SKIPPED`가 정상이며 정적 보안 검사는 모두 `PASS`여야 함
 - 시스템 추적성 감사: `SYSTEM_TRACEABILITY_HEALTHY`만 허용
 - 데이터 기준: Table 16, Entity 15, Repository 15, 물리 FK 12, 기능 흐름 13, 소프트 상관관계 4
-- 추적성 감사의 22개 검사키가 정확히 존재하고 모두 `PASS`여야 함
+- 추적성 감사의 23개 검사키가 정확히 존재하고 모두 `PASS`여야 함
 - Drone 변경 검사는 기본정보·상태·삭제·텔레메트리 쓰기의 행 잠금과 비잠금 읽기 경계를 함께 확인
 - AI 이벤트 수집 검사는 세션 행 잠금, 프레임 멱등 조회·생성 순서와 V5 UNIQUE 최종 방어를 함께 확인
 - AI 경보 생성 검사는 추론 이벤트 행 잠금, event 멱등 조회·생성 순서와 V10 UNIQUE 최종 방어를 함께 확인
@@ -22,6 +22,7 @@
 - 비행 세션 생명주기 검사는 Drone·Session 행 잠금, ACTIVE 세션 DB UNIQUE 제약, 읽기 전용 중복 탐지 규칙을 함께 확인
 - 비행 품질 평가 검사는 수동·종료 이벤트·백필 재계산의 Session 행 잠금, V16 평가 UNIQUE 제약, 비잠금 읽기 경계를 함께 확인
 - 정비 작업지시 검사는 자동 동기화·점검 시작·완료의 Work Order 잠금과 정비 SLA의 Incident→Work Order 잠금·재평가 순서, V19 UNIQUE 최종 방어를 함께 확인
+- Frontend 산출물 파일 추적 검사는 모바일 증적 후보 경로의 프로젝트 내부 기본값, Docker 읽기 전용 마운트, 동적 보고서·체크섬 경로의 Turbopack 추적 제외를 함께 확인
 - 정비 작전 현황 UI 검사는 SLA·전체 함대 인증 프록시, 두 응답 파서,
   30초 자동 갱신, 판정 시각 신선도·소스 시차, 단계·함대 비행 준비·
   기체별 판정 필터·사유·긴급 큐 시각화와 기체·작업 링크를 함께 확인
@@ -54,7 +55,7 @@ scripts\run-visionflow-api-audit-ci.bat
 1. `ai-openapi.json`에서 AI operation 추가·삭제 여부 확인
 2. 계약 보고서의 `baseline-counts`, `frontend-targets`, `backend-coverage`, `ai-coverage` 확인
 3. 보안 보고서의 `BLOCKED` 또는 `ADVISORY` check 확인
-4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·정비 작전 현황 UI 정책 검사와 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
+4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·Frontend 산출물 파일 추적·정비 작전 현황 UI 정책 검사와 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
 5. 의도된 변경이면 기존 계약·보안·추적성 기준선과 CI 정책을 함께 검토
 6. 의도하지 않은 변경이면 Route, proxy target, 인증 전파, Spring Security, Flyway, Entity·Repository 또는 기능 흐름 기준을 수정
 

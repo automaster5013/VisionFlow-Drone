@@ -15,6 +15,11 @@ const REPORT_NAME_PATTERN =
 const MAX_REPORT_BYTES = 1024 * 1024;
 const FRESHNESS_LIMIT_HOURS = 30 * 24;
 const FUTURE_CLOCK_TOLERANCE_HOURS = 1;
+const DEFAULT_EVIDENCE_DIRECTORY = path.join(
+    /*turbopackIgnore: true*/ process.cwd(),
+    "artifacts",
+    "mobile-readiness",
+);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
@@ -117,15 +122,7 @@ function getCandidateDirectories(): string[] {
         process.env.VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY?.trim();
     const candidates = [
         configuredDirectory,
-        path.resolve(process.cwd(), "artifacts", "mobile-readiness"),
-        path.resolve(
-            process.cwd(),
-            "..",
-            "..",
-            "..",
-            "artifacts",
-            "mobile-readiness",
-        ),
+        DEFAULT_EVIDENCE_DIRECTORY,
     ].filter((value): value is string => Boolean(value));
 
     return [...new Set(candidates)];
@@ -312,9 +309,12 @@ export async function loadMobileEvidenceStatus(
     }
 
     try {
-        const reportPath = path.join(directory, reportName);
+        const reportPath = path.join(
+            /*turbopackIgnore: true*/ directory,
+            reportName,
+        );
         const checksumPath = path.join(
-            directory,
+            /*turbopackIgnore: true*/ directory,
             reportName.replace(/\.json$/, ".sha256"),
         );
         const [reportBytes, checksumBytes] = await Promise.all([

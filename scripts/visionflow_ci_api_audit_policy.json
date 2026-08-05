@@ -30,6 +30,7 @@
     "flight-quality-assessment-concurrency-policy",
     "incident-lifecycle-concurrency-policy",
     "maintenance-work-order-lifecycle-concurrency-policy",
+    "frontend-output-file-tracing-policy",
     "maintenance-mission-control-ui-policy",
     "ai-alert-lifecycle-concurrency-policy",
     "geofence-event-lifecycle-concurrency-policy",

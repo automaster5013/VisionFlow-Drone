@@ -24,6 +24,13 @@ Compose의 `frontend-web` 서비스에는 증적 폴더가 다음 경로로 읽�
 ./artifacts/mobile-readiness:/app/artifacts/mobile-readiness:ro
 ```
 
+운영 환경은 `VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY`로 위 컨테이너 경로를
+명시하고, 로컬 기본값은 Frontend 프로젝트 아래의
+`artifacts/mobile-readiness`로 제한됩니다. 보고서와 체크섬 파일명은 허용
+패턴으로 검증한 뒤 읽으며, 동적 파일 경로는 Turbopack의 산출물 추적에서
+제외합니다. 따라서 `output: "standalone"` 빌드가 저장소 전체를 의도치 않게
+추적하지 않으면서 런타임 읽기 전용 마운트는 그대로 사용합니다.
+
 ## 적용 후 검증
 
 프로젝트 루트 `C:\VisionFlow-Drone`에서 실행합니다.

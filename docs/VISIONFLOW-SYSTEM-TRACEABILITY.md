@@ -357,6 +357,21 @@ flowchart LR
 - 모바일 증적 보고서
 - 감사·계약·보안·운영 가드 산출물
 
+### 8.1 Frontend standalone 파일 추적 경계
+
+- 모바일 증적 loader는 운영 환경의
+  `VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY`와 Frontend 프로젝트 내부 기본
+  `artifacts/mobile-readiness`만 후보로 사용한다. 저장소 상위 경로를
+  거슬러 올라가는 fallback은 허용하지 않는다.
+- Compose는 운영 후보를 `/app/artifacts/mobile-readiness`에 읽기 전용으로
+  마운트하며, Route Handler는 Node.js runtime·동적 응답·`no-store`를 유지한다.
+- 허용 패턴으로 선별한 보고서와 체크섬의 동적 경로에는
+  `turbopackIgnore: true`를 적용한다. 런타임 검증·SHA-256·심볼릭 링크·크기
+  제한은 유지하면서 Next.js `output: "standalone"`의 NFT가 저장소 전체를
+  의도치 않게 추적하지 않도록 한다.
+- `frontend-output-file-tracing-policy`는 경로 범위, 세 개의 추적 제외 표식,
+  Docker 읽기 전용 마운트와 standalone 설정을 CI에서 함께 고정한다.
+
 ## 9. 자동 감사 실행
 
 저장소 루트에서 실행한다.

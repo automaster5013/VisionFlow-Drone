@@ -1285,6 +1285,105 @@ def maintenance_work_order_lifecycle_concurrency_policy_drift(
     return drift
 
 
+def frontend_output_file_tracing_policy_drift(root: Path) -> list[str]:
+    frontend_root = root / "01_frontend" / "visionflow-web"
+    paths = {
+        "mobile-evidence": frontend_root / "src/lib/mobile-evidence.ts",
+        "evidence-route": frontend_root
+        / "src/app/api/mobile/evidence/status/route.ts",
+        "next-config": frontend_root / "next.config.ts",
+        "compose": root / "compose.yaml",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "mobile-evidence": [
+            "const DEFAULT_EVIDENCE_DIRECTORY = path.join(",
+            "/*turbopackIgnore: true*/ process.cwd()",
+            "process.env.VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY?.trim()",
+            "DEFAULT_EVIDENCE_DIRECTORY",
+            "/*turbopackIgnore: true*/ directory",
+            "REPORT_NAME_PATTERN.test(entry.name)",
+            "!metadata.isSymbolicLink()",
+            "metadata.size > maxBytes",
+        ],
+        "evidence-route": [
+            'import { loadMobileEvidenceStatus } from "@/lib/mobile-evidence";',
+            'export const dynamic = "force-dynamic";',
+            'export const runtime = "nodejs";',
+            '"Cache-Control": "no-store"',
+        ],
+        "next-config": ['output: "standalone"'],
+        "compose": [
+            "VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY: "
+            "/app/artifacts/mobile-readiness",
+            "./artifacts/mobile-readiness:"
+            "/app/artifacts/mobile-readiness:ro",
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    mobile_evidence = sources.get("mobile-evidence")
+    if mobile_evidence is not None:
+        candidate_at = mobile_evidence.find(
+            "function getCandidateDirectories(): string[]"
+        )
+        directory_scan_at = mobile_evidence.find(
+            "async function findEvidenceDirectory()"
+        )
+        candidate_source = (
+            mobile_evidence[candidate_at:directory_scan_at]
+            if 0 <= candidate_at < directory_scan_at
+            else ""
+        )
+        if '".."' in candidate_source or "path.resolve(" in candidate_source:
+            drift.append(
+                "scope:mobile-evidence:candidate-directories-"
+                "remain-inside-frontend-root"
+            )
+        if mobile_evidence.count("/*turbopackIgnore: true*/") != 3:
+            drift.append(
+                "usage:mobile-evidence:three-bounded-nft-ignore-markers"
+            )
+
+        default_at = mobile_evidence.find(
+            "const DEFAULT_EVIDENCE_DIRECTORY = path.join("
+        )
+        configured_at = mobile_evidence.find(
+            "process.env.VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY?.trim()"
+        )
+        candidates_at = mobile_evidence.find("const candidates = [")
+        report_path_at = mobile_evidence.find("const reportPath = path.join(")
+        checksum_path_at = mobile_evidence.find(
+            "const checksumPath = path.join("
+        )
+        read_at = mobile_evidence.find(
+            "const [reportBytes, checksumBytes] = await Promise.all(["
+        )
+        if not (
+            0 <= default_at < configured_at < candidates_at
+            and 0 <= report_path_at < checksum_path_at < read_at
+        ):
+            drift.append(
+                "ordering:mobile-evidence:bounded-directories-and-"
+                "ignored-file-paths-before-read"
+            )
+
+    return drift
+
+
 def maintenance_mission_control_ui_policy_drift(
     root: Path,
 ) -> list[str]:
@@ -2310,6 +2409,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not maintenance_work_order_drift
             else "정비 작업지시 전이 또는 SLA 재평가의 행 잠금·재검증·DB UNIQUE 방어가 누락됐습니다.",
             drift=maintenance_work_order_drift,
+        )
+    )
+    frontend_output_tracing_drift = (
+        frontend_output_file_tracing_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if frontend_output_tracing_drift else "PASS",
+            "frontend-output-file-tracing-policy",
+            "Frontend 산출물 파일 추적 정책",
+            "모바일 증적 읽기가 명시적 읽기 전용 경로와 제한된 파일명으로 유지되며 Next.js standalone 추적 범위를 벗어나지 않습니다."
+            if not frontend_output_tracing_drift
+            else "모바일 증적 경로의 범위 제한, Turbopack 추적 제외 또는 읽기 전용 배포 경계가 누락됐습니다.",
+            drift=frontend_output_tracing_drift,
         )
     )
     maintenance_mission_control_drift = (
