@@ -27,6 +27,7 @@
 - 정비 작전 현황 UI 검사는 SLA·전체 함대 인증 프록시, 두 응답 파서,
   30초 자동 갱신, 판정 시각 신선도·소스 시차, 단계·함대 비행 준비·
   기체별 판정 필터·사유·긴급 큐 시각화, 읽기 전용 관제 상세 드로어와
+  함대 게이트→작업지시→Incident·SLA→최종 판정의 4단계 근거 흐름,
   접근성 있는 닫기·포커스 복귀 및 기체·작업·Incident 링크를 함께 확인
 - AI OpenAPI inventory는 `streaming.py`의 정적 FastAPI decorator에서 매번 생성하므로 실행 중인 AI 서버가 필요하지 않음
 
@@ -58,7 +59,7 @@ scripts\run-visionflow-api-audit-ci.bat
 1. `ai-openapi.json`에서 AI operation 추가·삭제 여부 확인
 2. 계약 보고서의 `baseline-counts`, `frontend-targets`, `backend-coverage`, `ai-coverage` 확인
 3. 보안 보고서의 `BLOCKED` 또는 `ADVISORY` check 확인
-4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·GitHub Actions Node.js 24·Frontend 산출물 파일 추적·정비 작전 현황 UI 정책 검사와 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
+4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·GitHub Actions Node.js 24·Frontend 산출물 파일 추적·정비 작전 현황 UI와 판정 근거 타임라인 정책 검사 및 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
 5. 의도된 변경이면 기존 계약·보안·추적성 기준선과 CI 정책을 함께 검토
 6. 의도하지 않은 변경이면 Route, proxy target, 인증 전파, Spring Security, Flyway, Entity·Repository 또는 기능 흐름 기준을 수정
 

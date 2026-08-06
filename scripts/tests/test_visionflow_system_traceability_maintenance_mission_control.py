@@ -257,6 +257,41 @@ class SystemTraceabilityMaintenanceMissionControlTest(
             drift,
         )
 
+    def test_missing_readiness_decision_timeline_is_detected(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.copy_policy_sources(root)
+            drawer = (
+                root
+                / "01_frontend/visionflow-web/src/components"
+                / "maintenance/maintenance-readiness-detail-drawer.tsx"
+            )
+            source = drawer.read_text(encoding="utf-8")
+            source = source.replace(
+                "data-maintenance-decision-timeline",
+                "data-maintenance-decision-summary",
+                1,
+            )
+            drawer.write_text(source, encoding="utf-8")
+
+            drift = (
+                traceability
+                .maintenance_mission_control_ui_policy_drift(root)
+            )
+
+        self.assertIn(
+            "missing-token:readiness-drawer:"
+            "data-maintenance-decision-timeline",
+            drift,
+        )
+        self.assertIn(
+            "ordering:readiness-drawer:decision-builder-before-"
+            "timeline-before-freshness-before-work-order-detail",
+            drift,
+        )
+
     def copy_policy_sources(self, target_root: Path) -> None:
         source_root = SCRIPT_DIR.parent
         relative_paths = [

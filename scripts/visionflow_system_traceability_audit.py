@@ -1518,6 +1518,17 @@ def maintenance_mission_control_ui_policy_drift(
             "trackingItem.closureRecommendedAction",
             "trackingFreshness",
             "clearanceFreshness",
+            "data-maintenance-decision-timeline",
+            'aria-labelledby="maintenance-decision-timeline-title"',
+            "비행 판정 근거 흐름",
+            "const decisionTimeline = buildReadinessDecisionTimeline({",
+            "function buildReadinessDecisionTimeline({",
+            'key: "FLIGHT_GATE"',
+            'key: "WORK_ORDER"',
+            'key: "INCIDENT_SLA"',
+            'key: "FINAL_DECISION"',
+            "trackingItem.slaStatus",
+            "data-decision-step={step.key}",
             'href={`/drones/${clearance.droneId}`}',
             "/maintenance?droneId=",
             'href={`/incidents/${trackingItem.incidentId}/report`}',
@@ -1659,6 +1670,27 @@ def maintenance_mission_control_ui_policy_drift(
 
     readiness_drawer = sources.get("readiness-drawer")
     if readiness_drawer is not None:
+        decision_builder_at = readiness_drawer.find(
+            "const decisionTimeline = buildReadinessDecisionTimeline({"
+        )
+        decision_timeline_at = readiness_drawer.find(
+            "data-maintenance-decision-timeline"
+        )
+        freshness_at = readiness_drawer.find(
+            '<h4 className="text-sm font-black text-white">데이터 신선도</h4>'
+        )
+        work_order_at = readiness_drawer.find("작업지시·Incident")
+        if not (
+            0
+            <= decision_builder_at
+            < decision_timeline_at
+            < freshness_at
+            < work_order_at
+        ):
+            drift.append(
+                "ordering:readiness-drawer:decision-builder-before-"
+                "timeline-before-freshness-before-work-order-detail"
+            )
         if "fetch(" in readiness_drawer:
             drift.append(
                 "usage:readiness-drawer:existing-validated-data-only"
@@ -2549,9 +2581,9 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             else "PASS",
             "maintenance-mission-control-ui-policy",
             "정비 작전 현황 UI 정책",
-            "작업 단계·SLA 긴급 큐와 전체 함대 비행 준비 상태·기체별 판정 사유·두 소스의 신선도·읽기 전용 관제 상세 드로어가 인증 프록시 기반 보드로 연결되고 30초 자동 갱신됩니다."
+            "작업 단계·SLA 긴급 큐와 전체 함대 비행 준비 상태·기체별 판정 사유·두 소스의 신선도·4단계 비행 판정 근거 흐름을 갖춘 읽기 전용 관제 상세 드로어가 인증 프록시 기반 보드로 연결되고 30초 자동 갱신됩니다."
             if not maintenance_mission_control_drift
-            else "정비 작전 현황 보드의 데이터 검증·신선도·자동 갱신·우선순위·상세 드로어 또는 화면 연결이 누락됐습니다.",
+            else "정비 작전 현황 보드의 데이터 검증·신선도·자동 갱신·우선순위·상세 드로어·판정 근거 흐름 또는 화면 연결이 누락됐습니다.",
             drift=maintenance_mission_control_drift,
         )
     )
