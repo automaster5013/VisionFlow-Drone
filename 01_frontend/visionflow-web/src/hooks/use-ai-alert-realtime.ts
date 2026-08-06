@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Client, type IMessage } from "@stomp/stompjs";
 
+import { resolveWebSocketUrl } from "@/lib/websocket-url";
 import {
     parseAiAlertRealtimeMessage,
     type AiAlertRealtimeConnectionStatus,
@@ -30,9 +31,7 @@ export function useAiAlertRealtime(
         let active = true;
 
         const client = new Client({
-            brokerURL:
-                process.env.NEXT_PUBLIC_WEBSOCKET_URL ??
-                "ws://localhost:8080/ws",
+            brokerURL: resolveWebSocketUrl(),
             reconnectDelay: 5_000,
             heartbeatIncoming: 10_000,
             heartbeatOutgoing: 10_000,

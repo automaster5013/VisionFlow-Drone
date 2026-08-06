@@ -10,6 +10,7 @@ import {
     type IMessage,
 } from "@stomp/stompjs";
 
+import { resolveWebSocketUrl } from "@/lib/websocket-url";
 import type { Drone } from "@/types/drone";
 import type { WebSocketConnectionStatus } from "@/types/websocket";
 
@@ -41,12 +42,8 @@ export function useDroneTelemetry(
     const clientRef = useRef<Client | null>(null);
 
     useEffect(() => {
-        const websocketUrl =
-            process.env.NEXT_PUBLIC_WEBSOCKET_URL ??
-            "ws://localhost:8080/ws";
-
         const client = new Client({
-            brokerURL: websocketUrl,
+            brokerURL: resolveWebSocketUrl(),
             reconnectDelay: 5000,
             heartbeatIncoming: 10000,
             heartbeatOutgoing: 10000,

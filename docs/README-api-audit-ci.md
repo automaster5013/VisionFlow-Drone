@@ -13,7 +13,7 @@
 - 런타임 보안 검사는 CI에서 `SKIPPED`가 정상이며 정적 보안 검사는 모두 `PASS`여야 함
 - 시스템 추적성 감사: `SYSTEM_TRACEABILITY_HEALTHY`만 허용
 - 데이터 기준: Table 16, Entity 15, Repository 15, 물리 FK 12, 기능 흐름 13, 소프트 상관관계 4
-- 추적성 감사의 24개 검사키가 정확히 존재하고 모두 `PASS`여야 함
+- 추적성 감사의 25개 검사키가 정확히 존재하고 모두 `PASS`여야 함
 - Drone 변경 검사는 기본정보·상태·삭제·텔레메트리 쓰기의 행 잠금과 비잠금 읽기 경계를 함께 확인
 - AI 이벤트 수집 검사는 세션 행 잠금, 프레임 멱등 조회·생성 순서와 V5 UNIQUE 최종 방어를 함께 확인
 - AI 경보 생성 검사는 추론 이벤트 행 잠금, event 멱등 조회·생성 순서와 V10 UNIQUE 최종 방어를 함께 확인
@@ -29,6 +29,12 @@
   기체별 판정 필터·사유·긴급 큐 시각화, 읽기 전용 관제 상세 드로어와
   함대 게이트→작업지시→Incident·SLA→최종 판정의 4단계 근거 흐름,
   접근성 있는 닫기·포커스 복귀 및 기체·작업·Incident 링크를 함께 확인
+- 통합 이벤트 관제 UI 검사는 AI 추론·AI 경보·지오펜스 위반·Incident의
+  기존 인증 프록시와 엄격한 응답 파서, 15초 자동 갱신, AbortController 기반
+  오래된 요청 차단, 소스별 부분 장애 격리와 마지막 정상 데이터 유지,
+  소스·기체·위험도·대응 상태·시간 필터, 통합 타임라인, modal dialog 의미
+  구조·Escape·Tab 포커스 순환·포커스 복귀 및 기체·리플레이·Incident 링크를
+  함께 확인
 - AI OpenAPI inventory는 `streaming.py`의 정적 FastAPI decorator에서 매번 생성하므로 실행 중인 AI 서버가 필요하지 않음
 
 허용 정책은 `scripts/visionflow_ci_api_audit_policy.json`에 있습니다. 정책이나 기준선을 바꾸는 작업은 API 변경 검토와 함께 별도 커밋으로 진행하세요.
@@ -59,7 +65,7 @@ scripts\run-visionflow-api-audit-ci.bat
 1. `ai-openapi.json`에서 AI operation 추가·삭제 여부 확인
 2. 계약 보고서의 `baseline-counts`, `frontend-targets`, `backend-coverage`, `ai-coverage` 확인
 3. 보안 보고서의 `BLOCKED` 또는 `ADVISORY` check 확인
-4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·GitHub Actions Node.js 24·Frontend 산출물 파일 추적·정비 작전 현황 UI와 판정 근거 타임라인 정책 검사 및 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
+4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·GitHub Actions Node.js 24·Frontend 산출물 파일 추적·정비 작전 현황 UI와 판정 근거 타임라인·통합 이벤트 관제 UI 정책 검사 및 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
 5. 의도된 변경이면 기존 계약·보안·추적성 기준선과 CI 정책을 함께 검토
 6. 의도하지 않은 변경이면 Route, proxy target, 인증 전파, Spring Security, Flyway, Entity·Repository 또는 기능 흐름 기준을 수정
 

@@ -1,5 +1,8 @@
 package com.visionflow.api.common.config;
 
+import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -10,6 +13,22 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig
         implements WebSocketMessageBrokerConfigurer {
+
+    private final String[] allowedOriginPatterns;
+
+    public WebSocketConfig(
+            @Value("${visionflow.websocket.allowed-origin-patterns:"
+                    + "http://localhost:3000,"
+                    + "http://127.0.0.1:3000,"
+                    + "https://localhost:3443,"
+                    + "https://127.0.0.1:3443}")
+            String[] allowedOriginPatterns
+    ) {
+        this.allowedOriginPatterns = Arrays.stream(allowedOriginPatterns)
+                .map(String::trim)
+                .filter(pattern -> !pattern.isEmpty())
+                .toArray(String[]::new);
+    }
 
     @Override
     public void configureMessageBroker(
@@ -42,9 +61,6 @@ public class WebSocketConfig
     ) {
         registry
                 .addEndpoint("/ws")
-                .setAllowedOriginPatterns(
-                        "http://localhost:3000",
-                        "http://127.0.0.1:3000"
-                );
+                .setAllowedOriginPatterns(allowedOriginPatterns);
     }
 }

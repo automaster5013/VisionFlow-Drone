@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Client, type IMessage } from "@stomp/stompjs";
 
+import { resolveWebSocketUrl } from "@/lib/websocket-url";
 import type { Drone } from "@/types/drone";
 import type { WebSocketConnectionStatus } from "@/types/websocket";
 import type { DroneTelemetryHistory } from "@/types/drone-telemetry-history";
@@ -628,8 +629,7 @@ export function useDroneFleetTelemetry(
     let active = true;
 
     const client = new Client({
-      brokerURL:
-        process.env.NEXT_PUBLIC_WEBSOCKET_URL ?? "ws://localhost:8080/ws",
+      brokerURL: resolveWebSocketUrl(),
 
       reconnectDelay: 5_000,
       heartbeatIncoming: 10_000,

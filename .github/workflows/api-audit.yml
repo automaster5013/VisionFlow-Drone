@@ -5,8 +5,11 @@ on:
     paths:
       - ".github/workflows/api-audit.yml"
       - "01_frontend/visionflow-web/src/app/api/**"
+      - "01_frontend/visionflow-web/src/app/events/**"
+      - "01_frontend/visionflow-web/src/components/events/**"
       - "01_frontend/visionflow-web/src/components/maintenance/**"
       - "01_frontend/visionflow-web/src/lib/**"
+      - "01_frontend/visionflow-web/src/types/event-operations.ts"
       - "01_frontend/visionflow-web/src/types/maintenance-*.ts"
       - "02_backend/visionflow-api/src/main/java/**"
       - "02_backend/visionflow-api/src/main/resources/db/migration/**"
@@ -30,8 +33,11 @@ on:
     paths:
       - ".github/workflows/api-audit.yml"
       - "01_frontend/visionflow-web/src/app/api/**"
+      - "01_frontend/visionflow-web/src/app/events/**"
+      - "01_frontend/visionflow-web/src/components/events/**"
       - "01_frontend/visionflow-web/src/components/maintenance/**"
       - "01_frontend/visionflow-web/src/lib/**"
+      - "01_frontend/visionflow-web/src/types/event-operations.ts"
       - "01_frontend/visionflow-web/src/types/maintenance-*.ts"
       - "02_backend/visionflow-api/src/main/java/**"
       - "02_backend/visionflow-api/src/main/resources/db/migration/**"

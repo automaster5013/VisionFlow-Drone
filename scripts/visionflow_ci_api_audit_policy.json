@@ -33,6 +33,7 @@
     "github-actions-node24-runtime-policy",
     "frontend-output-file-tracing-policy",
     "maintenance-mission-control-ui-policy",
+    "event-operations-center-ui-policy",
     "ai-alert-lifecycle-concurrency-policy",
     "geofence-event-lifecycle-concurrency-policy",
     "demo-scenario-lifecycle-concurrency-policy",

@@ -1719,6 +1719,211 @@ def maintenance_mission_control_ui_policy_drift(
     return drift
 
 
+def event_operations_center_ui_policy_drift(root: Path) -> list[str]:
+    frontend_root = root / "01_frontend" / "visionflow-web" / "src"
+    paths = {
+        "events-page": frontend_root / "app/events/page.tsx",
+        "operations-center": frontend_root
+        / "components/events/event-operations-center.tsx",
+        "event-drawer": frontend_root
+        / "components/events/event-detail-drawer.tsx",
+        "event-types": frontend_root / "types/event-operations.ts",
+        "ai-events-route": frontend_root / "app/api/ai/events/route.ts",
+        "ai-alerts-route": frontend_root / "app/api/ai/alerts/route.ts",
+        "geofence-events-route": frontend_root
+        / "app/api/geofences/events/route.ts",
+        "incidents-route": frontend_root / "app/api/incidents/route.ts",
+        "drones-route": frontend_root / "app/api/drones/route.ts",
+        "workflow": root / ".github/workflows/api-audit.yml",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "events-page": [
+            'import { EventOperationsCenter } from '
+            '"@/components/events/event-operations-center";',
+            "<EventOperationsCenter />",
+            'export const dynamic = "force-dynamic";',
+        ],
+        "operations-center": [
+            '"use client";',
+            "data-event-operations-center",
+            "const AUTO_REFRESH_INTERVAL_MS = 15_000",
+            "Promise.allSettled([",
+            'fetchJson("/api/drones", controller.signal)',
+            'fetchJson("/api/ai/events?limit=100", controller.signal)',
+            'fetchJson("/api/ai/alerts?limit=200", controller.signal)',
+            'fetchJson("/api/geofences/events?activeOnly=false&limit=100", '
+            "controller.signal)",
+            'fetchJson("/api/incidents?limit=200", controller.signal)',
+            "parseEventOperationsDrones(droneResult.value)",
+            "parseEventOperationsAiEvents(aiEventResult.value)",
+            "parseAiAlertList(aiAlertResult.value)",
+            "parseEventOperationsGeofenceEvents(geofenceResult.value)",
+            "parseIncidentList(incidentResult.value)",
+            "buildEventOperationsTimeline(sources)",
+            "AbortController",
+            "document.visibilityState",
+            "data-event-operations-filters",
+            "data-event-operations-timeline",
+            "<EventDetailDrawer",
+            'aria-live="polite"',
+            "정상 수신된 소스와 마지막 유효 데이터는 계속 표시됩니다.",
+        ],
+        "event-drawer": [
+            '"use client";',
+            "data-event-operations-detail-drawer",
+            'role="dialog"',
+            'aria-modal="true"',
+            'aria-labelledby="event-operations-drawer-title"',
+            'keyboardEvent.key === "Escape"',
+            'keyboardEvent.key !== "Tab"',
+            "drawerRef.current?.querySelectorAll<HTMLElement>(",
+            'document.body.style.overflow = "hidden"',
+            "closeButtonRef.current?.focus()",
+            "returnFocusElement?.focus()",
+            'href={`/drones/${event.droneId}`}',
+            'href={`/incidents/${event.incidentId}/report`}',
+            'src={`/api/ai/events/${event.snapshotEventId}/snapshot`}',
+            "세션 리플레이 열기",
+        ],
+        "event-types": [
+            '"AI_ALERT"',
+            '"AI_INFERENCE"',
+            '"GEOFENCE"',
+            '"INCIDENT"',
+            "export function parseEventOperationsDrones(",
+            "export function parseEventOperationsAiEvents(",
+            "export function parseEventOperationsGeofenceEvents(",
+            "export function buildEventOperationsTimeline({",
+        ],
+        "ai-events-route": [
+            "withBackendOperatorAuth({",
+            'method: "GET"',
+            'cache: "no-store"',
+        ],
+        "ai-alerts-route": [
+            "proxyAiAlertRequest(",
+            'method: "GET"',
+        ],
+        "geofence-events-route": [
+            "withBackendOperatorAuth({",
+            'method: "GET"',
+            'cache: "no-store"',
+        ],
+        "incidents-route": [
+            "proxyIncidentRequest(",
+            'method: "GET"',
+        ],
+        "drones-route": [
+            "export async function GET(",
+            "withBackendOperatorAuth({",
+            'method: "GET"',
+            'cache: "no-store"',
+        ],
+        "workflow": [
+            '"01_frontend/visionflow-web/src/app/events/**"',
+            '"01_frontend/visionflow-web/src/components/events/**"',
+            '"01_frontend/visionflow-web/src/types/event-operations.ts"',
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    operations_center = sources.get("operations-center")
+    if operations_center is not None:
+        ai_fetch_at = operations_center.find(
+            'fetchJson("/api/ai/events?limit=100", controller.signal)'
+        )
+        ai_parse_at = operations_center.find(
+            "parseEventOperationsAiEvents(aiEventResult.value)"
+        )
+        timeline_at = operations_center.find(
+            "buildEventOperationsTimeline(sources)"
+        )
+        render_at = operations_center.find(
+            "data-event-operations-timeline"
+        )
+        if not (0 <= ai_fetch_at < ai_parse_at < timeline_at < render_at):
+            drift.append(
+                "ordering:event-operations:fetch-before-parse-before-"
+                "timeline-before-render"
+            )
+
+        source_error_at = operations_center.find(
+            "setSourceErrors(nextErrors)"
+        )
+        successful_source_at = operations_center.find(
+            "const successfulSourceCount = ["
+        )
+        last_valid_message_at = operations_center.find(
+            "정상 수신된 소스와 마지막 유효 데이터는 계속 표시됩니다."
+        )
+        if not (
+            0 <= source_error_at < successful_source_at < last_valid_message_at
+        ):
+            drift.append(
+                "ordering:event-operations:source-errors-before-"
+                "success-clock-before-partial-failure-message"
+            )
+
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            if f'method: "{method}"' in operations_center:
+                drift.append(
+                    "usage:event-operations:center-read-only-no-mutation"
+                )
+                break
+
+    event_drawer = sources.get("event-drawer")
+    if event_drawer is not None:
+        scroll_lock_at = event_drawer.find(
+            'document.body.style.overflow = "hidden"'
+        )
+        dialog_at = event_drawer.find('role="dialog"')
+        drone_link_at = event_drawer.find(
+            'href={`/drones/${event.droneId}`}'
+        )
+        incident_link_at = event_drawer.find(
+            'href={`/incidents/${event.incidentId}/report`}'
+        )
+        if not (
+            0 <= scroll_lock_at < dialog_at < drone_link_at < incident_link_at
+        ):
+            drift.append(
+                "ordering:event-drawer:accessibility-before-dialog-before-"
+                "direct-links"
+            )
+        if "fetch(" in event_drawer:
+            drift.append(
+                "usage:event-drawer:existing-validated-data-only"
+            )
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            if f'method: "{method}"' in event_drawer:
+                drift.append("usage:event-drawer:read-only-no-mutation")
+                break
+
+    workflow = sources.get("workflow")
+    if workflow is not None:
+        for token in required_tokens["workflow"]:
+            if workflow.count(token) != 2:
+                drift.append(
+                    f"trigger:event-operations:push-and-pr:{token}"
+                )
+
+    return drift
+
+
 def ai_alert_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -2585,6 +2790,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not maintenance_mission_control_drift
             else "정비 작전 현황 보드의 데이터 검증·신선도·자동 갱신·우선순위·상세 드로어·판정 근거 흐름 또는 화면 연결이 누락됐습니다.",
             drift=maintenance_mission_control_drift,
+        )
+    )
+    event_operations_center_drift = (
+        event_operations_center_ui_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if event_operations_center_drift else "PASS",
+            "event-operations-center-ui-policy",
+            "통합 이벤트 관제 UI 정책",
+            "AI 추론·경보, 지오펜스 위반과 Incident가 인증된 동일 출처 읽기 API에서 검증·통합되고, 부분 장애를 격리하는 15초 갱신 타임라인과 접근성 있는 읽기 전용 상세 드로어로 연결됩니다."
+            if not event_operations_center_drift
+            else "통합 이벤트 관제의 네 소스 조회·검증·부분 장애 격리·자동 갱신·필터·타임라인·상세 드로어·직접 링크 또는 workflow 경로 보호가 누락됐습니다.",
+            drift=event_operations_center_drift,
         )
     )
     ai_alert_lifecycle_drift = (

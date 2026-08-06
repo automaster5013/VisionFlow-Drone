@@ -6,13 +6,18 @@
 :3443 {
     tls /certs/visionflow-mobile.pem /certs/visionflow-mobile-key.pem
 
-    @health path /healthz
-    respond @health "ok" 200
-
     encode zstd gzip
 
-    reverse_proxy host.docker.internal:3000 {
-        lb_try_duration 10s
-        lb_try_interval 500ms
+    route {
+        @health path /healthz
+        respond @health "ok" 200
+
+        @backend_websocket path /ws /ws/*
+        reverse_proxy @backend_websocket host.docker.internal:8080
+
+        reverse_proxy host.docker.internal:3000 {
+            lb_try_duration 10s
+            lb_try_interval 500ms
+        }
     }
 }
