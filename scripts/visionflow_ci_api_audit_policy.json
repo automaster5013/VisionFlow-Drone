@@ -34,6 +34,7 @@
     "frontend-output-file-tracing-policy",
     "maintenance-mission-control-ui-policy",
     "event-operations-center-ui-policy",
+    "operations-statistics-center-ui-policy",
     "ai-alert-lifecycle-concurrency-policy",
     "geofence-event-lifecycle-concurrency-policy",
     "demo-scenario-lifecycle-concurrency-policy",

@@ -287,7 +287,30 @@ flowchart LR
 - `.github/workflows/api-audit.yml`은 `/events` 페이지·구성요소·공통 타입 변경을
   pull request와 `main` push 모두에서 추적성 정책 검사 대상으로 고정한다.
 
-### 4.14 AI 경보 확인·해결 직렬화
+### 4.14 운영 통계 Frontend
+
+- `/statistics`는 기존 same-origin 인증 읽기 프록시인
+  `/api/dashboard/operations`, `/api/flight-quality/fleet-reliability`,
+  `/api/maintenance/metrics`, `/api/ai/metrics/status`만 조회한다. Backend·AI
+  API, DB, 보안 규칙과 operation 수는 변경하지 않는다.
+- 비행 세션과 AI 런타임 응답은 운영 통계 전용 파서로 검증하고, 함대 신뢰도와
+  정비 KPI는 기존 공용 파서를 재사용한다. 검증되지 않은 응답은 KPI 계산이나
+  화면 상태에 반영하지 않는다.
+- 네 소스는 `Promise.allSettled`로 독립 조회한다. 일부 소스가 실패하거나 응답
+  형식이 잘못되어도 마지막 정상 데이터와 정상 소스는 계속 표시하고, 소스별
+  상태와 접근성 있는 부분 장애 안내를 함께 제공한다.
+- 30초 자동 갱신과 수동 갱신을 지원한다. 숨겨진 탭에서는 주기 조회를 생략하고,
+  `AbortController`와 요청 순번으로 이전 응답이 최신 통계를 덮어쓰지 못하게 한다.
+- 7·30·90일 선택은 비행 세션과 정비 작업지시 집계에 적용한다. 함대 신뢰도는
+  기체별 최신 최대 20개 품질 평가, AI 성능은 현재 런타임 롤링 스냅샷, 비행
+  허가는 최신 함대 판정임을 화면에 명시해 서로 다른 표본 범위를 혼동하지 않게 한다.
+- 완료율·품질 점수·탐지율·정비 해결률, 세션·작업지시 분포, 기체별 품질 추세와
+  함대 비행 허가를 읽기 전용으로 제공하고 기존 운영·신뢰도·정비·AI 상세 화면만
+  연결한다. 브라우저 변경 요청은 만들지 않는다.
+- `.github/workflows/api-audit.yml`은 `/statistics` 페이지·구성요소·공통 타입
+  변경을 pull request와 `main` push 모두에서 추적성 정책 검사 대상으로 고정한다.
+
+### 4.15 AI 경보 확인·해결 직렬화
 
 - 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
@@ -299,7 +322,7 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
-### 4.15 Geofence 위반 이벤트 직렬화
+### 4.16 Geofence 위반 이벤트 직렬화
 
 - 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
   `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
@@ -311,7 +334,7 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.16 Demo Scenario 단계 전이 직렬화
+### 4.17 Demo Scenario 단계 전이 직렬화
 
 - 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.

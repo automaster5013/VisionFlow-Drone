@@ -35,6 +35,10 @@
   소스·기체·위험도·대응 상태·시간 필터, 통합 타임라인, modal dialog 의미
   구조·Escape·Tab 포커스 순환·포커스 복귀 및 기체·리플레이·Incident 링크를
   함께 확인
+- 운영 통계 UI 검사는 비행 세션·AI 런타임·함대 신뢰도·정비 KPI의 기존
+  same-origin 인증 읽기 프록시와 응답 파서, 7·30·90일 범위, 30초 자동 갱신,
+  숨김 탭 조회 생략, AbortController 기반 요청 경합 방지, 부분 장애 시 마지막
+  정상 데이터 유지와 상세 화면 링크를 함께 확인
 - AI OpenAPI inventory는 `streaming.py`의 정적 FastAPI decorator에서 매번 생성하므로 실행 중인 AI 서버가 필요하지 않음
 
 허용 정책은 `scripts/visionflow_ci_api_audit_policy.json`에 있습니다. 정책이나 기준선을 바꾸는 작업은 API 변경 검토와 함께 별도 커밋으로 진행하세요.

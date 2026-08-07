@@ -1924,6 +1924,127 @@ def event_operations_center_ui_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def operations_statistics_center_ui_policy_drift(root: Path) -> list[str]:
+    frontend_root = root / "01_frontend" / "visionflow-web" / "src"
+    paths = {
+        "statistics-page": frontend_root / "app/statistics/page.tsx",
+        "statistics-center": frontend_root
+        / "components/statistics/operations-statistics-center.tsx",
+        "statistics-types": frontend_root / "types/operations-statistics.ts",
+        "operations-route": frontend_root / "app/api/dashboard/operations/route.ts",
+        "reliability-route": frontend_root
+        / "app/api/flight-quality/fleet-reliability/route.ts",
+        "maintenance-route": frontend_root / "app/api/maintenance/metrics/route.ts",
+        "ai-route": frontend_root / "app/api/ai/metrics/status/route.ts",
+        "workflow": root / ".github/workflows/api-audit.yml",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "statistics-page": [
+            'import { OperationsStatisticsCenter } from '
+            '"@/components/statistics/operations-statistics-center";',
+            "<OperationsStatisticsCenter />",
+            'export const dynamic = "force-dynamic";',
+        ],
+        "statistics-center": [
+            '"use client";',
+            "data-operations-statistics-center",
+            "const AUTO_REFRESH_INTERVAL_MS = 30_000",
+            "Promise.allSettled([",
+            "/api/dashboard/operations?limit=20&from=",
+            "/api/flight-quality/fleet-reliability?limitPerDrone=20",
+            "/api/maintenance/metrics?windowDays=${rangeDays}",
+            "/api/ai/metrics/status",
+            "parseOperationsStatisticsDashboard(operationsResult.value)",
+            "extractFleetReliabilityResponse(reliabilityResult.value)",
+            "parseMaintenanceMetrics(maintenanceResult.value)",
+            "parseOperationsStatisticsAiMetrics(aiResult.value)",
+            "AbortController",
+            "document.visibilityState",
+            'aria-live="polite"',
+            "마지막 정상 데이터를 유지합니다.",
+            'href="/dashboard"',
+            'href="/fleet-reliability"',
+            'href="/maintenance"',
+            'href="/ai-preview"',
+        ],
+        "statistics-types": [
+            "export function parseOperationsStatisticsDashboard(",
+            "export function parseOperationsStatisticsAiMetrics(",
+            "sessions.ready + sessions.active + sessions.completed + sessions.aborted",
+            "gate.allowed + gate.advisory + gate.blocked",
+        ],
+        "operations-route": [
+            "withBackendOperatorAuth({",
+            'method: "GET"',
+            'cache: "no-store"',
+        ],
+        "reliability-route": [
+            "withBackendOperatorAuth({",
+            'method: "GET"',
+            'cache: "no-store"',
+        ],
+        "maintenance-route": [
+            "proxyMaintenanceRequest(",
+            'method: "GET"',
+        ],
+        "ai-route": [
+            "withAiInternalAuth({",
+            'method: "GET"',
+            'cache: "no-store"',
+        ],
+        "workflow": [
+            '"01_frontend/visionflow-web/src/app/statistics/**"',
+            '"01_frontend/visionflow-web/src/components/statistics/**"',
+            '"01_frontend/visionflow-web/src/types/operations-statistics.ts"',
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    statistics_center = sources.get("statistics-center")
+    if statistics_center is not None:
+        fetch_at = statistics_center.find("Promise.allSettled([")
+        parse_at = statistics_center.find(
+            "parseOperationsStatisticsDashboard(operationsResult.value)"
+        )
+        retain_at = statistics_center.find("setSourceErrors(nextErrors)")
+        render_at = statistics_center.find("data-operations-statistics-center")
+        if not (0 <= fetch_at < parse_at < retain_at < render_at):
+            drift.append(
+                "ordering:operations-statistics:fetch-before-parse-before-"
+                "source-health-before-render"
+            )
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            if f'method: "{method}"' in statistics_center:
+                drift.append(
+                    "usage:operations-statistics:center-read-only-no-mutation"
+                )
+                break
+
+    workflow = sources.get("workflow")
+    if workflow is not None:
+        for token in required_tokens["workflow"]:
+            if workflow.count(token) != 2:
+                drift.append(
+                    f"trigger:operations-statistics:push-and-pr:{token}"
+                )
+
+    return drift
+
+
 def ai_alert_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -2804,6 +2925,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not event_operations_center_drift
             else "통합 이벤트 관제의 네 소스 조회·검증·부분 장애 격리·자동 갱신·필터·타임라인·상세 드로어·직접 링크 또는 workflow 경로 보호가 누락됐습니다.",
             drift=event_operations_center_drift,
+        )
+    )
+    operations_statistics_center_drift = (
+        operations_statistics_center_ui_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if operations_statistics_center_drift else "PASS",
+            "operations-statistics-center-ui-policy",
+            "운영 통계 센터 UI 정책",
+            "비행 세션·AI 추론·함대 신뢰도·정비 KPI가 인증된 동일 출처 읽기 API에서 검증되고, 부분 장애를 격리하는 30초 갱신 통계 보드로 연결됩니다."
+            if not operations_statistics_center_drift
+            else "운영 통계 센터의 네 소스 조회·검증·부분 장애 격리·자동 갱신·표본 범위 안내·상세 링크 또는 workflow 경로 보호가 누락됐습니다.",
+            drift=operations_statistics_center_drift,
         )
     )
     ai_alert_lifecycle_drift = (
