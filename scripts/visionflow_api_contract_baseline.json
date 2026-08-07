@@ -4,7 +4,7 @@
   "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 71,
+    "frontend": 72,
     "ai": 9
   },
   "frontendLocalOperations": [
@@ -44,6 +44,13 @@
       "path": "/api/ai/metrics/status",
       "targets": [
         { "service": "ai", "method": "GET", "path": "/api/metrics/status" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/models/status",
+      "targets": [
+        { "service": "ai", "method": "GET", "path": "/api/models/status" }
       ]
     },
     {
@@ -149,11 +156,6 @@
       "method": "POST",
       "path": "/api/metrics/reset",
       "reason": "운영 성능 도구 전용"
-    },
-    {
-      "method": "GET",
-      "path": "/api/models/status",
-      "reason": "운영 모델 점검 전용"
     },
     {
       "method": "GET",

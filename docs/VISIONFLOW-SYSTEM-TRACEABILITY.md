@@ -310,7 +310,22 @@ flowchart LR
 - `.github/workflows/api-audit.yml`은 `/statistics` 페이지·구성요소·공통 타입
   변경을 pull request와 `main` push 모두에서 추적성 정책 검사 대상으로 고정한다.
 
-### 4.15 AI 경보 확인·해결 직렬화
+### 4.15 AI 모델 운영 Frontend
+
+- `/models`는 모델·성능·입력 큐·스트림·최근 AI 경보의 다섯 same-origin
+  읽기 응답만 조회하고 각 응답을 전용 또는 기존 경보 파서로 검증한다.
+- 새 `GET /api/ai/models/status` Route Handler는 운영자 인증 상태와 AI 내부
+  서비스 키를 모두 적용한다. AI 원본의 모델 경로는 제거하고 프로필·해시·크기·
+  클래스·임계값·GPU와 런타임 버전만 브라우저에 전달한다.
+- 다섯 소스는 `Promise.allSettled`로 격리하고 일부 실패 시 마지막 정상 데이터를
+  유지한다. 30초 자동 갱신, 숨김 탭 생략, `AbortController`와 요청 순번을 통한
+  오래된 응답 차단을 적용한다.
+- 화면은 모델 업로드·교체·활성화나 성능 초기화 요청을 제공하지 않는다. 기존
+  AI 미리보기·이벤트 관제·카메라 운영 화면으로의 읽기 탐색만 제공한다.
+- `.github/workflows/api-audit.yml`은 `/models` 페이지·구성요소·공통 타입 변경을
+  pull request와 `main` push 모두에서 추적성 정책 검사 대상으로 고정한다.
+
+### 4.16 AI 경보 확인·해결 직렬화
 
 - 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
@@ -322,7 +337,7 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
-### 4.16 Geofence 위반 이벤트 직렬화
+### 4.17 Geofence 위반 이벤트 직렬화
 
 - 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
   `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
@@ -334,7 +349,7 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.17 Demo Scenario 단계 전이 직렬화
+### 4.18 Demo Scenario 단계 전이 직렬화
 
 - 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.
@@ -451,7 +466,7 @@ scripts\run-visionflow-system-traceability-audit.bat
 
 ```text
 VisionFlow system traceability audit: SYSTEM_TRACEABILITY_HEALTHY
-Operations: Backend=70, Frontend=71, AI=9
+Operations: Backend=70, Frontend=72, AI=9
 Data model: Tables=16, Entities=15, Repositories=15, ForeignKeys=12
 ```
 

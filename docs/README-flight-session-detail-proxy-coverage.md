@@ -12,7 +12,7 @@ Backend `GET /api/drones/{droneId}/flight-sessions/{sessionId}`를 Next.js의 �
 
 ## 정책 경계
 
-- operation 기준: Backend 70, Frontend 71, AI 9
+- operation 기준: Backend 70, Frontend 72, AI 9
 - Backend health, AI 내부 입력, 운영 점검 API만 direct-only 예외로 유지
 - 허용된 계약 Advisory: 0건
 - 보안 기준: 세션 상세 proxy는 `withBackendOperatorAuth` 필수

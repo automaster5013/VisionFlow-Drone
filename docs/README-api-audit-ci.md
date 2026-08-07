@@ -6,14 +6,14 @@
 
 ## 판정 정책
 
-- operation 기준: Backend 70, Frontend 71, AI 9
+- operation 기준: Backend 70, Frontend 72, AI 9
 - 계약 감사: `API_CONTRACT_HEALTHY`만 허용; 허용 Advisory 0건
 - 계약 감사의 Advisory, `unexpected` 항목, missing target, operation 수 변경: 실패
 - 보안 감사: `API_SECURITY_HEALTHY`만 허용
 - 런타임 보안 검사는 CI에서 `SKIPPED`가 정상이며 정적 보안 검사는 모두 `PASS`여야 함
 - 시스템 추적성 감사: `SYSTEM_TRACEABILITY_HEALTHY`만 허용
 - 데이터 기준: Table 16, Entity 15, Repository 15, 물리 FK 12, 기능 흐름 13, 소프트 상관관계 4
-- 추적성 감사의 25개 검사키가 정확히 존재하고 모두 `PASS`여야 함
+- 추적성 감사의 27개 검사키가 정확히 존재하고 모두 `PASS`여야 함
 - Drone 변경 검사는 기본정보·상태·삭제·텔레메트리 쓰기의 행 잠금과 비잠금 읽기 경계를 함께 확인
 - AI 이벤트 수집 검사는 세션 행 잠금, 프레임 멱등 조회·생성 순서와 V5 UNIQUE 최종 방어를 함께 확인
 - AI 경보 생성 검사는 추론 이벤트 행 잠금, event 멱등 조회·생성 순서와 V10 UNIQUE 최종 방어를 함께 확인
@@ -39,6 +39,9 @@
   same-origin 인증 읽기 프록시와 응답 파서, 7·30·90일 범위, 30초 자동 갱신,
   숨김 탭 조회 생략, AbortController 기반 요청 경합 방지, 부분 장애 시 마지막
   정상 데이터 유지와 상세 화면 링크를 함께 확인
+- AI 모델 운영 UI 검사는 인증된 모델 상태 프록시의 경로 비공개 정제,
+  모델·GPU·성능·입력 큐·스트림·최근 경보 파서, 30초 자동 갱신,
+  부분 장애 시 마지막 정상 데이터 유지와 읽기 전용 경계를 함께 확인
 - AI OpenAPI inventory는 `streaming.py`의 정적 FastAPI decorator에서 매번 생성하므로 실행 중인 AI 서버가 필요하지 않음
 
 허용 정책은 `scripts/visionflow_ci_api_audit_policy.json`에 있습니다. 정책이나 기준선을 바꾸는 작업은 API 변경 검토와 함께 별도 커밋으로 진행하세요.
@@ -69,7 +72,7 @@ scripts\run-visionflow-api-audit-ci.bat
 1. `ai-openapi.json`에서 AI operation 추가·삭제 여부 확인
 2. 계약 보고서의 `baseline-counts`, `frontend-targets`, `backend-coverage`, `ai-coverage` 확인
 3. 보안 보고서의 `BLOCKED` 또는 `ADVISORY` check 확인
-4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·GitHub Actions Node.js 24·Frontend 산출물 파일 추적·정비 작전 현황 UI와 판정 근거 타임라인·통합 이벤트 관제 UI 정책 검사 및 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
+4. 추적성 보고서의 삭제·Drone 변경·세션 상관관계·AI 이벤트 수집·AI 경보 생성·AI 스냅샷·감사 로그 보존·세션 생명주기·비행 품질 평가·정비 작업지시 동시성·GitHub Actions Node.js 24·Frontend 산출물 파일 추적·정비 작전 현황·통합 이벤트 관제·운영 통계·AI 모델 운영 UI 정책 검사 및 `baseline-counts`, `migration-tables`, `entity-repository-mapping`, `foreign-key-contract`, `flow-operation-coverage`, `flow-table-coverage` 확인
 5. 의도된 변경이면 기존 계약·보안·추적성 기준선과 CI 정책을 함께 검토
 6. 의도하지 않은 변경이면 Route, proxy target, 인증 전파, Spring Security, Flyway, Entity·Repository 또는 기능 흐름 기준을 수정
 

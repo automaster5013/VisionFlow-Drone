@@ -22,7 +22,7 @@ class FlightSessionDetailProxyCoverageTest(unittest.TestCase):
         operation = next(item for item in operations if item.key == key)
         route_text = (root / operation.source).read_text(encoding="utf-8")
 
-        self.assertEqual(len(operations), 71)
+        self.assertEqual(len(operations), 72)
         self.assertEqual(
             security.route_auth_mechanism(
                 operation,
@@ -48,8 +48,8 @@ class FlightSessionDetailProxyCoverageTest(unittest.TestCase):
             .read_text(encoding="utf-8")
         )
 
-        self.assertEqual(contract_baseline["expectedCounts"]["frontend"], 71)
-        self.assertEqual(security_baseline["expectedCounts"]["frontend"], 71)
+        self.assertEqual(contract_baseline["expectedCounts"]["frontend"], 72)
+        self.assertEqual(security_baseline["expectedCounts"]["frontend"], 72)
         self.assertEqual(contract_baseline["advisoryBackendOnlyOperations"], [])
         self.assertEqual(policy["allowedContractAdvisories"], [])
 

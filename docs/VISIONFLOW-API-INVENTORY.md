@@ -394,7 +394,7 @@ AI annotated stream은 `/api/ai/stream/annotated`를 통해 내부 서비스 키
 
 ## 9. 권장 완료 기준
 
-- [x] Backend 70, Frontend 71, AI 9 operation 수가 승인된 기준선과 일치한다.
+- [x] Backend 70, Frontend 72, AI 9 operation 수가 승인된 기준선과 일치한다.
 - [x] 모든 Frontend 업무 Proxy가 실제 Backend 또는 AI target을 가진다.
 - [x] MJPEG 영상이 PC·스마트폰 모두 same-origin HTTPS로 표시된다.
 - [ ] 공개 쓰기 API가 명시적 Device ingress allowlist와 제한을 가진다.

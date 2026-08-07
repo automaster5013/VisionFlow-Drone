@@ -3,12 +3,12 @@
   "baselineCommit": "4d4b8693cda6ecb4ba2d322ed617750525a17580",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 71,
+    "frontend": 72,
     "ai": 9
   },
   "expectedTraceabilityCounts": {
     "backend": 70,
-    "frontend": 71,
+    "frontend": 72,
     "ai": 9,
     "tables": 16,
     "entities": 15,
@@ -35,6 +35,7 @@
     "maintenance-mission-control-ui-policy",
     "event-operations-center-ui-policy",
     "operations-statistics-center-ui-policy",
+    "ai-model-operations-center-ui-policy",
     "ai-alert-lifecycle-concurrency-policy",
     "geofence-event-lifecycle-concurrency-policy",
     "demo-scenario-lifecycle-concurrency-policy",

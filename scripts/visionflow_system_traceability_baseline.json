@@ -3,7 +3,7 @@
   "baselineCommit": "fc794e571c39fb3ea1cede7d5509816f483c5664",
   "expectedCounts": {
     "backend": 70,
-    "frontend": 71,
+    "frontend": 72,
     "ai": 9,
     "tables": 16,
     "entities": 15,
@@ -144,7 +144,7 @@
       "title": "AI 영상 입력·추론 스트림",
       "description": "브라우저 프레임 ingest, GPU 추론, MJPEG, 모델·성능 상태",
       "backendPatterns": [],
-      "frontendPatterns": ["^(GET|POST) /api/ai/(?:ingest|metrics|stream)(?:/.*)?$"],
+      "frontendPatterns": ["^(GET|POST) /api/ai/(?:ingest|metrics|models|stream)(?:/.*)?$"],
       "aiPatterns": ["^(GET|POST) /api/.*$"],
       "tables": [],
       "runtimeStores": ["BrowserUploadSource queue", "AnnotatedFrameHub", "InferencePerformanceMonitor", "YOLO model state", "VISIONFLOW_AI_INTERNAL_KEY"]

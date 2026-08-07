@@ -68,7 +68,7 @@ scripts\run-visionflow-api-security-audit.bat
 
 예상 결과는 다음과 같습니다.
 
-- API operation 수: Backend 70, Frontend 71, AI 9
+- API operation 수: Backend 70, Frontend 72, AI 9
 - AI 공개 health: HTTP 200
 - AI 민감 API의 키 누락·오류: HTTP 401
 - 올바른 내부 키를 사용하는 Next.js AI proxy: HTTP 200

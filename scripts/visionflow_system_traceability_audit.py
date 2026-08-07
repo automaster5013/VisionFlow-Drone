@@ -2045,6 +2045,134 @@ def operations_statistics_center_ui_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def ai_model_operations_center_ui_policy_drift(root: Path) -> list[str]:
+    frontend_root = root / "01_frontend" / "visionflow-web" / "src"
+    paths = {
+        "models-page": frontend_root / "app/models/page.tsx",
+        "models-center": frontend_root
+        / "components/models/ai-model-operations-center.tsx",
+        "models-types": frontend_root / "types/ai-model-operations.ts",
+        "model-status-route": frontend_root
+        / "app/api/ai/models/status/route.ts",
+        "metrics-route": frontend_root / "app/api/ai/metrics/status/route.ts",
+        "ingest-route": frontend_root / "app/api/ai/ingest/status/route.ts",
+        "stream-route": frontend_root / "app/api/ai/stream/status/route.ts",
+        "alerts-route": frontend_root / "app/api/ai/alerts/route.ts",
+        "workflow": root / ".github/workflows/api-audit.yml",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "models-page": [
+            'import { AiModelOperationsCenter } from '
+            '"@/components/models/ai-model-operations-center";',
+            "<AiModelOperationsCenter />",
+            'export const dynamic = "force-dynamic";',
+        ],
+        "models-center": [
+            '"use client";',
+            "data-ai-model-operations-center",
+            "const AUTO_REFRESH_INTERVAL_MS = 30_000",
+            "Promise.allSettled([",
+            'fetchJson("/api/ai/models/status"',
+            'fetchJson("/api/ai/metrics/status"',
+            'fetchJson("/api/ai/ingest/status"',
+            'fetchJson("/api/ai/stream/status"',
+            'fetchJson("/api/ai/alerts?limit=100"',
+            "parseAiModelStatus(modelResult.value)",
+            "parseAiPerformanceStatus(metricsResult.value)",
+            "parseAiIngestStatus(ingestResult.value)",
+            "parseAiStreamStatus(streamResult.value)",
+            "parseAiAlertList(alertsResult.value)",
+            "AbortController",
+            "document.visibilityState",
+            'aria-live="polite"',
+            "마지막 정상 데이터를 유지합니다.",
+            'href="/ai-preview"',
+            'href="/events"',
+            'href="/cameras"',
+        ],
+        "models-types": [
+            "export function parseAiModelStatus(",
+            "export function parseAiPerformanceStatus(",
+            "export function parseAiIngestStatus(",
+            "export function parseAiStreamStatus(",
+        ],
+        "model-status-route": [
+            "getOperatorSecurityStatus()",
+            "withAiInternalAuth({",
+            '`${AI_STREAM_API_URL}/api/models/status`',
+            "sanitizeModelStatus(body)",
+            'method: "GET"',
+            'cache: "no-store"',
+        ],
+        "metrics-route": ["withAiInternalAuth({", 'method: "GET"'],
+        "ingest-route": ["withAiInternalAuth({", 'method: "GET"'],
+        "stream-route": ["withAiInternalAuth({", 'method: "GET"'],
+        "alerts-route": ["proxyAiAlertRequest(", 'method: "GET"'],
+        "workflow": [
+            '"01_frontend/visionflow-web/src/app/models/**"',
+            '"01_frontend/visionflow-web/src/components/models/**"',
+            '"01_frontend/visionflow-web/src/types/ai-model-operations.ts"',
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    models_center = sources.get("models-center")
+    if models_center is not None:
+        fetch_at = models_center.find("Promise.allSettled([")
+        parse_at = models_center.find("parseAiModelStatus(modelResult.value)")
+        retain_at = models_center.find("setSourceErrors(nextErrors)")
+        render_at = models_center.find("data-ai-model-operations-center")
+        if not (0 <= fetch_at < parse_at < retain_at < render_at):
+            drift.append(
+                "ordering:ai-model-operations:fetch-before-parse-before-"
+                "source-health-before-render"
+            )
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            if f'method: "{method}"' in models_center:
+                drift.append(
+                    "usage:ai-model-operations:center-read-only-no-mutation"
+                )
+                break
+
+    model_route = sources.get("model-status-route")
+    if model_route is not None:
+        for sensitive_token in (
+            "requestedPath:",
+            "resolvedPath:",
+            "value.requestedPath",
+            "value.resolvedPath",
+        ):
+            if sensitive_token in model_route:
+                drift.append(
+                    "exposure:model-status-route:raw-model-path"
+                )
+                break
+
+    workflow = sources.get("workflow")
+    if workflow is not None:
+        for token in required_tokens["workflow"]:
+            if workflow.count(token) != 2:
+                drift.append(
+                    f"trigger:ai-model-operations:push-and-pr:{token}"
+                )
+
+    return drift
+
+
 def ai_alert_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -2941,6 +3069,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             drift=operations_statistics_center_drift,
         )
     )
+    ai_model_operations_center_drift = (
+        ai_model_operations_center_ui_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if ai_model_operations_center_drift else "PASS",
+            "ai-model-operations-center-ui-policy",
+            "AI 모델 운영 센터 UI 정책",
+            "모델 신원·GPU 런타임·추론 성능·입력 큐·분석 스트림·최근 경보가 인증된 읽기 API에서 검증되고, 민감 경로를 제외한 30초 갱신 보드로 연결됩니다."
+            if not ai_model_operations_center_drift
+            else "AI 모델 운영 센터의 인증·응답 정제·파서·부분 장애 격리·자동 갱신·읽기 전용 경계 또는 workflow 경로 보호가 누락됐습니다.",
+            drift=ai_model_operations_center_drift,
+        )
+    )
     ai_alert_lifecycle_drift = (
         ai_alert_lifecycle_concurrency_policy_drift(root)
     )
@@ -3111,7 +3253,7 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             "BLOCKED" if any(unmapped.values()) or unused_patterns else "PASS",
             "flow-operation-coverage",
             "기능 흐름별 API coverage",
-            "Backend 70·Frontend 71·AI 9 operation이 기능 흐름에 연결됐습니다."
+            "Backend 70·Frontend 72·AI 9 operation이 기능 흐름에 연결됐습니다."
             if not any(unmapped.values()) and not unused_patterns
             else "기능 흐름에 연결되지 않은 operation 또는 사용되지 않은 패턴이 있습니다.",
             unmapped=unmapped,
