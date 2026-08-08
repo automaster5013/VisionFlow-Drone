@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { AiAlertOperationsPanel } from "@/components/dashboard/ai-alert-operations-panel";
 import { AiAlertRealtimeNotifier } from "@/components/dashboard/ai-alert-realtime-notifier";
@@ -13,6 +14,9 @@ import { getBackendHealth } from "@/lib/api/health";
 import { getIncidents } from "@/lib/api/incidents";
 import { getOperationsDashboard } from "@/lib/api/operations-dashboard";
 import { loadMobileEvidenceStatus } from "@/lib/mobile-evidence";
+import { getOperatorAuthMode } from "@/lib/server/operator-auth";
+import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
+import { buildProtectedReturnTo } from "@/lib/server/protected-page";
 import type { AiAlertItem, AiAlertQuery } from "@/types/ai-alert";
 import type { IncidentItem, IncidentQuery } from "@/types/incident";
 import type { FleetReliabilityResponse } from "@/types/fleet-reliability";
@@ -290,7 +294,64 @@ async function loadFleetReliability(): Promise<FleetReliabilityLoadResult> {
 export default async function DashboardPage({
     searchParams,
 }: DashboardPageProps) {
-    const parsedFilters = parseDashboardFilters(await searchParams);
+    const search = await searchParams;
+    const operatorSecurity = await getOperatorSecurityStatus();
+    const publicMode =
+        getOperatorAuthMode() === "session" &&
+        operatorSecurity?.enabled === true &&
+        operatorSecurity.authenticated === false;
+
+    if (publicMode) {
+        const returnTo = buildProtectedReturnTo("/dashboard", search);
+        const [health, mobileEvidence] = await Promise.all([
+            getBackendHealth(),
+            loadMobileEvidenceStatus(),
+        ]);
+
+        return (
+            <div className="space-y-10">
+                <section
+                    data-public-dashboard-mode
+                    aria-labelledby="public-dashboard-title"
+                    className="rounded-3xl border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-6 shadow-sm sm:p-8"
+                >
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">
+                        Public status
+                    </p>
+                    <h1
+                        id="public-dashboard-title"
+                        className="mt-2 text-3xl font-black text-slate-950"
+                    >
+                        공개 상태 대시보드
+                    </h1>
+                    <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
+                        비로그인 상태에서는 Backend 연결 상태와 모바일 센서 증적
+                        준비 상태만 표시합니다. 비행 세션, AI 경보, Incident,
+                        함대 신뢰도는 운영자 로그인 후 제공됩니다.
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-3">
+                        <Link
+                            href={`/operator-login?returnTo=${encodeURIComponent(returnTo)}`}
+                            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800"
+                        >
+                            운영자 로그인
+                        </Link>
+                        <Link
+                            href="/security-status"
+                            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                        >
+                            보안 상태 확인
+                        </Link>
+                    </div>
+                </section>
+
+                <MobileSensorEvidenceCard status={mobileEvidence} />
+                <HealthDashboard health={health} />
+            </div>
+        );
+    }
+
+    const parsedFilters = parseDashboardFilters(search);
     const aiAlertQuery = toAiAlertQuery(parsedFilters.query);
     const incidentQuery = toIncidentQuery(parsedFilters.query);
     const [
