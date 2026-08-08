@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { readOperatorConsolePreferences } from "@/lib/operator-console-settings";
 import { parseAiAlertList, type AiAlertItem } from "@/types/ai-alert";
 import {
   parseAiIngestStatus,
@@ -132,7 +133,10 @@ function Panel({ title, description, children }: { title: string; description: s
 }
 
 export function AiModelOperationsCenter() {
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [consolePreferences] = useState(() => readOperatorConsolePreferences());
+  const [autoRefresh, setAutoRefresh] = useState(
+    consolePreferences.aiModelAutoRefresh,
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);

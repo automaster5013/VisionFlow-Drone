@@ -11,6 +11,7 @@ import {
 
 import { EventDetailDrawer } from "@/components/events/event-detail-drawer";
 import { formatKoreanDateTime } from "@/lib/date";
+import { readOperatorConsolePreferences } from "@/lib/operator-console-settings";
 import { parseAiAlertList } from "@/types/ai-alert";
 import {
   buildEventOperationsTimeline,
@@ -24,6 +25,7 @@ import {
   type EventOperationsSources,
 } from "@/types/event-operations";
 import { parseIncidentList } from "@/types/incident";
+import type { EventTimeRange } from "@/types/operator-console-settings";
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
 const DISPLAY_LIMIT = 100;
@@ -31,7 +33,7 @@ const DISPLAY_LIMIT = 100;
 type SourceFilter = "" | EventOperationsSource;
 type SeverityFilter = "" | EventOperationsSeverity;
 type LifecycleFilter = "" | EventOperationsLifecycle;
-type TimeRangeFilter = "1H" | "6H" | "24H" | "7D" | "ALL";
+type TimeRangeFilter = EventTimeRange;
 type SourceHealthKey = "aiEvents" | "aiAlerts" | "geofenceEvents" | "incidents";
 
 const EMPTY_SOURCES: EventOperationsSources = {
@@ -163,18 +165,23 @@ function matchesSearch(event: EventOperationsItem, query: string): boolean {
 }
 
 export function EventOperationsCenter() {
+  const [consolePreferences] = useState(() => readOperatorConsolePreferences());
   const [sources, setSources] = useState<EventOperationsSources>(EMPTY_SOURCES);
   const [sourceErrors, setSourceErrors] = useState<Partial<Record<SourceHealthKey, string>>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(
+    consolePreferences.eventAutoRefresh,
+  );
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [clockMs, setClockMs] = useState(0);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("");
   const [droneFilter, setDroneFilter] = useState("");
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("");
   const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleFilter>("");
-  const [timeRange, setTimeRange] = useState<TimeRangeFilter>("24H");
+  const [timeRange, setTimeRange] = useState<TimeRangeFilter>(
+    consolePreferences.eventTimeRange,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventOperationsItem | null>(null);
   const [returnFocusElement, setReturnFocusElement] = useState<HTMLButtonElement | null>(null);

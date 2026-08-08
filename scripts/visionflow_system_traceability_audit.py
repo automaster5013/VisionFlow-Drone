@@ -2173,6 +2173,158 @@ def ai_model_operations_center_ui_policy_drift(root: Path) -> list[str]:
     return drift
 
 
+def operator_console_settings_ui_policy_drift(root: Path) -> list[str]:
+    frontend_root = root / "01_frontend" / "visionflow-web" / "src"
+    paths = {
+        "settings-page": frontend_root / "app/settings/page.tsx",
+        "settings-center": frontend_root
+        / "components/settings/operator-console-settings-center.tsx",
+        "settings-storage": frontend_root
+        / "lib/operator-console-settings.ts",
+        "settings-types": frontend_root
+        / "types/operator-console-settings.ts",
+        "events-center": frontend_root
+        / "components/events/event-operations-center.tsx",
+        "statistics-center": frontend_root
+        / "components/statistics/operations-statistics-center.tsx",
+        "models-center": frontend_root
+        / "components/models/ai-model-operations-center.tsx",
+        "workflow": root / ".github/workflows/api-audit.yml",
+    }
+    sources: dict[str, str] = {}
+    drift: list[str] = []
+    for key, path in paths.items():
+        if not path.is_file():
+            drift.append(f"missing:{key}:{path.relative_to(root)}")
+            continue
+        sources[key] = path.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "settings-page": [
+            'import { OperatorConsoleSettingsCenter } from '
+            '"@/components/settings/operator-console-settings-center";',
+            "<OperatorConsoleSettingsCenter />",
+            'export const dynamic = "force-dynamic";',
+        ],
+        "settings-center": [
+            '"use client";',
+            "data-operator-console-settings-center",
+            "useOperatorAccess()",
+            "readOperatorConsolePreferences()",
+            "writeOperatorConsolePreferences(preferences)",
+            "resetOperatorConsolePreferences()",
+            "eventAutoRefresh",
+            "eventTimeRange",
+            "statisticsAutoRefresh",
+            "statisticsRangeDays",
+            "aiModelAutoRefresh",
+            "서버 변경 없음",
+            "변경하지 않음",
+            "저장하지 않음",
+            '["이벤트 관제", "/events"]',
+            '["운영 통계", "/statistics"]',
+            '["AI 모델", "/models"]',
+            'aria-live="polite"',
+        ],
+        "settings-storage": [
+            '"visionflow.operator-console-settings.v1"',
+            "DEFAULT_OPERATOR_CONSOLE_PREFERENCES",
+            "parseOperatorConsolePreferences(",
+            "window.localStorage.getItem(",
+            "window.localStorage.setItem(",
+            "window.localStorage.removeItem(",
+            "schemaVersion: 1",
+        ],
+        "settings-types": [
+            'EVENT_TIME_RANGE_OPTIONS = ["1H", "6H", "24H", "7D", "ALL"]',
+            "STATISTICS_RANGE_OPTIONS = [7, 30, 90]",
+            "export interface OperatorConsolePreferences",
+            "export interface StoredOperatorConsolePreferences",
+        ],
+        "events-center": [
+            "readOperatorConsolePreferences",
+            "consolePreferences.eventAutoRefresh",
+            "consolePreferences.eventTimeRange",
+        ],
+        "statistics-center": [
+            "readOperatorConsolePreferences",
+            "consolePreferences.statisticsAutoRefresh",
+            "consolePreferences.statisticsRangeDays",
+        ],
+        "models-center": [
+            "readOperatorConsolePreferences",
+            "consolePreferences.aiModelAutoRefresh",
+        ],
+        "workflow": [
+            '"01_frontend/visionflow-web/src/app/settings/**"',
+            '"01_frontend/visionflow-web/src/components/settings/**"',
+            '"01_frontend/visionflow-web/src/types/operator-console-settings.ts"',
+        ],
+    }
+    for key, tokens in required_tokens.items():
+        source = sources.get(key)
+        if source is None:
+            continue
+        for token in tokens:
+            if token not in source:
+                drift.append(f"missing-token:{key}:{token}")
+
+    settings_center = sources.get("settings-center")
+    if settings_center is not None:
+        read_at = settings_center.find("readOperatorConsolePreferences()")
+        save_at = settings_center.find(
+            "writeOperatorConsolePreferences(preferences)"
+        )
+        reset_at = settings_center.find("resetOperatorConsolePreferences()")
+        render_at = settings_center.find(
+            "data-operator-console-settings-center"
+        )
+        if not (0 <= read_at < save_at < reset_at < render_at):
+            drift.append(
+                "ordering:operator-console-settings:read-before-save-before-"
+                "reset-before-render"
+            )
+        if "fetch(" in settings_center:
+            drift.append(
+                "usage:operator-console-settings:no-network-request"
+            )
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            if f'method: "{method}"' in settings_center:
+                drift.append(
+                    "usage:operator-console-settings:no-server-mutation"
+                )
+                break
+
+    settings_storage = sources.get("settings-storage")
+    if settings_storage is not None:
+        for sensitive_token in (
+            "apiKey",
+            "password",
+            "secret",
+            "requestedPath",
+            "resolvedPath",
+        ):
+            if sensitive_token in settings_storage:
+                drift.append(
+                    "exposure:operator-console-settings:sensitive-value"
+                )
+                break
+        if "fetch(" in settings_storage:
+            drift.append(
+                "usage:operator-console-settings:storage-local-only"
+            )
+
+    workflow = sources.get("workflow")
+    if workflow is not None:
+        for token in required_tokens["workflow"]:
+            if workflow.count(token) != 2:
+                drift.append(
+                    f"trigger:operator-console-settings:push-and-pr:{token}"
+                )
+
+    return drift
+
+
 def ai_alert_lifecycle_concurrency_policy_drift(root: Path) -> list[str]:
     backend_root = (
         root
@@ -3081,6 +3233,20 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             if not ai_model_operations_center_drift
             else "AI 모델 운영 센터의 인증·응답 정제·파서·부분 장애 격리·자동 갱신·읽기 전용 경계 또는 workflow 경로 보호가 누락됐습니다.",
             drift=ai_model_operations_center_drift,
+        )
+    )
+    operator_console_settings_drift = (
+        operator_console_settings_ui_policy_drift(root)
+    )
+    checks.append(
+        check(
+            "BLOCKED" if operator_console_settings_drift else "PASS",
+            "operator-console-settings-ui-policy",
+            "운영 설정 센터 브라우저 경계 정책",
+            "이벤트·통계·AI 모델 관제의 시작 기본값이 검증된 브라우저 저장소에만 보관되고 각 읽기 전용 화면에 적용되며, 서버·DB·AI 설정과 비밀값은 변경하거나 저장하지 않습니다."
+            if not operator_console_settings_drift
+            else "운영 설정 센터의 브라우저 전용 저장·검증·복원·관제 화면 연동·민감값 차단 또는 workflow 경로 보호가 누락됐습니다.",
+            drift=operator_console_settings_drift,
         )
     )
     ai_alert_lifecycle_drift = (

@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { readOperatorConsolePreferences } from "@/lib/operator-console-settings";
 import { extractFleetReliabilityResponse } from "@/types/fleet-reliability";
 import { parseMaintenanceMetrics } from "@/types/maintenance-metrics";
 import type { OperationsDashboardData } from "@/types/operations-dashboard";
@@ -20,11 +21,15 @@ import {
 } from "@/types/operations-statistics";
 import type { FleetReliabilityResponse } from "@/types/fleet-reliability";
 import type { MaintenanceMetrics } from "@/types/maintenance-metrics";
+import {
+  STATISTICS_RANGE_OPTIONS,
+  type StatisticsRangeDays,
+} from "@/types/operator-console-settings";
 
 const AUTO_REFRESH_INTERVAL_MS = 30_000;
-const RANGE_OPTIONS = [7, 30, 90] as const;
+const RANGE_OPTIONS = STATISTICS_RANGE_OPTIONS;
 
-type RangeDays = (typeof RANGE_OPTIONS)[number];
+type RangeDays = StatisticsRangeDays;
 type SourceKey = "operations" | "reliability" | "maintenance" | "ai";
 
 const SOURCE_LABELS: Record<SourceKey, string> = {
@@ -178,8 +183,13 @@ function Panel({
 }
 
 export function OperationsStatisticsCenter() {
-  const [rangeDays, setRangeDays] = useState<RangeDays>(30);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [consolePreferences] = useState(() => readOperatorConsolePreferences());
+  const [rangeDays, setRangeDays] = useState<RangeDays>(
+    consolePreferences.statisticsRangeDays,
+  );
+  const [autoRefresh, setAutoRefresh] = useState(
+    consolePreferences.statisticsAutoRefresh,
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);

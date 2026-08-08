@@ -325,7 +325,21 @@ flowchart LR
 - `.github/workflows/api-audit.yml`은 `/models` 페이지·구성요소·공통 타입 변경을
   pull request와 `main` push 모두에서 추적성 정책 검사 대상으로 고정한다.
 
-### 4.16 AI 경보 확인·해결 직렬화
+### 4.16 운영 설정 Frontend 브라우저 경계
+
+- `/settings`는 이벤트·통계·AI 모델 관제의 자동 갱신과 초기 조회 범위만
+  현재 브라우저의 `localStorage`에 저장한다. Backend·AI API나 DB를 호출하지 않는다.
+- 저장 payload는 schema version과 허용된 다섯 설정 필드만 포함하며, 읽을 때
+  boolean·열거형·기간 값을 모두 검증한다. 누락·변조·구버전 값은 제품 기본값으로
+  복구하고 기본값 복원은 저장 키를 제거한다.
+- API key·비밀번호·비밀값·모델 원본 경로·운영 데이터는 저장하지 않는다.
+  운영자 인증 상태는 사용자 안내에만 사용하며 역할이나 서버 설정을 변경하지 않는다.
+- `/events`, `/statistics`, `/models`는 화면 진입 시 검증된 브라우저 설정을 한 번 읽어
+  초기값으로 적용한다. 화면 내부의 임시 변경은 저장값을 자동으로 덮어쓰지 않는다.
+- `.github/workflows/api-audit.yml`은 설정 페이지·구성요소·공통 타입과 저장 모듈
+  변경을 pull request와 `main` push 모두에서 추적성 정책 검사 대상으로 고정한다.
+
+### 4.17 AI 경보 확인·해결 직렬화
 
 - 운영자 확인과 해결 요청은 대상 `ai_alert` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근 뒤 상태·처리자·메모를 변경한다.
@@ -337,7 +351,7 @@ flowchart LR
 - 이벤트별 경보 생성은 기존 `uk_ai_alert_event` UNIQUE 제약을 최종 중복 생성
   방어선으로 유지한다.
 
-### 4.17 Geofence 위반 이벤트 직렬화
+### 4.18 Geofence 위반 이벤트 직렬화
 
 - 지오펜스 설정 변경·활성 상태 변경·텔레메트리 위반 평가는 대상
   `drone_geofence` 행을 먼저 `PESSIMISTIC_WRITE`로 잠근다.
@@ -349,7 +363,7 @@ flowchart LR
   발견 시 migration 적용 전에 차단한다.
 - 목록·상세 조회는 기존 비잠금 읽기를 유지한다.
 
-### 4.18 Demo Scenario 단계 전이 직렬화
+### 4.19 Demo Scenario 단계 전이 직렬화
 
 - 탐지·에스컬레이션·해결·완료는 대상 `demo_scenario` 행을 먼저
   `PESSIMISTIC_WRITE`로 잠근다.
