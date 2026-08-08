@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { withAiInternalAuth } from "@/lib/server/ai-internal-auth";
+import { requireOperatorApiAccess } from "@/lib/server/operator-api-access";
+import { isSameOriginRequest } from "@/lib/server/same-origin";
 
 const AI_STREAM_API_URL = (
   process.env.AI_STREAM_API_URL ?? "http://localhost:8000"
@@ -19,6 +21,22 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: "CROSS_ORIGIN_AI_FRAME_INGEST_DENIED",
+        message: "다른 출처에서 AI 영상 프레임을 전송할 수 없습니다.",
+      },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  const access = await requireOperatorApiAccess("OPERATOR");
+  if (access) {
+    return access;
+  }
+
   const droneId = request.nextUrl.searchParams.get("droneId") ?? "";
   const sourceId = request.nextUrl.searchParams.get("sourceId")?.trim() ?? "";
   const sessionId = request.nextUrl.searchParams.get("sessionId")?.trim() ?? "";

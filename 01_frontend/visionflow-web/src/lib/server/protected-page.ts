@@ -4,8 +4,13 @@ import { redirect } from "next/navigation";
 
 import { getOperatorAuthMode } from "@/lib/server/operator-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
+import type { OperatorSecurityStatus } from "@/types/operator-security";
 
 type ProtectedSearchValue = string | string[] | undefined;
+
+export type OperatorPageAccessRequirement =
+  | "AUTHENTICATED"
+  | "OPERATOR";
 
 function safeReturnTo(returnTo: string): string {
   const candidate = returnTo.trim();
@@ -47,4 +52,47 @@ export async function requireOperatorAuthentication(
       `/operator-login?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`,
     );
   }
+}
+
+
+function hasRequiredPageAccess(
+  status: OperatorSecurityStatus,
+  requirement: OperatorPageAccessRequirement,
+): boolean {
+  if (!status.enabled) {
+    return true;
+  }
+
+  if (!status.authenticated) {
+    return false;
+  }
+
+  if (requirement === "AUTHENTICATED") {
+    return true;
+  }
+
+  return status.role === "OPERATOR" || status.role === "ADMIN";
+}
+
+export async function requireOperatorPageAccess(
+  returnTo: string,
+  requirement: OperatorPageAccessRequirement,
+): Promise<boolean> {
+  const status = await getOperatorSecurityStatus();
+
+  if (status && hasRequiredPageAccess(status, requirement)) {
+    return true;
+  }
+
+  if (
+    getOperatorAuthMode() === "session" &&
+    status?.enabled === true &&
+    status.authenticated === false
+  ) {
+    redirect(
+      `/operator-login?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`,
+    );
+  }
+
+  return false;
 }

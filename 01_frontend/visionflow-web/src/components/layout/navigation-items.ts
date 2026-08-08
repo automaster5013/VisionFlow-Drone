@@ -1,11 +1,18 @@
 import type { OperatorSecurityStatus } from "@/types/operator-security";
 
+export type AppNavigationAccess =
+    | "PUBLIC"
+    | "AUTHENTICATED"
+    | "OPERATOR"
+    | "ADMIN";
+
 export interface AppNavigationItem {
     label: string;
     href: string;
     adminOnly?: boolean;
     presentation?: boolean;
     activeAliases?: string[];
+    access?: AppNavigationAccess;
 }
 
 export const appNavigationItems: AppNavigationItem[] = [
@@ -15,6 +22,7 @@ export const appNavigationItems: AppNavigationItem[] = [
         label: "카메라",
         href: "/cameras",
         activeAliases: ["/mobile-camera"],
+        access: "OPERATOR",
     },
     { label: "이벤트", href: "/events" },
     { label: "감사 로그", href: "/audit-logs" },
@@ -43,13 +51,43 @@ export function canAdministerOperatorSessions(
     );
 }
 
+function hasNavigationAccess(
+    item: AppNavigationItem,
+    operatorSecurity: OperatorSecurityStatus | null,
+) {
+    const access = item.access ?? "PUBLIC";
+
+    if (operatorSecurity?.enabled === false || access === "PUBLIC") {
+        return true;
+    }
+
+    if (operatorSecurity?.authenticated !== true) {
+        return false;
+    }
+
+    if (access === "AUTHENTICATED") {
+        return true;
+    }
+
+    if (access === "OPERATOR") {
+        return (
+            operatorSecurity.role === "OPERATOR" ||
+            operatorSecurity.role === "ADMIN"
+        );
+    }
+
+    return operatorSecurity.role === "ADMIN";
+}
+
 export function getVisibleNavigationItems(
     operatorSecurity: OperatorSecurityStatus | null,
 ) {
     const canAdminister = canAdministerOperatorSessions(operatorSecurity);
 
     return appNavigationItems.filter(
-        (item) => !item.adminOnly || canAdminister,
+        (item) =>
+            (!item.adminOnly || canAdminister) &&
+            hasNavigationAccess(item, operatorSecurity),
     );
 }
 

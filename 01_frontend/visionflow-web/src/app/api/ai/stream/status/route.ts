@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 
 import { withAiInternalAuth } from "@/lib/server/ai-internal-auth";
+import { requireOperatorApiAccess } from "@/lib/server/operator-api-access";
 
 const AI_STREAM_API_URL = (
   process.env.AI_STREAM_API_URL ?? "http://localhost:8000"
 ).replace(/\/$/, "");
 
 export async function GET() {
+  const access = await requireOperatorApiAccess("AUTHENTICATED");
+  if (access) {
+    return access;
+  }
+
   try {
     const response = await fetch(`${AI_STREAM_API_URL}/api/streams/status`, withAiInternalAuth({
       method: "GET",
