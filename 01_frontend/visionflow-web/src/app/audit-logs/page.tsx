@@ -5,6 +5,10 @@ import { AuditExportLink } from "@/components/audit/audit-export-link";
 
 import { getAuditRetentionStatus } from "@/lib/api/audit-retention";
 import { getAuditLogs } from "@/lib/api/audit-logs";
+import {
+    buildProtectedReturnTo,
+    requireOperatorAuthentication,
+} from "@/lib/server/protected-page";
 import { formatKoreanDateTime } from "@/lib/date";
 import {
     AUDIT_ACTIONS,
@@ -251,7 +255,12 @@ async function loadRetentionStatus(): Promise<{
 export default async function AuditLogsPage({
     searchParams,
 }: AuditLogPageProps) {
-    const parsed = parseFilters(await searchParams);
+    const search = await searchParams;
+    await requireOperatorAuthentication(
+        buildProtectedReturnTo("/audit-logs", search),
+    );
+
+    const parsed = parseFilters(search);
     const [result, retention] = await Promise.all([
         loadAuditLogs(parsed.query, parsed.error),
         loadRetentionStatus(),

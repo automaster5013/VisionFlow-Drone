@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
 import { MaintenanceWorkOrderBoard } from "@/components/maintenance/maintenance-work-order-board";
+import {
+  buildProtectedReturnTo,
+  requireOperatorAuthentication,
+} from "@/lib/server/protected-page";
 import type { MaintenanceWorkOrderStatus } from "@/types/maintenance-work-order";
 
 export const metadata: Metadata = {
@@ -38,6 +42,9 @@ export default async function MaintenancePage({
   searchParams,
 }: MaintenancePageProps) {
   const query = await searchParams;
+  await requireOperatorAuthentication(
+    buildProtectedReturnTo("/maintenance", query),
+  );
   const initialDroneId = positiveInteger(
     firstSearchValue(query.droneId),
   );
