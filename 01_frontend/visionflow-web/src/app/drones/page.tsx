@@ -1,5 +1,10 @@
+import { redirect } from "next/navigation";
+
 import { DroneFleetControl } from "@/components/drones/drone-fleet-control";
-import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+import {
+  getOperatorAuthMode,
+  withBackendOperatorAuth,
+} from "@/lib/server/operator-auth";
 import type { Drone } from "@/types/drone";
 import type { IncidentReplayFocus } from "@/types/incident-replay";
 import {
@@ -15,6 +20,23 @@ interface DronesPageProps {
 
 function firstSearchValue(value: SearchValue): string {
   return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
+
+function buildDronesReturnTo(query: Record<string, SearchValue>): string {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        params.append(key, item);
+      }
+    } else if (typeof value === "string") {
+      params.set(key, value);
+    }
+  }
+
+  const search = params.toString();
+  return search ? `/drones?${search}` : "/drones";
 }
 
 function parseOptionalNumber(value: string): number | null {
@@ -127,15 +149,24 @@ export default async function DronesPage({ searchParams }: DronesPageProps) {
     getInitialFleetClearance(backendApiUrl),
   ]);
 
-  if (!response.ok && response.status !== 401) {
+  if (response.status === 401) {
+    if (getOperatorAuthMode() === "session") {
+      const returnTo = buildDronesReturnTo(query);
+      redirect(`/operator-login?returnTo=${encodeURIComponent(returnTo)}`);
+    }
+
+    throw new Error(
+      `드론 목록 조회 인증 실패: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  if (!response.ok) {
     throw new Error(
         `드론 목록 조회 실패: ${response.status} ${response.statusText}`,
     );
   }
 
-  const drones = response.status === 401
-    ? []
-    : extractDrones(await response.json() as unknown);
+  const drones = extractDrones(await response.json() as unknown);
   const initialSelectedDroneId =
     requestedDroneId !== null &&
     requestedDroneId > 0 &&

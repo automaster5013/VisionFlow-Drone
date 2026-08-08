@@ -138,6 +138,7 @@ export function MobileNavigation({ operatorSecurity }: MobileNavigationProps) {
                                     const active = isNavigationItemActive(
                                         pathname,
                                         item.href,
+                                        item.activeAliases,
                                     );
                                     const presentation = item.presentation === true;
 

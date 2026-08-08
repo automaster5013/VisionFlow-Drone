@@ -5,12 +5,17 @@ export interface AppNavigationItem {
     href: string;
     adminOnly?: boolean;
     presentation?: boolean;
+    activeAliases?: string[];
 }
 
 export const appNavigationItems: AppNavigationItem[] = [
     { label: "대시보드", href: "/dashboard" },
     { label: "드론 관리", href: "/drones" },
-    { label: "카메라", href: "/cameras" },
+    {
+        label: "카메라",
+        href: "/cameras",
+        activeAliases: ["/mobile-camera"],
+    },
     { label: "이벤트", href: "/events" },
     { label: "감사 로그", href: "/audit-logs" },
     { label: "보안 상태", href: "/security-status" },
@@ -48,10 +53,20 @@ export function getVisibleNavigationItems(
     );
 }
 
-export function isNavigationItemActive(pathname: string, href: string) {
+function matchesNavigationPath(pathname: string, href: string) {
     if (href === "/dashboard") {
         return pathname === "/" || pathname === href;
     }
 
     return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function isNavigationItemActive(
+    pathname: string,
+    href: string,
+    activeAliases: readonly string[] = [],
+) {
+    return [href, ...activeAliases].some((candidate) =>
+        matchesNavigationPath(pathname, candidate),
+    );
 }

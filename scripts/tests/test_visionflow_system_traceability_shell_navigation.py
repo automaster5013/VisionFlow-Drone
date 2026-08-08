@@ -33,6 +33,7 @@ class SystemTraceabilityShellNavigationTest(unittest.TestCase):
             self.assertIn(f'href: "{route}"', source)
 
         self.assertIn("adminOnly: true", source)
+        self.assertIn('activeAliases: ["/mobile-camera"]', source)
         self.assertIn('operatorSecurity.role === "ADMIN"', source)
         self.assertIn("getVisibleNavigationItems", source)
 
@@ -46,6 +47,21 @@ class SystemTraceabilityShellNavigationTest(unittest.TestCase):
         self.assertIn("isNavigationItemActive", source)
         self.assertIn('aria-current={active ? "page" : undefined}', source)
         self.assertIn('aria-label="주요 메뉴"', source)
+
+    def test_camera_alias_is_used_for_desktop_and_mobile_active_state(self) -> None:
+        desktop = read_text(
+            "01_frontend/visionflow-web/src/components/layout/app-sidebar.tsx"
+        )
+        mobile = read_text(
+            "01_frontend/visionflow-web/src/components/layout/mobile-navigation.tsx"
+        )
+        inventory = read_text(
+            "01_frontend/visionflow-web/src/components/layout/navigation-items.ts"
+        )
+
+        self.assertIn('activeAliases: ["/mobile-camera"]', inventory)
+        self.assertIn("item.activeAliases", desktop)
+        self.assertIn("item.activeAliases", mobile)
 
     def test_mobile_navigation_has_dialog_escape_and_focus_contract(self) -> None:
         source = read_text(
@@ -77,6 +93,25 @@ class SystemTraceabilityShellNavigationTest(unittest.TestCase):
         )
         self.assertIn(
             "<MobileNavigation operatorSecurity={operatorSecurity} />",
+            source,
+        )
+
+    def test_drones_unauthenticated_session_redirects_to_login(self) -> None:
+        source = read_text(
+            "01_frontend/visionflow-web/src/app/drones/page.tsx"
+        )
+
+        for contract in (
+            'response.status === 401',
+            'getOperatorAuthMode() === "session"',
+            "buildDronesReturnTo(query)",
+            'redirect(`/operator-login?returnTo=${encodeURIComponent(returnTo)}`)',
+            "const drones = extractDrones",
+        ):
+            self.assertIn(contract, source)
+
+        self.assertNotIn(
+            "const drones = response.status === 401",
             source,
         )
 

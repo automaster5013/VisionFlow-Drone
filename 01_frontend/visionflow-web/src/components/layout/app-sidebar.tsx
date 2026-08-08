@@ -52,7 +52,11 @@ export function AppSidebar({ operatorSecurity }: AppSidebarProps) {
                 <nav aria-label="주요 메뉴">
                     <ul className="space-y-2">
                         {visibleItems.map((item) => {
-                            const active = isNavigationItemActive(pathname, item.href);
+                            const active = isNavigationItemActive(
+                                pathname,
+                                item.href,
+                                item.activeAliases,
+                            );
                             const presentation = item.presentation === true;
 
                             return (
