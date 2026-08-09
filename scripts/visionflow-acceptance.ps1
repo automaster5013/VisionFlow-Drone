@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$FrontendUrl = "http://localhost:3000",
     [string]$BackendUrl = "http://localhost:8080",
@@ -385,12 +385,131 @@ function Test-FrontendSecurityHeaders {
     Add-Result -Name "Frontend security headers" -Passed $passed -StatusCode $response.StatusCode -DurationMs $response.DurationMs -Message $message
 }
 
+function Open-AcceptanceFrontendSession {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Key,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("VIEWER", "OPERATOR", "ADMIN")]
+        [string]$ExpectedRole
+    )
+
+    $originHeaders = @{ "Origin" = $FrontendUrl }
+
+    if ([string]::IsNullOrWhiteSpace($Key)) {
+        return [pscustomobject]@{
+            Ready = $false
+            Headers = $originHeaders
+            StatusCode = 0
+            DurationMs = 0
+            Message = "Missing $ExpectedRole acceptance key"
+        }
+    }
+
+    $loginBody = [ordered]@{ operatorKey = $Key } | ConvertTo-Json -Compress
+    $loginResponse = Invoke-VisionFlowRequest `
+        -Method "POST" `
+        -Uri "$FrontendUrl/api/operator/session" `
+        -Body $loginBody `
+        -Headers $originHeaders
+    $loginJson = ConvertFrom-ResponseJson -Body $loginResponse.Body
+
+    $actualRole = ""
+    if (
+        $null -ne $loginJson -and
+        $null -ne $loginJson.PSObject.Properties["role"]
+    ) {
+        $actualRole = [string]$loginJson.role
+    }
+
+    $cookieText = if ($null -eq $loginResponse.SetCookie) {
+        ""
+    } else {
+        [string]$loginResponse.SetCookie
+    }
+    $cookieLower = $cookieText.ToLowerInvariant()
+    $cookieValid = (
+        $cookieLower.Contains("visionflow_operator_session=") -and
+        $cookieLower.Contains("httponly") -and
+        $cookieLower.Contains("samesite=lax")
+    )
+
+    $ready = (
+        $loginResponse.StatusCode -eq 200 -and
+        $actualRole -eq $ExpectedRole -and
+        $cookieValid
+    )
+
+    $message = if ($ready) {
+        "Temporary $ExpectedRole browser session issued"
+    } elseif ($null -ne $loginResponse.Error) {
+        $loginResponse.Error
+    } else {
+        Get-ErrorMessage `
+            -Json $loginJson `
+            -Fallback "Expected HTTP 200 $ExpectedRole browser session with secure cookie"
+    }
+
+    return [pscustomobject]@{
+        Ready = $ready
+        Headers = $originHeaders
+        StatusCode = $loginResponse.StatusCode
+        DurationMs = $loginResponse.DurationMs
+        Message = $message
+    }
+}
+
+function Close-AcceptanceFrontendSession {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Headers
+    )
+
+    return Invoke-VisionFlowRequest `
+        -Method "DELETE" `
+        -Uri "$FrontendUrl/api/operator/session" `
+        -Headers $Headers
+}
+
 function Test-CspReportOnlyEndpoint {
-    $beforeResponse = Invoke-VisionFlowRequest -Method "GET" -Uri "$FrontendUrl/api/security/csp-report"
+    # CSP report ingestion must remain public, while observability GET is ADMIN-only.
+    # Read the baseline as ADMIN, log out, submit the synthetic report anonymously,
+    # then log back in as ADMIN to verify the bounded-memory increment.
+    $beforeSession = Open-AcceptanceFrontendSession `
+        -Key $AdminKey `
+        -ExpectedRole "ADMIN"
+
+    if (-not $beforeSession.Ready) {
+        Add-Result `
+            -Name "Frontend CSP report observability" `
+            -Passed $false `
+            -StatusCode $beforeSession.StatusCode `
+            -DurationMs $beforeSession.DurationMs `
+            -Message ("Could not create ADMIN session for CSP baseline: " + $beforeSession.Message)
+        return
+    }
+
+    $beforeResponse = Invoke-VisionFlowRequest `
+        -Method "GET" `
+        -Uri "$FrontendUrl/api/security/csp-report"
     $beforeJson = ConvertFrom-ResponseJson -Body $beforeResponse.Body
     $beforeCount = 0
-    if ($null -ne $beforeJson -and $null -ne $beforeJson.PSObject.Properties["totalReports"]) {
+    if (
+        $null -ne $beforeJson -and
+        $null -ne $beforeJson.PSObject.Properties["totalReports"]
+    ) {
         $beforeCount = [long]$beforeJson.totalReports
+    }
+
+    $beforeLogout = Close-AcceptanceFrontendSession -Headers $beforeSession.Headers
+    if ($beforeLogout.StatusCode -ne 204) {
+        Add-Result `
+            -Name "Frontend CSP report observability" `
+            -Passed $false `
+            -StatusCode $beforeLogout.StatusCode `
+            -DurationMs ($beforeSession.DurationMs + $beforeResponse.DurationMs + $beforeLogout.DurationMs) `
+            -Message "Could not clear ADMIN session before anonymous CSP POST"
+        return
     }
 
     $body = [ordered]@{
@@ -403,9 +522,38 @@ function Test-CspReportOnlyEndpoint {
             "status-code" = 200
         }
     } | ConvertTo-Json -Compress
-    $postResponse = Invoke-VisionFlowRequest -Method "POST" -Uri "$FrontendUrl/api/security/csp-report" -Body $body
-    $afterResponse = Invoke-VisionFlowRequest -Method "GET" -Uri "$FrontendUrl/api/security/csp-report"
+
+    # Intentionally anonymous: the browser CSP reporter must not need operator auth.
+    $postResponse = Invoke-VisionFlowRequest `
+        -Method "POST" `
+        -Uri "$FrontendUrl/api/security/csp-report" `
+        -Body $body
+
+    $afterSession = Open-AcceptanceFrontendSession `
+        -Key $AdminKey `
+        -ExpectedRole "ADMIN"
+
+    if (-not $afterSession.Ready) {
+        Add-Result `
+            -Name "Frontend CSP report observability" `
+            -Passed $false `
+            -StatusCode $afterSession.StatusCode `
+            -DurationMs (
+                $beforeSession.DurationMs +
+                $beforeResponse.DurationMs +
+                $beforeLogout.DurationMs +
+                $postResponse.DurationMs +
+                $afterSession.DurationMs
+            ) `
+            -Message ("CSP POST was HTTP $($postResponse.StatusCode), but ADMIN verification login failed: " + $afterSession.Message)
+        return
+    }
+
+    $afterResponse = Invoke-VisionFlowRequest `
+        -Method "GET" `
+        -Uri "$FrontendUrl/api/security/csp-report"
     $afterJson = ConvertFrom-ResponseJson -Body $afterResponse.Body
+
     $afterCount = -1
     $retainedCount = -1
     $storage = ""
@@ -420,26 +568,109 @@ function Test-CspReportOnlyEndpoint {
             $storage = [string]$afterJson.storage
         }
     }
+
+    $afterLogout = Close-AcceptanceFrontendSession -Headers $afterSession.Headers
+
+    $beforeReadable = $beforeResponse.StatusCode -eq 200
     $postAccepted = $postResponse.StatusCode -eq 204
     $statusReadable = $afterResponse.StatusCode -eq 200
     $countIncremented = $afterCount -ge ($beforeCount + 1)
     $reportRetained = $retainedCount -ge 1
     $boundedMemory = $storage -eq "BOUNDED_PROCESS_MEMORY"
-    $passed = $postAccepted -and $statusReadable -and $countIncremented -and $reportRetained -and $boundedMemory
+    $sessionClosed = $afterLogout.StatusCode -eq 204
+
+    $passed = (
+        $beforeReadable -and
+        $postAccepted -and
+        $statusReadable -and
+        $countIncremented -and
+        $reportRetained -and
+        $boundedMemory -and
+        $sessionClosed
+    )
+
     $message = if ($passed) {
-        "Synthetic report accepted and visible in bounded process memory ($afterCount total, $retainedCount retained)"
+        "Anonymous synthetic report accepted; ADMIN observability confirmed bounded process memory ($afterCount total, $retainedCount retained)"
     } elseif ($null -ne $postResponse.Error) {
         $postResponse.Error
     } elseif ($null -ne $afterResponse.Error) {
         $afterResponse.Error
     } else {
-        "Expected POST 204 and observable memory increment; POST=$($postResponse.StatusCode), GET=$($afterResponse.StatusCode), before=$beforeCount, after=$afterCount, retained=$retainedCount, storage=$storage"
+        "Expected ADMIN GET 200, anonymous POST 204, ADMIN GET 200 and observable increment; beforeGET=$($beforeResponse.StatusCode), POST=$($postResponse.StatusCode), afterGET=$($afterResponse.StatusCode), before=$beforeCount, after=$afterCount, retained=$retainedCount, storage=$storage, logout=$($afterLogout.StatusCode)"
     }
-    $statusCode = if (-not $postAccepted) { $postResponse.StatusCode } else { $afterResponse.StatusCode }
-    $durationMs = $beforeResponse.DurationMs + $postResponse.DurationMs + $afterResponse.DurationMs
-    Add-Result -Name "Frontend CSP report observability" -Passed $passed -StatusCode $statusCode -DurationMs $durationMs -Message $message
+
+    $statusCode = if (-not $beforeReadable) {
+        $beforeResponse.StatusCode
+    } elseif (-not $postAccepted) {
+        $postResponse.StatusCode
+    } elseif (-not $statusReadable) {
+        $afterResponse.StatusCode
+    } elseif (-not $sessionClosed) {
+        $afterLogout.StatusCode
+    } else {
+        200
+    }
+
+    $durationMs = (
+        $beforeSession.DurationMs +
+        $beforeResponse.DurationMs +
+        $beforeLogout.DurationMs +
+        $postResponse.DurationMs +
+        $afterSession.DurationMs +
+        $afterResponse.DurationMs +
+        $afterLogout.DurationMs
+    )
+
+    Add-Result `
+        -Name "Frontend CSP report observability" `
+        -Passed $passed `
+        -StatusCode $statusCode `
+        -DurationMs $durationMs `
+        -Message $message
 }
 
+function Test-AuthenticatedNextAiProxies {
+    $session = Open-AcceptanceFrontendSession `
+        -Key $OperatorKey `
+        -ExpectedRole "OPERATOR"
+
+    if (-not $session.Ready) {
+        $message = "Could not create OPERATOR browser session for Next AI proxy checks: $($session.Message)"
+        Add-Result `
+            -Name "Next AI ingest proxy" `
+            -Passed $false `
+            -StatusCode $session.StatusCode `
+            -DurationMs $session.DurationMs `
+            -Message $message
+        Add-Result `
+            -Name "Next AI stream proxy" `
+            -Passed $false `
+            -StatusCode $session.StatusCode `
+            -DurationMs 0 `
+            -Message $message
+        return
+    }
+
+    Test-Endpoint `
+        -Name "Next AI ingest proxy" `
+        -Uri "$FrontendUrl/api/ai/ingest/status" |
+        Out-Null
+
+    Test-Endpoint `
+        -Name "Next AI stream proxy" `
+        -Uri "$FrontendUrl/api/ai/stream/status" |
+        Out-Null
+
+    $logoutResponse = Close-AcceptanceFrontendSession -Headers $session.Headers
+    if ($logoutResponse.StatusCode -ne 204) {
+        Add-Result `
+            -Name "Next AI proxy session cleanup" `
+            -Passed $false `
+            -StatusCode $logoutResponse.StatusCode `
+            -DurationMs $logoutResponse.DurationMs `
+            -Message "Temporary OPERATOR browser session could not be cleared"
+    }
+}
 function Get-OperatorHeaders {
     param(
         [AllowNull()]
@@ -1338,8 +1569,7 @@ try {
             Test-Endpoint -Name "AI authorized ingest status" -Uri "$AiUrl/api/ingest/status" -Headers $aiHeaders | Out-Null
             Test-Endpoint -Name "AI authorized stream status" -Uri "$AiUrl/api/streams/status" -Headers $aiHeaders | Out-Null
         }
-        Test-Endpoint -Name "Next AI ingest proxy" -Uri "$FrontendUrl/api/ai/ingest/status" | Out-Null
-        Test-Endpoint -Name "Next AI stream proxy" -Uri "$FrontendUrl/api/ai/stream/status" | Out-Null
+        Test-AuthenticatedNextAiProxies
     }
 
     if ($RunRbac) {
