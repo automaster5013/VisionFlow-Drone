@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CspReportMonitor } from "@/components/security/csp-report-monitor";
+import { OperatorAccessDenied } from "@/components/security/operator-access-denied";
 import { SecurityHeaderProbe } from "@/components/security/security-header-probe";
 import { getOperatorAuthMode } from "@/lib/server/operator-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
 import { getOperatorSessions } from "@/lib/server/operator-session-management";
+import { requireOperatorPageAccess } from "@/lib/server/protected-page";
 import type { OperatorManagedSession } from "@/types/operator-session-management";
 
 export const metadata: Metadata = {
@@ -76,6 +78,20 @@ async function loadSessions(canAdminister: boolean): Promise<{
 }
 
 export default async function SecurityStatusPage() {
+  const allowed = await requireOperatorPageAccess(
+    "/security-status",
+    "AUTHENTICATED",
+  );
+
+  if (!allowed) {
+    return (
+      <OperatorAccessDenied
+        title="운영 보안 상태"
+        requirement="AUTHENTICATED"
+      />
+    );
+  }
+
   const status = await getOperatorSecurityStatus();
   const authMode = getOperatorAuthMode();
   const canAdminister =
@@ -180,34 +196,55 @@ export default async function SecurityStatusPage() {
 
       <SecurityHeaderProbe />
 
-      <CspReportMonitor />
+      {canAdminister ? (
+        <>
+          <CspReportMonitor />
 
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-        <p className="text-sm font-semibold text-amber-800">DEFERRED CHECKS</p>
-        <h2 className="mt-1 text-xl font-black text-slate-950">
-          장비 이동 후 이어서 검증할 항목
-        </h2>
-        <ul className="mt-4 space-y-2 text-sm leading-6 text-amber-950">
-          <li>스마트폰 실센서 HTTPS 인증서 검증은 단말 수리 후 재개합니다.</li>
-          <li>HP OMEN RTX 5060과 파인튜닝한 best.pt 성능 검증은 장비 이동 후 진행합니다.</li>
-          <li>강제 CSP와 HSTS는 HTTPS·AI 배치 주소가 확정된 뒤 적용합니다.</li>
-          <li>DJI Mini 4 Pro 전용 연동은 3차 프로젝트 범위로 유지합니다.</li>
-        </ul>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link
-            href="/operator-sessions"
-            className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white"
-          >
-            활성 세션 관리
-          </Link>
-          <Link
-            href="/audit-logs"
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"
-          >
-            감사 로그 확인
-          </Link>
-        </div>
-      </section>
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <p className="text-sm font-semibold text-amber-800">DEFERRED CHECKS</p>
+            <h2 className="mt-1 text-xl font-black text-slate-950">
+              장비 이동 후 이어서 검증할 항목
+            </h2>
+            <ul className="mt-4 space-y-2 text-sm leading-6 text-amber-950">
+              <li>스마트폰 실센서 HTTPS 인증서 검증은 단말 수리 후 재개합니다.</li>
+              <li>HP OMEN RTX 5060과 파인튜닝한 best.pt 성능 검증은 장비 이동 후 진행합니다.</li>
+              <li>강제 CSP와 HSTS는 HTTPS·AI 배치 주소가 확정된 뒤 적용합니다.</li>
+              <li>DJI Mini 4 Pro 전용 연동은 3차 프로젝트 범위로 유지합니다.</li>
+            </ul>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/operator-sessions"
+                className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white"
+              >
+                활성 세션 관리
+              </Link>
+              <Link
+                href="/audit-logs"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"
+              >
+                감사 로그 확인
+              </Link>
+            </div>
+          </section>
+        </>
+      ) : (
+        <section
+          data-admin-security-detail-restricted
+          className="rounded-2xl border border-slate-200 bg-slate-50 p-6"
+        >
+          <p className="text-sm font-semibold text-slate-600">
+            ADMIN SECURITY DETAIL
+          </p>
+          <h2 className="mt-1 text-xl font-black text-slate-950">
+            상세 보안 관찰 정보는 ADMIN 전용입니다.
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
+            CSP 위반 URI·source file, 활성 세션 관리, 미완료 hardening 항목은
+            ADMIN 로그인 상태에서만 표시됩니다. 현재 역할에는 고수준 RBAC 및
+            보안 헤더 상태만 제공합니다.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
 
-export type OperatorApiAccessRequirement = "AUTHENTICATED" | "OPERATOR";
+export type OperatorApiAccessRequirement = "AUTHENTICATED" | "OPERATOR" | "ADMIN";
 
 function noStoreJson(
   body: Record<string, unknown>,
@@ -57,6 +57,20 @@ export async function requireOperatorApiAccess(
         success: false,
         code: "OPERATOR_PERMISSION_DENIED",
         message: "이 작업에는 OPERATOR 이상의 권한이 필요합니다.",
+      },
+      403,
+    );
+  }
+
+  if (
+    requirement === "ADMIN" &&
+    operator.role !== "ADMIN"
+  ) {
+    return noStoreJson(
+      {
+        success: false,
+        code: "OPERATOR_ADMIN_REQUIRED",
+        message: "이 작업에는 ADMIN 권한이 필요합니다.",
       },
       403,
     );

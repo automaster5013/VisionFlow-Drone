@@ -26,7 +26,11 @@ export const appNavigationItems: AppNavigationItem[] = [
     },
     { label: "이벤트", href: "/events" },
     { label: "감사 로그", href: "/audit-logs" },
-    { label: "보안 상태", href: "/security-status" },
+    {
+        label: "보안 상태",
+        href: "/security-status",
+        access: "AUTHENTICATED",
+    },
     {
         label: "세션 관리",
         href: "/operator-sessions",
@@ -34,7 +38,11 @@ export const appNavigationItems: AppNavigationItem[] = [
     },
     { label: "통계", href: "/statistics" },
     { label: "AI 모델", href: "/models" },
-    { label: "설정", href: "/settings" },
+    {
+        label: "설정",
+        href: "/settings",
+        access: "AUTHENTICATED",
+    },
     {
         label: "시연 모드",
         href: "/demo-mode",

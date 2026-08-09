@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { requireOperatorApiAccess } from "@/lib/server/operator-api-access";
+
 export const runtime = "nodejs";
 
 const MAX_REPORT_BYTES = 16 * 1024;
@@ -149,6 +151,11 @@ function summarizeDirectives(reports: SanitizedCspReport[]) {
 }
 
 export async function GET() {
+  const access = await requireOperatorApiAccess("ADMIN");
+  if (access) {
+    return access;
+  }
+
   const store = getReportStore();
   return NextResponse.json(
     {
