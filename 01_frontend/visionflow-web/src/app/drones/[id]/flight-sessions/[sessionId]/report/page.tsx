@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { FlightSessionReportView } from "@/components/drones/flight-session-report-view";
+import { OperatorAccessDenied } from "@/components/security/operator-access-denied";
+import { requireOperatorPageAccess } from "@/lib/server/protected-page";
 
 interface FlightSessionReportPageProps {
   params: Promise<{
@@ -24,6 +26,23 @@ export default async function FlightSessionReportPage({
     sessionId.length > 36
   ) {
     notFound();
+  }
+
+  const returnTo =
+    `/drones/${id}/flight-sessions/` +
+    `${encodeURIComponent(sessionId)}/report`;
+  const allowed = await requireOperatorPageAccess(
+    returnTo,
+    "AUTHENTICATED",
+  );
+
+  if (!allowed) {
+    return (
+      <OperatorAccessDenied
+        title="비행 세션 보고서"
+        requirement="AUTHENTICATED"
+      />
+    );
   }
 
   return (
