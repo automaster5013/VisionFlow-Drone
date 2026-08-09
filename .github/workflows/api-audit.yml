@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - ".github/workflows/api-audit.yml"
+      - ".env.example"
+      - "compose.yaml"
       - "01_frontend/visionflow-web/src/app/ai-preview/**"
       - "01_frontend/visionflow-web/src/app/api/**"
       - "01_frontend/visionflow-web/src/app/audit-logs/**"
@@ -38,17 +40,21 @@ on:
       - "scripts/visionflow_ai_openapi_snapshot.py"
       - "scripts/visionflow_ci_api_audit_gate.py"
       - "scripts/visionflow_ci_api_audit_policy.json"
+      - "scripts/visionflow_config_preflight.py"
       - "scripts/visionflow_data_integrity_audit.py"
       - "scripts/visionflow_data_integrity_policy.json"
       - "scripts/visionflow_system_traceability_audit.py"
       - "scripts/visionflow_system_traceability_baseline.json"
       - "scripts/tests/test_visionflow_system_traceability_*.py"
       - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
+      - "docs/README-security-configuration.md"
   push:
     branches:
       - main
     paths:
       - ".github/workflows/api-audit.yml"
+      - ".env.example"
+      - "compose.yaml"
       - "01_frontend/visionflow-web/src/app/ai-preview/**"
       - "01_frontend/visionflow-web/src/app/api/**"
       - "01_frontend/visionflow-web/src/app/audit-logs/**"
@@ -83,12 +89,14 @@ on:
       - "scripts/visionflow_ai_openapi_snapshot.py"
       - "scripts/visionflow_ci_api_audit_gate.py"
       - "scripts/visionflow_ci_api_audit_policy.json"
+      - "scripts/visionflow_config_preflight.py"
       - "scripts/visionflow_data_integrity_audit.py"
       - "scripts/visionflow_data_integrity_policy.json"
       - "scripts/visionflow_system_traceability_audit.py"
       - "scripts/visionflow_system_traceability_baseline.json"
       - "scripts/tests/test_visionflow_system_traceability_*.py"
       - "docs/VISIONFLOW-SYSTEM-TRACEABILITY.md"
+      - "docs/README-security-configuration.md"
   workflow_dispatch:
 
 permissions:
@@ -123,6 +131,7 @@ jobs:
             scripts/visionflow_api_security_audit.py \
             scripts/visionflow_ai_openapi_snapshot.py \
             scripts/visionflow_ci_api_audit_gate.py \
+            scripts/visionflow_config_preflight.py \
             scripts/visionflow_data_integrity_audit.py \
             scripts/visionflow_system_traceability_audit.py
           python -m json.tool scripts/visionflow_api_contract_baseline.json >/dev/null
