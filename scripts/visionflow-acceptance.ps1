@@ -808,6 +808,235 @@ function Test-AuthenticatedAnalysisPages {
             -Message "Temporary VIEWER browser session could not be cleared"
     }
 }
+function Test-OperatorPairingFlow {
+    $issuerToken = ""
+    $pairedToken = ""
+    $viewerToken = ""
+
+    try {
+        $issuerResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/sessions" `
+            -Headers (Get-OperatorHeaders -Key $AdminKey)
+        $issuerJson = ConvertFrom-ResponseJson -Body $issuerResponse.Body
+        $issuerReady = (
+            $issuerResponse.StatusCode -eq 200 -and
+            $null -ne $issuerJson -and
+            $null -ne $issuerJson.PSObject.Properties["token"] -and
+            -not [string]::IsNullOrWhiteSpace([string]$issuerJson.token)
+        )
+        Add-Result `
+            -Name "Pairing issuer session" `
+            -Passed $issuerReady `
+            -StatusCode $issuerResponse.StatusCode `
+            -DurationMs $issuerResponse.DurationMs `
+            -Message $(if ($issuerReady) { "Temporary ADMIN issuer session created" } else { "Could not create ADMIN issuer session" })
+        if (-not $issuerReady) {
+            return
+        }
+
+        $issuerToken = [string]$issuerJson.token
+        $issuerHeaders = @{ "X-VisionFlow-Operator-Session" = $issuerToken }
+
+        $createBody = [ordered]@{ targetRole = "OPERATOR" } | ConvertTo-Json -Compress
+        $createResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/pairings" `
+            -Body $createBody `
+            -Headers $issuerHeaders
+        $createJson = ConvertFrom-ResponseJson -Body $createResponse.Body
+        $pairingId = if ($null -ne $createJson -and $null -ne $createJson.PSObject.Properties["pairingId"]) { [string]$createJson.pairingId } else { "" }
+        $pairingToken = if ($null -ne $createJson -and $null -ne $createJson.PSObject.Properties["pairingToken"]) { [string]$createJson.pairingToken } else { "" }
+        $verificationCode = if ($null -ne $createJson -and $null -ne $createJson.PSObject.Properties["verificationCode"]) { [string]$createJson.verificationCode } else { "" }
+        $created = (
+            $createResponse.StatusCode -eq 201 -and
+            $pairingId -match "^[0-9a-fA-F-]{36}$" -and
+            $pairingToken.Length -ge 40 -and
+            $verificationCode -match "^\d{6}$" -and
+            [string]$createJson.targetRole -eq "OPERATOR"
+        )
+        Add-Result `
+            -Name "Pairing create" `
+            -Passed $created `
+            -StatusCode $createResponse.StatusCode `
+            -DurationMs $createResponse.DurationMs `
+            -Message $(if ($created) { "One-time OPERATOR pairing created without a role key" } else { "Pairing creation response was invalid" })
+        if (-not $created) {
+            return
+        }
+
+        $claimBody = [ordered]@{
+            pairingToken = $pairingToken
+            deviceName = "VisionFlow Acceptance Phone"
+        } | ConvertTo-Json -Compress
+        $claimResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/pairings/$pairingId/claim" `
+            -Body $claimBody
+        $claimJson = ConvertFrom-ResponseJson -Body $claimResponse.Body
+        $claimed = (
+            $claimResponse.StatusCode -eq 200 -and
+            $null -ne $claimJson -and
+            [string]$claimJson.status -eq "CLAIMED" -and
+            [string]$claimJson.verificationCode -eq $verificationCode -and
+            [string]$claimJson.targetRole -eq "OPERATOR"
+        )
+        Add-Result `
+            -Name "Pairing claim" `
+            -Passed $claimed `
+            -StatusCode $claimResponse.StatusCode `
+            -DurationMs $claimResponse.DurationMs `
+            -Message $(if ($claimed) { "Mobile claim accepted with matching verification code" } else { "Pairing claim did not reach CLAIMED" })
+        if (-not $claimed) {
+            return
+        }
+
+        $exchangeBody = [ordered]@{ pairingToken = $pairingToken } | ConvertTo-Json -Compress
+        $preApprovalResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/pairings/$pairingId/exchange" `
+            -Body $exchangeBody
+        $preApprovalJson = ConvertFrom-ResponseJson -Body $preApprovalResponse.Body
+        $preApprovalDenied = (
+            $preApprovalResponse.StatusCode -eq 409 -and
+            $null -ne $preApprovalJson -and
+            [string]$preApprovalJson.code -eq "OPERATOR_PAIRING_APPROVAL_REQUIRED"
+        )
+        Add-Result `
+            -Name "Pairing approval gate" `
+            -Passed $preApprovalDenied `
+            -StatusCode $preApprovalResponse.StatusCode `
+            -DurationMs $preApprovalResponse.DurationMs `
+            -Message $(if ($preApprovalDenied) { "Session exchange blocked until PC approval" } else { "Pairing could bypass PC approval" })
+
+        $approveResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/pairings/$pairingId/approve" `
+            -Body "{}" `
+            -Headers $issuerHeaders
+        $approveJson = ConvertFrom-ResponseJson -Body $approveResponse.Body
+        $approved = (
+            $approveResponse.StatusCode -eq 200 -and
+            $null -ne $approveJson -and
+            [string]$approveJson.status -eq "APPROVED"
+        )
+        Add-Result `
+            -Name "Pairing approve" `
+            -Passed $approved `
+            -StatusCode $approveResponse.StatusCode `
+            -DurationMs $approveResponse.DurationMs `
+            -Message $(if ($approved) { "Issuer session approved the claimed device" } else { "Pairing approval failed" })
+        if (-not $approved) {
+            return
+        }
+
+        $exchangeResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/pairings/$pairingId/exchange" `
+            -Body $exchangeBody
+        $exchangeJson = ConvertFrom-ResponseJson -Body $exchangeResponse.Body
+        $pairedToken = if ($null -ne $exchangeJson -and $null -ne $exchangeJson.PSObject.Properties["token"]) { [string]$exchangeJson.token } else { "" }
+        $exchanged = (
+            $exchangeResponse.StatusCode -eq 200 -and
+            $pairedToken.Length -ge 40 -and
+            [string]$exchangeJson.role -eq "OPERATOR"
+        )
+        Add-Result `
+            -Name "Pairing exchange" `
+            -Passed $exchanged `
+            -StatusCode $exchangeResponse.StatusCode `
+            -DurationMs $exchangeResponse.DurationMs `
+            -Message $(if ($exchanged) { "Approved QR exchanged for a separate OPERATOR session" } else { "Pairing did not issue the expected session" })
+        if (-not $exchanged) {
+            return
+        }
+
+        $pairedIdentity = Invoke-VisionFlowRequest `
+            -Method "GET" `
+            -Uri "$BackendUrl/api/security/me" `
+            -Headers @{ "X-VisionFlow-Operator-Session" = $pairedToken }
+        $pairedIdentityJson = ConvertFrom-ResponseJson -Body $pairedIdentity.Body
+        $pairedRoleOk = (
+            $pairedIdentity.StatusCode -eq 200 -and
+            $null -ne $pairedIdentityJson -and
+            $pairedIdentityJson.authenticated -eq $true -and
+            [string]$pairedIdentityJson.role -eq "OPERATOR"
+        )
+        Add-Result `
+            -Name "Pairing issued role" `
+            -Passed $pairedRoleOk `
+            -StatusCode $pairedIdentity.StatusCode `
+            -DurationMs $pairedIdentity.DurationMs `
+            -Message $(if ($pairedRoleOk) { "Paired session resolves as OPERATOR" } else { "Paired session role is incorrect" })
+
+        $reuseResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/pairings/$pairingId/exchange" `
+            -Body $exchangeBody
+        $reuseJson = ConvertFrom-ResponseJson -Body $reuseResponse.Body
+        $reuseDenied = (
+            $reuseResponse.StatusCode -eq 410 -and
+            $null -ne $reuseJson -and
+            [string]$reuseJson.code -eq "OPERATOR_PAIRING_ALREADY_USED"
+        )
+        Add-Result `
+            -Name "Pairing one-time reuse denial" `
+            -Passed $reuseDenied `
+            -StatusCode $reuseResponse.StatusCode `
+            -DurationMs $reuseResponse.DurationMs `
+            -Message $(if ($reuseDenied) { "Consumed QR token cannot be reused" } else { "Consumed pairing token was unexpectedly reusable" })
+
+        $viewerResponse = Invoke-VisionFlowRequest `
+            -Method "POST" `
+            -Uri "$BackendUrl/api/security/sessions" `
+            -Headers (Get-OperatorHeaders -Key $ViewerKey)
+        $viewerJson = ConvertFrom-ResponseJson -Body $viewerResponse.Body
+        $viewerReady = (
+            $viewerResponse.StatusCode -eq 200 -and
+            $null -ne $viewerJson -and
+            $null -ne $viewerJson.PSObject.Properties["token"] -and
+            -not [string]::IsNullOrWhiteSpace([string]$viewerJson.token)
+        )
+
+        if ($viewerReady) {
+            $viewerToken = [string]$viewerJson.token
+            $escalationResponse = Invoke-VisionFlowRequest `
+                -Method "POST" `
+                -Uri "$BackendUrl/api/security/pairings" `
+                -Body ([ordered]@{ targetRole = "ADMIN" } | ConvertTo-Json -Compress) `
+                -Headers @{ "X-VisionFlow-Operator-Session" = $viewerToken }
+            $escalationJson = ConvertFrom-ResponseJson -Body $escalationResponse.Body
+            $escalationDenied = (
+                $escalationResponse.StatusCode -eq 403 -and
+                $null -ne $escalationJson -and
+                [string]$escalationJson.code -eq "OPERATOR_PAIRING_ROLE_ESCALATION_DENIED"
+            )
+            Add-Result `
+                -Name "Pairing role escalation denial" `
+                -Passed $escalationDenied `
+                -StatusCode $escalationResponse.StatusCode `
+                -DurationMs $escalationResponse.DurationMs `
+                -Message $(if ($escalationDenied) { "VIEWER cannot mint an ADMIN mobile session" } else { "Pairing role escalation boundary failed" })
+        } else {
+            Add-Result `
+                -Name "Pairing role escalation denial" `
+                -Passed $false `
+                -StatusCode $viewerResponse.StatusCode `
+                -DurationMs $viewerResponse.DurationMs `
+                -Message "Could not create temporary VIEWER session for escalation test"
+        }
+    } finally {
+        foreach ($token in @($pairedToken, $viewerToken, $issuerToken)) {
+            if (-not [string]::IsNullOrWhiteSpace($token)) {
+                [void](Invoke-VisionFlowRequest `
+                    -Method "DELETE" `
+                    -Uri "$BackendUrl/api/security/sessions/current" `
+                    -Headers @{ "X-VisionFlow-Operator-Session" = $token })
+            }
+        }
+    }
+}
+
 function Get-OperatorHeaders {
     param(
         [AllowNull()]
@@ -1788,6 +2017,7 @@ try {
             Test-FrontendSessionRole -Key $OperatorKey -ExpectedRole "OPERATOR"
             Test-FrontendSessionRole -Key $AdminKey -ExpectedRole "ADMIN"
             Test-BackendSessionManagement -ViewerKey $ViewerKey -AdminKey $AdminKey
+            Test-OperatorPairingFlow
         }
     }
 

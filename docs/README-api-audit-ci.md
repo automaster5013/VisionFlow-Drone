@@ -6,7 +6,7 @@
 
 ## 판정 정책
 
-- operation 기준: Backend 70, Frontend 72, AI 9
+- operation 기준: Backend 76, Frontend 78, AI 9
 - 계약 감사: `API_CONTRACT_HEALTHY`만 허용; 허용 Advisory 0건
 - 계약 감사의 Advisory, `unexpected` 항목, missing target, operation 수 변경: 실패
 - 보안 감사: `API_SECURITY_HEALTHY`만 허용

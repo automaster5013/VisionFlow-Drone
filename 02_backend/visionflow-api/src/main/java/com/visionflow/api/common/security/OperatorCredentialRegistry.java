@@ -70,6 +70,16 @@ public class OperatorCredentialRegistry {
         return Optional.empty();
     }
 
+    public Optional<OperatorPrincipal> findPrincipal(OperatorRole role) {
+        if (!enabled || role == null) {
+            return Optional.empty();
+        }
+        return credentials.stream()
+                .map(Credential::principal)
+                .filter(principal -> principal.role() == role)
+                .findFirst();
+    }
+
     private void addCredential(
             List<Credential> target,
             String rawName,

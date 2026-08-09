@@ -58,13 +58,21 @@ export function OperatorSessionControls({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => void logout()}
-      disabled={loggingOut}
-      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-    >
-      {loggingOut ? "로그아웃 중" : "로그아웃"}
-    </button>
+    <div className="flex items-center gap-2">
+      <Link
+        href="/operator-pairing"
+        className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800 hover:bg-sky-100"
+      >
+        QR 로그인
+      </Link>
+      <button
+        type="button"
+        onClick={() => void logout()}
+        disabled={loggingOut}
+        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+      >
+        {loggingOut ? "로그아웃 중" : "로그아웃"}
+      </button>
+    </div>
   );
 }

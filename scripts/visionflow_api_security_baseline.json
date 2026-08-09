@@ -3,229 +3,343 @@
   "project": "visionflow",
   "baselineCommit": "4537e9bc7d8b2e332efbe096e07a02e4c62b5343",
   "expectedCounts": {
-    "backend": 70,
-    "frontend": 72,
+    "backend": 76,
+    "frontend": 78,
     "ai": 9
   },
   "requiredBackendAccess": [
     {
+      "method": "POST",
+      "path": "/api/security/pairings",
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
+      "reason": "QR 페어링 생성은 로그인된 VIEWER 이상이며 Controller가 현재 세션을 추가 검증"
+    },
+    {
+      "method": "GET",
+      "path": "/api/security/pairings/{}",
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
+      "reason": "QR 페어링 상태는 생성한 브라우저 세션에서만 조회"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/security/pairings/{}",
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
+      "reason": "QR 페어링 취소는 생성한 브라우저 세션에서만 수행"
+    },
+    {
+      "method": "POST",
+      "path": "/api/security/pairings/{}/approve",
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
+      "reason": "QR 페어링 승인은 생성 세션 일치와 역할 위임 상한을 Controller가 검증"
+    },
+    {
       "method": "GET",
       "path": "/api/security/sessions",
-      "allowedAccess": ["ROLE_ADMIN"],
+      "allowedAccess": [
+        "ROLE_ADMIN"
+      ],
       "reason": "활성 운영자 세션 목록은 ADMIN 전용"
     },
     {
       "method": "DELETE",
       "path": "/api/security/sessions/{}",
-      "allowedAccess": ["ROLE_ADMIN"],
+      "allowedAccess": [
+        "ROLE_ADMIN"
+      ],
       "reason": "다른 운영자 세션 강제 종료는 ADMIN 전용"
     },
     {
       "method": "DELETE",
       "path": "/api/security/sessions/others",
-      "allowedAccess": ["ROLE_ADMIN"],
+      "allowedAccess": [
+        "ROLE_ADMIN"
+      ],
       "reason": "다른 운영자 세션 일괄 종료는 ADMIN 전용"
     },
     {
       "method": "GET",
       "path": "/api/audit-logs/export",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "감사 로그 내보내기는 인증된 역할만 허용"
     },
     {
       "method": "GET",
       "path": "/api/audit-logs",
-      "allowedAccess": ["ROLE_ADMIN"],
+      "allowedAccess": [
+        "ROLE_ADMIN"
+      ],
       "reason": "감사 행위와 운영자 활동 이력은 ADMIN 전용"
     },
     {
       "method": "GET",
       "path": "/api/audit-logs/retention",
-      "allowedAccess": ["ROLE_ADMIN"],
+      "allowedAccess": [
+        "ROLE_ADMIN"
+      ],
       "reason": "감사 로그 보존 정책은 ADMIN 전용"
     },
     {
       "method": "GET",
       "path": "/api/ai/alerts",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "AI 경보 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/ai/alerts/{}",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "AI 경보 상세는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/ai/events",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "AI 추론 이벤트는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/ai/events/{}/snapshot",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "AI 이벤트 스냅숏은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/incidents",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "Incident 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/incidents/{}",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "Incident 상세는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/incidents/{}/report",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "Incident 보고서는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/dashboard/operations",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "관제 운영 요약은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "드론 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones/{}",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "드론 상세는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones/{}/telemetry/history",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "텔레메트리 이력은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones/{}/flight-sessions",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "비행 세션 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones/{}/flight-sessions/{}",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "비행 세션 상세는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones/{}/flight-sessions/{}/replay",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "비행 세션 리플레이는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones/{}/flight-quality-assessments",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "비행 품질 평가 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/drones/{}/flight-sessions/{}/quality-assessment",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "비행 세션 품질 평가는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/flight-quality/fleet-reliability",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "함대 신뢰도 분석은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/geofences",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "지오펜스 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/geofences/{}",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "지오펜스 상세는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/geofences/events",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "지오펜스 이벤트는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/flight-clearance",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "비행 허가 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/flight-clearance/{}",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "기체별 비행 허가는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/metrics",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "정비 지표는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/priorities",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "정비 우선순위는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/sla",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "정비 SLA는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/sla/incidents",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "정비 SLA Incident는 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/work-orders",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "정비 작업 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
       "path": "/api/maintenance/work-orders/{}",
-      "allowedAccess": ["ROLES_VIEWER_OPERATOR_ADMIN"],
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
       "reason": "정비 작업 상세는 인증된 역할만 조회"
     },
     {
       "method": "DELETE",
       "path": "/api/drones/{}",
-      "allowedAccess": ["ROLE_ADMIN"],
+      "allowedAccess": [
+        "ROLE_ADMIN"
+      ],
       "reason": "드론 삭제는 ADMIN 전용"
     },
     {
       "method": "POST",
       "path": "/api/audit-logs/retention/cleanup",
-      "allowedAccess": ["ROLE_ADMIN"],
+      "allowedAccess": [
+        "ROLE_ADMIN"
+      ],
       "reason": "감사 로그 정리는 ADMIN 전용"
     }
   ],
   "expectedBackendPublicWrites": [
+    {
+      "method": "POST",
+      "path": "/api/security/pairings/{}/claim",
+      "reason": "256-bit 일회용 QR 토큰으로 스마트폰이 기기 연결을 요청하는 공개 진입점"
+    },
+    {
+      "method": "POST",
+      "path": "/api/security/pairings/{}/exchange",
+      "reason": "PC 승인 후 일회용 QR 토큰을 별도 운영자 세션으로 교환하는 공개 진입점"
+    },
     {
       "method": "POST",
       "path": "/api/security/sessions",

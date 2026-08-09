@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "baselineCommit": "fc794e571c39fb3ea1cede7d5509816f483c5664",
   "expectedCounts": {
-    "backend": 70,
-    "frontend": 72,
+    "backend": 76,
+    "frontend": 78,
     "ai": 9,
     "tables": 16,
     "entities": 15,
@@ -11,173 +11,519 @@
     "foreignKeys": 12
   },
   "tables": [
-    {"name": "system_status", "createdIn": "V1__create_system_status_table.sql", "entity": null, "repository": null, "classification": "LEGACY_SCHEMA", "note": "현재 HealthService는 DB를 조회하지 않으며 테이블만 잔존"},
-    {"name": "drone", "createdIn": "V2__create_drone_table.sql", "entity": "Drone", "repository": "DroneRepository", "classification": "CORE"},
-    {"name": "drone_telemetry_history", "createdIn": "V3__create_drone_telemetry_history_table.sql", "entity": "DroneTelemetryHistory", "repository": "DroneTelemetryHistoryRepository", "classification": "CORE"},
-    {"name": "drone_geofence", "createdIn": "V4__create_drone_geofence_tables.sql", "entity": "DroneGeofence", "repository": "DroneGeofenceRepository", "classification": "CORE"},
-    {"name": "drone_geofence_event", "createdIn": "V4__create_drone_geofence_tables.sql", "entity": "DroneGeofenceEvent", "repository": "DroneGeofenceEventRepository", "classification": "CORE"},
-    {"name": "ai_inference_event", "createdIn": "V5__create_ai_inference_event_tables.sql", "entity": "AiInferenceEvent", "repository": "AiInferenceEventRepository", "classification": "CORE"},
-    {"name": "ai_detection", "createdIn": "V5__create_ai_inference_event_tables.sql", "entity": "AiDetection", "repository": "AiDetectionRepository", "classification": "CORE"},
-    {"name": "flight_session", "createdIn": "V9__create_flight_session.sql", "entity": "FlightSession", "repository": "FlightSessionRepository", "classification": "CORE"},
-    {"name": "ai_alert", "createdIn": "V10__create_ai_alert.sql", "entity": "AiAlert", "repository": "AiAlertRepository", "classification": "CORE"},
-    {"name": "incident", "createdIn": "V11__create_incident_management.sql", "entity": "Incident", "repository": "IncidentRepository", "classification": "CORE"},
-    {"name": "incident_action_history", "createdIn": "V11__create_incident_management.sql", "entity": "IncidentActionHistory", "repository": "IncidentActionHistoryRepository", "classification": "HISTORY"},
-    {"name": "demo_scenario", "createdIn": "V14__create_demo_scenario.sql", "entity": "DemoScenario", "repository": "DemoScenarioRepository", "classification": "DEMO"},
-    {"name": "audit_log", "createdIn": "V15__create_audit_log.sql", "entity": "AuditLog", "repository": "AuditLogRepository", "classification": "AUDIT"},
-    {"name": "flight_quality_assessment", "createdIn": "V16__create_flight_quality_assessment.sql", "entity": "FlightQualityAssessment", "repository": "FlightQualityAssessmentRepository", "classification": "CORE"},
-    {"name": "maintenance_work_order", "createdIn": "V19__create_maintenance_work_order.sql", "entity": "MaintenanceWorkOrder", "repository": "MaintenanceWorkOrderRepository", "classification": "CORE"},
-    {"name": "maintenance_work_order_history", "createdIn": "V19__create_maintenance_work_order.sql", "entity": "MaintenanceWorkOrderHistory", "repository": "MaintenanceWorkOrderHistoryRepository", "classification": "HISTORY"}
+    {
+      "name": "system_status",
+      "createdIn": "V1__create_system_status_table.sql",
+      "entity": null,
+      "repository": null,
+      "classification": "LEGACY_SCHEMA",
+      "note": "현재 HealthService는 DB를 조회하지 않으며 테이블만 잔존"
+    },
+    {
+      "name": "drone",
+      "createdIn": "V2__create_drone_table.sql",
+      "entity": "Drone",
+      "repository": "DroneRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "drone_telemetry_history",
+      "createdIn": "V3__create_drone_telemetry_history_table.sql",
+      "entity": "DroneTelemetryHistory",
+      "repository": "DroneTelemetryHistoryRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "drone_geofence",
+      "createdIn": "V4__create_drone_geofence_tables.sql",
+      "entity": "DroneGeofence",
+      "repository": "DroneGeofenceRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "drone_geofence_event",
+      "createdIn": "V4__create_drone_geofence_tables.sql",
+      "entity": "DroneGeofenceEvent",
+      "repository": "DroneGeofenceEventRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "ai_inference_event",
+      "createdIn": "V5__create_ai_inference_event_tables.sql",
+      "entity": "AiInferenceEvent",
+      "repository": "AiInferenceEventRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "ai_detection",
+      "createdIn": "V5__create_ai_inference_event_tables.sql",
+      "entity": "AiDetection",
+      "repository": "AiDetectionRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "flight_session",
+      "createdIn": "V9__create_flight_session.sql",
+      "entity": "FlightSession",
+      "repository": "FlightSessionRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "ai_alert",
+      "createdIn": "V10__create_ai_alert.sql",
+      "entity": "AiAlert",
+      "repository": "AiAlertRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "incident",
+      "createdIn": "V11__create_incident_management.sql",
+      "entity": "Incident",
+      "repository": "IncidentRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "incident_action_history",
+      "createdIn": "V11__create_incident_management.sql",
+      "entity": "IncidentActionHistory",
+      "repository": "IncidentActionHistoryRepository",
+      "classification": "HISTORY"
+    },
+    {
+      "name": "demo_scenario",
+      "createdIn": "V14__create_demo_scenario.sql",
+      "entity": "DemoScenario",
+      "repository": "DemoScenarioRepository",
+      "classification": "DEMO"
+    },
+    {
+      "name": "audit_log",
+      "createdIn": "V15__create_audit_log.sql",
+      "entity": "AuditLog",
+      "repository": "AuditLogRepository",
+      "classification": "AUDIT"
+    },
+    {
+      "name": "flight_quality_assessment",
+      "createdIn": "V16__create_flight_quality_assessment.sql",
+      "entity": "FlightQualityAssessment",
+      "repository": "FlightQualityAssessmentRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "maintenance_work_order",
+      "createdIn": "V19__create_maintenance_work_order.sql",
+      "entity": "MaintenanceWorkOrder",
+      "repository": "MaintenanceWorkOrderRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "maintenance_work_order_history",
+      "createdIn": "V19__create_maintenance_work_order.sql",
+      "entity": "MaintenanceWorkOrderHistory",
+      "repository": "MaintenanceWorkOrderHistoryRepository",
+      "classification": "HISTORY"
+    }
   ],
   "foreignKeys": [
-    {"fromTable": "drone_telemetry_history", "fromColumn": "drone_id", "toTable": "drone", "toColumn": "id"},
-    {"fromTable": "drone_geofence_event", "fromColumn": "geofence_id", "toTable": "drone_geofence", "toColumn": "id"},
-    {"fromTable": "ai_detection", "fromColumn": "event_id", "toTable": "ai_inference_event", "toColumn": "id"},
-    {"fromTable": "flight_session", "fromColumn": "drone_id", "toTable": "drone", "toColumn": "id"},
-    {"fromTable": "ai_alert", "fromColumn": "event_id", "toTable": "ai_inference_event", "toColumn": "id"},
-    {"fromTable": "incident_action_history", "fromColumn": "incident_id", "toTable": "incident", "toColumn": "id"},
-    {"fromTable": "flight_quality_assessment", "fromColumn": "session_id", "toTable": "flight_session", "toColumn": "session_id"},
-    {"fromTable": "flight_quality_assessment", "fromColumn": "drone_id", "toTable": "drone", "toColumn": "id"},
-    {"fromTable": "maintenance_work_order", "fromColumn": "incident_id", "toTable": "incident", "toColumn": "id"},
-    {"fromTable": "maintenance_work_order", "fromColumn": "drone_id", "toTable": "drone", "toColumn": "id"},
-    {"fromTable": "maintenance_work_order", "fromColumn": "source_assessment_id", "toTable": "flight_quality_assessment", "toColumn": "id"},
-    {"fromTable": "maintenance_work_order_history", "fromColumn": "work_order_id", "toTable": "maintenance_work_order", "toColumn": "id"}
+    {
+      "fromTable": "drone_telemetry_history",
+      "fromColumn": "drone_id",
+      "toTable": "drone",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "drone_geofence_event",
+      "fromColumn": "geofence_id",
+      "toTable": "drone_geofence",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "ai_detection",
+      "fromColumn": "event_id",
+      "toTable": "ai_inference_event",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "flight_session",
+      "fromColumn": "drone_id",
+      "toTable": "drone",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "ai_alert",
+      "fromColumn": "event_id",
+      "toTable": "ai_inference_event",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "incident_action_history",
+      "fromColumn": "incident_id",
+      "toTable": "incident",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "flight_quality_assessment",
+      "fromColumn": "session_id",
+      "toTable": "flight_session",
+      "toColumn": "session_id"
+    },
+    {
+      "fromTable": "flight_quality_assessment",
+      "fromColumn": "drone_id",
+      "toTable": "drone",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "maintenance_work_order",
+      "fromColumn": "incident_id",
+      "toTable": "incident",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "maintenance_work_order",
+      "fromColumn": "drone_id",
+      "toTable": "drone",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "maintenance_work_order",
+      "fromColumn": "source_assessment_id",
+      "toTable": "flight_quality_assessment",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "maintenance_work_order_history",
+      "fromColumn": "work_order_id",
+      "toTable": "maintenance_work_order",
+      "toColumn": "id"
+    }
   ],
   "softCorrelations": [
-    {"key": "session_id", "tables": ["flight_session", "drone_telemetry_history", "ai_inference_event", "ai_alert", "incident", "demo_scenario", "maintenance_work_order"], "risk": "일부 테이블은 물리 FK 없이 문자열 UUID로 연결"},
-    {"key": "drone_id", "tables": ["drone", "drone_telemetry_history", "flight_session", "ai_inference_event", "ai_alert", "incident", "demo_scenario", "flight_quality_assessment", "maintenance_work_order"], "risk": "AI·Incident·Demo 계열 일부는 애플리케이션 검증에 의존"},
-    {"key": "source_type + source_id", "tables": ["incident", "ai_alert", "drone_geofence_event", "flight_quality_assessment", "audit_log"], "risk": "다형 소스 참조이므로 DB FK 대신 서비스 규칙과 UNIQUE 제약에 의존"},
-    {"key": "snapshot_path", "tables": ["ai_inference_event"], "risk": "DB 메타데이터와 파일시스템 JPG의 이중 정합성 필요"}
+    {
+      "key": "session_id",
+      "tables": [
+        "flight_session",
+        "drone_telemetry_history",
+        "ai_inference_event",
+        "ai_alert",
+        "incident",
+        "demo_scenario",
+        "maintenance_work_order"
+      ],
+      "risk": "일부 테이블은 물리 FK 없이 문자열 UUID로 연결"
+    },
+    {
+      "key": "drone_id",
+      "tables": [
+        "drone",
+        "drone_telemetry_history",
+        "flight_session",
+        "ai_inference_event",
+        "ai_alert",
+        "incident",
+        "demo_scenario",
+        "flight_quality_assessment",
+        "maintenance_work_order"
+      ],
+      "risk": "AI·Incident·Demo 계열 일부는 애플리케이션 검증에 의존"
+    },
+    {
+      "key": "source_type + source_id",
+      "tables": [
+        "incident",
+        "ai_alert",
+        "drone_geofence_event",
+        "flight_quality_assessment",
+        "audit_log"
+      ],
+      "risk": "다형 소스 참조이므로 DB FK 대신 서비스 규칙과 UNIQUE 제약에 의존"
+    },
+    {
+      "key": "snapshot_path",
+      "tables": [
+        "ai_inference_event"
+      ],
+      "risk": "DB 메타데이터와 파일시스템 JPG의 이중 정합성 필요"
+    }
   ],
   "flows": [
     {
       "key": "platform-health",
       "title": "플랫폼 상태",
       "description": "Backend·AI health와 레거시 system_status 스키마 경계",
-      "backendPatterns": ["^GET /api/health$"],
+      "backendPatterns": [
+        "^GET /api/health$"
+      ],
       "frontendPatterns": [],
-      "aiPatterns": ["^GET /health$"],
-      "tables": ["system_status"],
-      "runtimeStores": ["Spring HealthService runtime response", "FastAPI process health"]
+      "aiPatterns": [
+        "^GET /health$"
+      ],
+      "tables": [
+        "system_status"
+      ],
+      "runtimeStores": [
+        "Spring HealthService runtime response",
+        "FastAPI process health"
+      ]
     },
     {
       "key": "operator-security-audit",
       "title": "운영자 인증·감사",
       "description": "역할별 KEY, 만료 세션, 로그인 제한과 감사 기록",
-      "backendPatterns": ["^(GET|POST|DELETE) /api/security(?:/.*)?$", "^(GET|POST) /api/audit-logs(?:/.*)?$"],
-      "frontendPatterns": ["^(GET|POST|DELETE) /api/operator(?:/.*)?$", "^(GET|POST) /api/audit-logs(?:/.*)?$"],
+      "backendPatterns": [
+        "^(GET|POST|DELETE) /api/security(?:/.*)?$",
+        "^(GET|POST) /api/audit-logs(?:/.*)?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|POST|DELETE) /api/operator(?:/.*)?$",
+        "^(GET|POST) /api/audit-logs(?:/.*)?$"
+      ],
       "aiPatterns": [],
-      "tables": ["audit_log"],
-      "runtimeStores": ["OperatorCredentialRegistry", "OperatorSessionRegistry", "OperatorLoginAttemptGuard", "HttpOnly session cookie"]
+      "tables": [
+        "audit_log"
+      ],
+      "runtimeStores": [
+        "OperatorCredentialRegistry",
+        "OperatorSessionRegistry",
+        "OperatorPairingRegistry",
+        "OperatorLoginAttemptGuard",
+        "HttpOnly session cookie"
+      ]
     },
     {
       "key": "operations-dashboard",
       "title": "운영 대시보드",
       "description": "비행·AI·감사 집계 조회",
-      "backendPatterns": ["^GET /api/dashboard/operations$"],
-      "frontendPatterns": ["^GET /api/dashboard/operations$"],
+      "backendPatterns": [
+        "^GET /api/dashboard/operations$"
+      ],
+      "frontendPatterns": [
+        "^GET /api/dashboard/operations$"
+      ],
       "aiPatterns": [],
-      "tables": ["flight_session", "ai_inference_event", "audit_log"],
+      "tables": [
+        "flight_session",
+        "ai_inference_event",
+        "audit_log"
+      ],
       "runtimeStores": []
     },
     {
       "key": "demo-scenario",
       "title": "통합 시연 시나리오",
       "description": "드론·세션·AI 탐지·경보·Incident를 하나의 시연 상태로 묶음",
-      "backendPatterns": ["^(GET|POST) /api/demo/scenarios(?:/.*)?$"],
-      "frontendPatterns": ["^(GET|POST) /api/demo/scenarios(?:/.*)?$"],
+      "backendPatterns": [
+        "^(GET|POST) /api/demo/scenarios(?:/.*)?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|POST) /api/demo/scenarios(?:/.*)?$"
+      ],
       "aiPatterns": [],
-      "tables": ["demo_scenario", "drone", "flight_session", "drone_telemetry_history", "ai_inference_event", "ai_detection", "ai_alert", "incident", "incident_action_history", "audit_log"],
+      "tables": [
+        "demo_scenario",
+        "drone",
+        "flight_session",
+        "drone_telemetry_history",
+        "ai_inference_event",
+        "ai_detection",
+        "ai_alert",
+        "incident",
+        "incident_action_history",
+        "audit_log"
+      ],
       "runtimeStores": []
     },
     {
       "key": "drone-telemetry",
       "title": "드론·텔레메트리",
       "description": "기체 등록·상태·현재 센서값과 이력 저장",
-      "backendPatterns": ["^(GET|POST|PUT|PATCH|DELETE) /api/drones(?:/\\{\\})?(?:/(?:status|telemetry(?:/history)?))?$"],
-      "frontendPatterns": ["^(GET|POST|PUT|PATCH|DELETE) /api/drones(?:/\\[id\\])?(?:/(?:status|telemetry(?:/history)?))?$"],
+      "backendPatterns": [
+        "^(GET|POST|PUT|PATCH|DELETE) /api/drones(?:/\\{\\})?(?:/(?:status|telemetry(?:/history)?))?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|POST|PUT|PATCH|DELETE) /api/drones(?:/\\[id\\])?(?:/(?:status|telemetry(?:/history)?))?$"
+      ],
       "aiPatterns": [],
-      "tables": ["drone", "drone_telemetry_history"],
-      "runtimeStores": ["WebSocket realtime telemetry publisher"]
+      "tables": [
+        "drone",
+        "drone_telemetry_history"
+      ],
+      "runtimeStores": [
+        "WebSocket realtime telemetry publisher"
+      ]
     },
     {
       "key": "flight-session-replay",
       "title": "비행 세션·재생",
       "description": "세션 시작·갱신·완료·중단과 텔레메트리·탐지 재생",
-      "backendPatterns": ["^(GET|POST|PATCH|PUT) /api/drones/\\{\\}/flight-sessions(?:/.*)?$"],
-      "frontendPatterns": ["^(GET|POST|PATCH|PUT) /api/drones/\\[id\\]/flight-sessions(?:/.*)?$"],
+      "backendPatterns": [
+        "^(GET|POST|PATCH|PUT) /api/drones/\\{\\}/flight-sessions(?:/.*)?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|POST|PATCH|PUT) /api/drones/\\[id\\]/flight-sessions(?:/.*)?$"
+      ],
       "aiPatterns": [],
-      "tables": ["flight_session", "drone", "drone_telemetry_history", "ai_inference_event", "ai_detection", "audit_log"],
+      "tables": [
+        "flight_session",
+        "drone",
+        "drone_telemetry_history",
+        "ai_inference_event",
+        "ai_detection",
+        "audit_log"
+      ],
       "runtimeStores": []
     },
     {
       "key": "flight-quality-reliability",
       "title": "비행 품질·신뢰성",
       "description": "세션 품질 산정·backfill·기단 신뢰도와 Incident 자동화",
-      "backendPatterns": ["^(GET|POST) /api/flight-quality(?:/.*)?$", "^(GET|POST) /api/drones/\\{\\}/flight-quality-assessments(?:/.*)?$", "^(GET|PUT) /api/drones/\\{\\}/flight-sessions/\\{\\}/quality-assessment$"],
-      "frontendPatterns": ["^(GET|POST) /api/flight-quality(?:/.*)?$", "^(GET|POST) /api/drones/\\[id\\]/flight-quality-assessments(?:/.*)?$", "^(GET|PUT) /api/drones/\\[id\\]/flight-sessions/\\[sessionId\\]/quality-assessment$"],
+      "backendPatterns": [
+        "^(GET|POST) /api/flight-quality(?:/.*)?$",
+        "^(GET|POST) /api/drones/\\{\\}/flight-quality-assessments(?:/.*)?$",
+        "^(GET|PUT) /api/drones/\\{\\}/flight-sessions/\\{\\}/quality-assessment$"
+      ],
+      "frontendPatterns": [
+        "^(GET|POST) /api/flight-quality(?:/.*)?$",
+        "^(GET|POST) /api/drones/\\[id\\]/flight-quality-assessments(?:/.*)?$",
+        "^(GET|PUT) /api/drones/\\[id\\]/flight-sessions/\\[sessionId\\]/quality-assessment$"
+      ],
       "aiPatterns": [],
-      "tables": ["flight_quality_assessment", "flight_session", "drone", "drone_telemetry_history", "ai_inference_event", "incident", "incident_action_history", "maintenance_work_order"],
+      "tables": [
+        "flight_quality_assessment",
+        "flight_session",
+        "drone",
+        "drone_telemetry_history",
+        "ai_inference_event",
+        "incident",
+        "incident_action_history",
+        "maintenance_work_order"
+      ],
       "runtimeStores": []
     },
     {
       "key": "geofence",
       "title": "지오펜스",
       "description": "지오펜스 정의·활성화·진입 이벤트와 Incident 연계",
-      "backendPatterns": ["^(GET|POST|PUT|PATCH) /api/geofences(?:/.*)?$"],
-      "frontendPatterns": ["^(GET|POST|PUT|PATCH) /api/geofences(?:/.*)?$"],
+      "backendPatterns": [
+        "^(GET|POST|PUT|PATCH) /api/geofences(?:/.*)?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|POST|PUT|PATCH) /api/geofences(?:/.*)?$"
+      ],
       "aiPatterns": [],
-      "tables": ["drone_geofence", "drone_geofence_event", "incident", "incident_action_history", "audit_log"],
+      "tables": [
+        "drone_geofence",
+        "drone_geofence_event",
+        "incident",
+        "incident_action_history",
+        "audit_log"
+      ],
       "runtimeStores": []
     },
     {
       "key": "ai-event-alert",
       "title": "AI 이벤트·경보 영속화",
       "description": "AI 추론 결과·탐지·스냅숏 메타데이터·경보와 Incident 연계",
-      "backendPatterns": ["^(GET|POST|PUT|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$"],
-      "frontendPatterns": ["^(GET|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$"],
+      "backendPatterns": [
+        "^(GET|POST|PUT|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$"
+      ],
       "aiPatterns": [],
-      "tables": ["ai_inference_event", "ai_detection", "ai_alert", "drone", "incident", "incident_action_history"],
-      "runtimeStores": ["AI snapshot filesystem"]
+      "tables": [
+        "ai_inference_event",
+        "ai_detection",
+        "ai_alert",
+        "drone",
+        "incident",
+        "incident_action_history"
+      ],
+      "runtimeStores": [
+        "AI snapshot filesystem"
+      ]
     },
     {
       "key": "ai-runtime-stream",
       "title": "AI 영상 입력·추론 스트림",
       "description": "브라우저 프레임 ingest, GPU 추론, MJPEG, 모델·성능 상태",
       "backendPatterns": [],
-      "frontendPatterns": ["^(GET|POST) /api/ai/(?:ingest|metrics|models|stream)(?:/.*)?$"],
-      "aiPatterns": ["^(GET|POST) /api/.*$"],
+      "frontendPatterns": [
+        "^(GET|POST) /api/ai/(?:ingest|metrics|models|stream)(?:/.*)?$"
+      ],
+      "aiPatterns": [
+        "^(GET|POST) /api/.*$"
+      ],
       "tables": [],
-      "runtimeStores": ["BrowserUploadSource queue", "AnnotatedFrameHub", "InferencePerformanceMonitor", "YOLO model state", "VISIONFLOW_AI_INTERNAL_KEY"]
+      "runtimeStores": [
+        "BrowserUploadSource queue",
+        "AnnotatedFrameHub",
+        "InferencePerformanceMonitor",
+        "YOLO model state",
+        "VISIONFLOW_AI_INTERNAL_KEY"
+      ]
     },
     {
       "key": "incident-management",
       "title": "Incident 관리",
       "description": "다형 이벤트 소스의 Incident 생성·배정·상태·보고서·이력",
-      "backendPatterns": ["^(GET|POST|PATCH) /api/incidents(?:/.*)?$"],
-      "frontendPatterns": ["^(GET|POST|PATCH) /api/incidents(?:/.*)?$"],
+      "backendPatterns": [
+        "^(GET|POST|PATCH) /api/incidents(?:/.*)?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|POST|PATCH) /api/incidents(?:/.*)?$"
+      ],
       "aiPatterns": [],
-      "tables": ["incident", "incident_action_history", "ai_alert", "ai_inference_event", "drone_geofence_event", "drone_telemetry_history", "flight_quality_assessment"],
+      "tables": [
+        "incident",
+        "incident_action_history",
+        "ai_alert",
+        "ai_inference_event",
+        "drone_geofence_event",
+        "drone_telemetry_history",
+        "flight_quality_assessment"
+      ],
       "runtimeStores": []
     },
     {
       "key": "maintenance-sla",
       "title": "정비·SLA·비행 허가",
       "description": "작업지시·정비 이력·비행 허가·SLA·Incident 자동화",
-      "backendPatterns": ["^(GET|PATCH) /api/maintenance(?:/.*)?$"],
-      "frontendPatterns": ["^(GET|PATCH) /api/maintenance(?:/.*)?$"],
+      "backendPatterns": [
+        "^(GET|PATCH) /api/maintenance(?:/.*)?$"
+      ],
+      "frontendPatterns": [
+        "^(GET|PATCH) /api/maintenance(?:/.*)?$"
+      ],
       "aiPatterns": [],
-      "tables": ["maintenance_work_order", "maintenance_work_order_history", "incident", "incident_action_history", "drone", "flight_quality_assessment", "audit_log"],
-      "runtimeStores": ["MaintenanceSlaAutomationProperties"]
+      "tables": [
+        "maintenance_work_order",
+        "maintenance_work_order_history",
+        "incident",
+        "incident_action_history",
+        "drone",
+        "flight_quality_assessment",
+        "audit_log"
+      ],
+      "runtimeStores": [
+        "MaintenanceSlaAutomationProperties"
+      ]
     },
     {
       "key": "frontend-local-observability",
       "title": "Frontend 로컬 관측",
       "description": "CSP report 메모리 집계와 모바일 증적 파일 상태",
       "backendPatterns": [],
-      "frontendPatterns": ["^(GET|POST) /api/(?:mobile/evidence/status|security/csp-report)$"],
+      "frontendPatterns": [
+        "^(GET|POST) /api/(?:mobile/evidence/status|security/csp-report)$"
+      ],
       "aiPatterns": [],
       "tables": [],
-      "runtimeStores": ["bounded CSP report process memory", "mobile evidence filesystem"]
+      "runtimeStores": [
+        "bounded CSP report process memory",
+        "mobile evidence filesystem"
+      ]
     }
   ]
 }

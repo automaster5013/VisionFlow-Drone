@@ -45,11 +45,32 @@ export default async function OperatorLoginPage({
           운영자 로그인
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          발급받은 역할별 키를 입력하세요. 원본 키는 브라우저에 저장하지 않고,
-          백엔드가 발급한 만료형 세션만 HttpOnly 쿠키로 보관합니다.
+          스마트폰은 PC에서 생성한 5분 일회용 QR 로그인을 권장합니다.
+          장기 역할 KEY는 초기 설정·복구용으로만 사용하고 브라우저에는 저장하지 않습니다.
         </p>
 
-        <OperatorLoginForm returnTo={returnTo} />
+        <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+          <p className="text-sm font-bold text-sky-900">
+            스마트폰에서 접속 중인가요?
+          </p>
+          <p className="mt-1 text-xs leading-5 text-sky-800">
+            PC의 로그인된 VisionFlow 화면에서 상단의 QR 로그인 버튼을 눌러
+            일회용 QR을 생성한 뒤 스마트폰으로 스캔하세요.
+          </p>
+          <Link
+            href="/operator-pair"
+            className="mt-3 inline-flex text-sm font-bold text-sky-900 underline underline-offset-4"
+          >
+            QR 로그인 안내
+          </Link>
+        </div>
+
+        <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <summary className="cursor-pointer text-sm font-bold text-slate-800">
+            비상·초기 설정용 KEY 로그인
+          </summary>
+          <OperatorLoginForm returnTo={returnTo} />
+        </details>
 
         <div className="mt-5 border-t border-slate-200 pt-4 text-center">
           <Link

@@ -69,9 +69,27 @@ public class SecurityConfig {
                             .permitAll()
                             .requestMatchers(
                                     HttpMethod.POST,
-                                    "/api/security/sessions"
+                                    "/api/security/sessions",
+                                    "/api/security/pairings/*/claim",
+                                    "/api/security/pairings/*/exchange"
                             )
                             .permitAll()
+                            .requestMatchers(
+                                    HttpMethod.POST,
+                                    "/api/security/pairings",
+                                    "/api/security/pairings/*/approve"
+                            )
+                            .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
+                            .requestMatchers(
+                                    HttpMethod.GET,
+                                    "/api/security/pairings/*"
+                            )
+                            .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
+                            .requestMatchers(
+                                    HttpMethod.DELETE,
+                                    "/api/security/pairings/*"
+                            )
+                            .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
                             .requestMatchers(
                                     HttpMethod.DELETE,
                                     "/api/security/sessions/current"

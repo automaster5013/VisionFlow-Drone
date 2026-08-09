@@ -3,8 +3,8 @@
   "project": "visionflow",
   "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
   "expectedCounts": {
-    "backend": 70,
-    "frontend": 72,
+    "backend": 76,
+    "frontend": 78,
     "ai": 9
   },
   "frontendLocalOperations": [
@@ -29,102 +29,240 @@
       "method": "POST",
       "path": "/api/ai/ingest/frame",
       "targets": [
-        { "service": "ai", "method": "POST", "path": "/api/ingest/frame" }
+        {
+          "service": "ai",
+          "method": "POST",
+          "path": "/api/ingest/frame"
+        }
       ]
     },
     {
       "method": "GET",
       "path": "/api/ai/ingest/status",
       "targets": [
-        { "service": "ai", "method": "GET", "path": "/api/ingest/status" }
+        {
+          "service": "ai",
+          "method": "GET",
+          "path": "/api/ingest/status"
+        }
       ]
     },
     {
       "method": "GET",
       "path": "/api/ai/metrics/status",
       "targets": [
-        { "service": "ai", "method": "GET", "path": "/api/metrics/status" }
+        {
+          "service": "ai",
+          "method": "GET",
+          "path": "/api/metrics/status"
+        }
       ]
     },
     {
       "method": "GET",
       "path": "/api/ai/models/status",
       "targets": [
-        { "service": "ai", "method": "GET", "path": "/api/models/status" }
+        {
+          "service": "ai",
+          "method": "GET",
+          "path": "/api/models/status"
+        }
       ]
     },
     {
       "method": "GET",
       "path": "/api/ai/stream/status",
       "targets": [
-        { "service": "ai", "method": "GET", "path": "/api/streams/status" }
+        {
+          "service": "ai",
+          "method": "GET",
+          "path": "/api/streams/status"
+        }
       ]
     },
     {
       "method": "GET",
       "path": "/api/ai/stream/annotated",
       "targets": [
-        { "service": "ai", "method": "GET", "path": "/api/streams/annotated.mjpeg" }
+        {
+          "service": "ai",
+          "method": "GET",
+          "path": "/api/streams/annotated.mjpeg"
+        }
       ]
     },
     {
       "method": "GET",
       "path": "/api/operator/session",
       "targets": [
-        { "service": "backend", "method": "GET", "path": "/api/security/me" }
+        {
+          "service": "backend",
+          "method": "GET",
+          "path": "/api/security/me"
+        }
       ]
     },
     {
       "method": "POST",
       "path": "/api/operator/session",
       "targets": [
-        { "service": "backend", "method": "POST", "path": "/api/security/sessions" }
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/security/sessions"
+        }
       ]
     },
     {
       "method": "DELETE",
       "path": "/api/operator/session",
       "targets": [
-        { "service": "backend", "method": "DELETE", "path": "/api/security/sessions/current" }
+        {
+          "service": "backend",
+          "method": "DELETE",
+          "path": "/api/security/sessions/current"
+        }
       ]
     },
     {
       "method": "GET",
       "path": "/api/operator/sessions",
       "targets": [
-        { "service": "backend", "method": "GET", "path": "/api/security/sessions" }
+        {
+          "service": "backend",
+          "method": "GET",
+          "path": "/api/security/sessions"
+        }
       ]
     },
     {
       "method": "DELETE",
       "path": "/api/operator/sessions/{}",
       "targets": [
-        { "service": "backend", "method": "DELETE", "path": "/api/security/sessions/{}" }
+        {
+          "service": "backend",
+          "method": "DELETE",
+          "path": "/api/security/sessions/{}"
+        }
       ]
     },
     {
       "method": "DELETE",
       "path": "/api/operator/sessions/others",
       "targets": [
-        { "service": "backend", "method": "DELETE", "path": "/api/security/sessions/others" }
+        {
+          "service": "backend",
+          "method": "DELETE",
+          "path": "/api/security/sessions/others"
+        }
       ]
     },
     {
       "method": "POST",
       "path": "/api/demo/scenarios/{}/{}",
       "targets": [
-        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/detect" },
-        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/escalate" },
-        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/resolve" },
-        { "service": "backend", "method": "POST", "path": "/api/demo/scenarios/{}/complete" }
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/demo/scenarios/{}/detect"
+        },
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/demo/scenarios/{}/escalate"
+        },
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/demo/scenarios/{}/resolve"
+        },
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/demo/scenarios/{}/complete"
+        }
       ]
     },
     {
       "method": "POST",
       "path": "/api/drones/{}/flight-sessions/{}/{}",
       "targets": [
-        { "service": "backend", "method": "POST", "path": "/api/drones/{}/flight-sessions/{}/complete" },
-        { "service": "backend", "method": "POST", "path": "/api/drones/{}/flight-sessions/{}/abort" }
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/drones/{}/flight-sessions/{}/complete"
+        },
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/drones/{}/flight-sessions/{}/abort"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/pairings",
+      "targets": [
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/security/pairings"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/operator/pairings/{}",
+      "targets": [
+        {
+          "service": "backend",
+          "method": "GET",
+          "path": "/api/security/pairings/{}"
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/operator/pairings/{}",
+      "targets": [
+        {
+          "service": "backend",
+          "method": "DELETE",
+          "path": "/api/security/pairings/{}"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/pairings/{}/claim",
+      "targets": [
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/security/pairings/{}/claim"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/pairings/{}/approve",
+      "targets": [
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/security/pairings/{}/approve"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/pairings/{}/exchange",
+      "targets": [
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/security/pairings/{}/exchange"
+        }
       ]
     }
   ],

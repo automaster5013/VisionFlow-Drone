@@ -86,7 +86,7 @@ Backend 표에는 RBAC 활성 모드와 비활성 모드를 모두 표시합니�
 
 ## 현재 기준 결과
 
-현재 operation 수는 Backend 70·Frontend 72·AI 9입니다. 정상 예상 상태는 `API_SECURITY_HEALTHY`입니다.
+현재 operation 수는 Backend 76·Frontend 78·AI 9입니다. 정상 예상 상태는 `API_SECURITY_HEALTHY`입니다.
 
 확인된 현재 상태:
 

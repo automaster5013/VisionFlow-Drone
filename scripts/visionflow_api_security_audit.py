@@ -903,7 +903,10 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
                 else (
                     "승인된 공개 수집 API의 접근 규칙이 변경됐습니다."
                     if changed_writes
-                    else "공개 변경 API는 승인된 장치·AI·세션 진입점 5개뿐입니다."
+                    else (
+                        "공개 변경 API는 승인된 장치·AI·세션 진입점 "
+                        f"{len(baseline.get('expectedBackendPublicWrites', []))}개뿐입니다."
+                    )
                 )
             ),
             unexpected=unexpected_writes,
