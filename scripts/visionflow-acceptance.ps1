@@ -713,6 +713,48 @@ function Test-OperatorProtectedDemoPages {
             -Message "Temporary OPERATOR browser session could not be cleared"
     }
 }
+function Test-OperatorProtectedMobilePages {
+    $session = Open-AcceptanceFrontendSession `
+        -Key $OperatorKey `
+        -ExpectedRole "OPERATOR"
+
+    if (-not $session.Ready) {
+        $message = "Could not create OPERATOR browser session for protected mobile pages: $($session.Message)"
+        Add-Result `
+            -Name "Frontend mobile control" `
+            -Passed $false `
+            -StatusCode $session.StatusCode `
+            -DurationMs $session.DurationMs `
+            -Message $message
+        Add-Result `
+            -Name "Frontend mobile flight" `
+            -Passed $false `
+            -StatusCode $session.StatusCode `
+            -DurationMs 0 `
+            -Message $message
+        return
+    }
+
+    Test-Endpoint `
+        -Name "Frontend mobile control" `
+        -Uri "$FrontendUrl/mobile-control" |
+        Out-Null
+
+    Test-Endpoint `
+        -Name "Frontend mobile flight" `
+        -Uri "$FrontendUrl/mobile-flight" |
+        Out-Null
+
+    $logoutResponse = Close-AcceptanceFrontendSession -Headers $session.Headers
+    if ($logoutResponse.StatusCode -ne 204) {
+        Add-Result `
+            -Name "Frontend mobile page session cleanup" `
+            -Passed $false `
+            -StatusCode $logoutResponse.StatusCode `
+            -DurationMs $logoutResponse.DurationMs `
+            -Message "Temporary OPERATOR browser session could not be cleared"
+    }
+}
 function Get-OperatorHeaders {
     param(
         [AllowNull()]
@@ -1599,6 +1641,7 @@ try {
     Test-Endpoint -Name "Frontend security posture" -Uri "$FrontendUrl/security-status" | Out-Null
     Test-Endpoint -Name "Frontend drone control" -Uri "$FrontendUrl/drones" | Out-Null
     Test-OperatorProtectedDemoPages
+    Test-OperatorProtectedMobilePages
 
     if (-not $SkipAi) {
         Test-Endpoint -Name "AI public health" -Uri "$AiUrl/health" | Out-Null
