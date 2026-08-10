@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/api-audit.yml"
+      - ".github/workflows/docker-publish.yml"
       - ".env.example"
       - "compose.yaml"
       - "01_frontend/visionflow-web/src/app/ai-preview/**"
@@ -60,6 +61,7 @@ on:
       - main
     paths:
       - ".github/workflows/api-audit.yml"
+      - ".github/workflows/docker-publish.yml"
       - ".env.example"
       - "compose.yaml"
       - "01_frontend/visionflow-web/src/app/ai-preview/**"
