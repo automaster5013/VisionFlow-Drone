@@ -1,0 +1,15 @@
+services:
+  backend-api:
+    build: !reset null
+    image: ${VISIONFLOW_DOCKERHUB_REPOSITORY:-automaster5013/visionflow-drone}:backend-sha-${VISIONFLOW_RELEASE_SHA:?VISIONFLOW_RELEASE_SHA is required}
+    pull_policy: always
+
+  ai-server:
+    build: !reset null
+    image: ${VISIONFLOW_DOCKERHUB_REPOSITORY:-automaster5013/visionflow-drone}:ai-sha-${VISIONFLOW_RELEASE_SHA:?VISIONFLOW_RELEASE_SHA is required}
+    pull_policy: always
+
+  frontend-web:
+    build: !reset null
+    image: ${VISIONFLOW_DOCKERHUB_REPOSITORY:-automaster5013/visionflow-drone}:frontend-sha-${VISIONFLOW_RELEASE_SHA:?VISIONFLOW_RELEASE_SHA is required}
+    pull_policy: always
