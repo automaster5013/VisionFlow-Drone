@@ -145,6 +145,21 @@ function parseFlightSessionResponse(
   return null;
 }
 
+function parseFlightSessionList(
+  payload: unknown,
+): FlightSessionManagementResponse[] {
+  const candidates = Array.isArray(payload)
+    ? payload
+    : typeof payload === "object" &&
+        payload !== null &&
+        "data" in payload &&
+        Array.isArray((payload as { data?: unknown }).data)
+      ? (payload as { data: unknown[] }).data
+      : [];
+
+  return candidates.filter(isFlightSessionResponse);
+}
+
 async function readApiError(
   response: Response,
   fallback: string,
@@ -168,6 +183,34 @@ async function readApiError(
   }
 
   return fallback;
+}
+
+async function fetchActiveFlightSession(
+  droneId: number,
+  signal?: AbortSignal,
+): Promise<FlightSessionManagementResponse | null> {
+  const response = await fetch(
+    `/api/drones/${droneId}/flight-sessions?limit=100`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readApiError(
+        response,
+        `기존 비행 세션 조회 실패: ${response.status}`,
+      ),
+    );
+  }
+
+  const sessions = parseFlightSessionList(await response.json());
+
+  return sessions.find((candidate) => candidate.status === "ACTIVE") ?? null;
 }
 
 function formatSessionTime(value: string | null | undefined): string {
@@ -262,6 +305,11 @@ export function MobileFlightControl() {
   const [flightClearance, setFlightClearance] =
     useState<MaintenanceFlightClearance | null>(null);
   const [clearanceReloadToken, setClearanceReloadToken] = useState(0);
+  const [recoverySession, setRecoverySession] =
+    useState<FlightSessionManagementResponse | null>(null);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [recoveryReloadToken, setRecoveryReloadToken] = useState(0);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -356,6 +404,35 @@ export function MobileFlightControl() {
       abortController.abort();
     };
   }, [clearanceReloadToken, selectedDroneId]);
+
+  useEffect(() => {
+    if (selectedDroneId === null) {
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    fetchActiveFlightSession(selectedDroneId, abortController.signal)
+      .then((activeSession) => {
+        if (!abortController.signal.aborted) {
+          setRecoverySession(activeSession);
+          setRecoveryError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!abortController.signal.aborted) {
+          setRecoveryError(
+            error instanceof Error
+              ? error.message
+              : "기존 ACTIVE 비행 세션을 확인하지 못했습니다.",
+          );
+        }
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [recoveryReloadToken, selectedDroneId]);
 
   const releaseCamera = useCallback(() => {
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -638,6 +715,9 @@ export function MobileFlightControl() {
     };
   }, [running]);
 
+  const selectedRecoverySession =
+    recoverySession?.droneId === selectedDroneId ? recoverySession : null;
+
   async function startFlight() {
     if (!canOperate) {
       setStartupError(operateDeniedReason);
@@ -672,6 +752,33 @@ export function MobileFlightControl() {
     if (session?.status === "ACTIVE") {
       setStartupError(
         "기존 ACTIVE 세션을 완료하거나 중단한 뒤 새 비행을 시작하세요.",
+      );
+      return;
+    }
+
+    if (selectedRecoverySession !== null) {
+      setStartupError(
+        "서버에 이전 ACTIVE 비행 세션이 남아 있습니다. 기존 세션을 중단한 뒤 새 비행을 시작하세요.",
+      );
+      return;
+    }
+
+    try {
+      const serverActiveSession =
+        await fetchActiveFlightSession(selectedDroneId);
+
+      if (serverActiveSession !== null) {
+        setRecoverySession(serverActiveSession);
+        setStartupError(
+          "서버에 이전 ACTIVE 비행 세션이 남아 있습니다. 기존 세션을 중단한 뒤 새 비행을 시작하세요.",
+        );
+        return;
+      }
+    } catch (error) {
+      setStartupError(
+        error instanceof Error
+          ? error.message
+          : "기존 ACTIVE 비행 세션 상태를 확인하지 못했습니다.",
       );
       return;
     }
@@ -769,6 +876,63 @@ export function MobileFlightControl() {
       );
     } finally {
       setSessionAction(null);
+    }
+  }
+
+  async function abortRecoverySession() {
+    if (!canOperate) {
+      setRecoveryError(operateDeniedReason);
+      return;
+    }
+
+    if (selectedRecoverySession === null) {
+      setRecoveryError("중단할 기존 ACTIVE 비행 세션이 없습니다.");
+      return;
+    }
+
+    setRecoveryBusy(true);
+    setRecoveryError(null);
+
+    try {
+      const response = await fetch(
+        `/api/drones/${selectedRecoverySession.droneId}/flight-sessions/` +
+          `${encodeURIComponent(selectedRecoverySession.sessionId)}/abort`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+          keepalive: true,
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await readApiError(
+            response,
+            `기존 비행 세션 중단 실패: ${response.status}`,
+          ),
+        );
+      }
+
+      const abortedSession = parseFlightSessionResponse(await response.json());
+
+      if (abortedSession === null || abortedSession.status !== "ABORTED") {
+        throw new Error("기존 비행 세션 중단 응답 형식이 올바르지 않습니다.");
+      }
+
+      setRecoverySession(null);
+      setStartupError(null);
+      setLifecycleError(null);
+      setRecoveryReloadToken((current) => current + 1);
+      setClearanceReloadToken((current) => current + 1);
+    } catch (error) {
+      setRecoveryError(
+        error instanceof Error
+          ? error.message
+          : "기존 ACTIVE 비행 세션을 중단하지 못했습니다.",
+      );
+    } finally {
+      setRecoveryBusy(false);
     }
   }
 
@@ -1092,6 +1256,80 @@ export function MobileFlightControl() {
           </label>
         </section>
 
+        {selectedRecoverySession !== null && (
+          <section className="rounded-2xl border border-red-300 bg-red-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-xs font-bold uppercase tracking-wider text-red-700">
+                  Active Session Recovery
+                </div>
+                <div className="mt-1 font-bold text-red-950">
+                  서버에 이전 ACTIVE 비행 세션이 남아 있습니다.
+                </div>
+                <div className="mt-2 break-all font-mono text-xs font-bold text-red-900">
+                  {selectedRecoverySession.sessionId}
+                </div>
+                <div className="mt-1 text-sm text-red-800">
+                  {selectedRecoverySession.name} · 시작{" "}
+                  {formatSessionTime(selectedRecoverySession.startedAt)}
+                  {selectedRecoverySession.sourceDeviceId
+                    ? ` · ${selectedRecoverySession.sourceDeviceId}`
+                    : ""}
+                </div>
+                <p className="mt-2 text-sm text-red-800">
+                  브라우저 종료·백그라운드 전환 등으로 정상 종료되지 않은
+                  세션일 수 있습니다. 아래 버튼으로 서버 세션을 ABORTED 처리한
+                  뒤 새 비행을 시작하세요.
+                </p>
+                {recoveryError && (
+                  <div className="mt-3 rounded-lg border border-red-300 bg-white p-2 text-sm text-red-800">
+                    {recoveryError}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void abortRecoverySession()}
+                  disabled={recoveryBusy || !canOperate}
+                  className="rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {recoveryBusy
+                    ? "기존 세션 중단 중"
+                    : "기존 ACTIVE 세션 중단"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRecoveryReloadToken((current) => current + 1)
+                  }
+                  disabled={recoveryBusy}
+                  className="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-bold text-red-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  상태 다시 확인
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {recoveryError && selectedRecoverySession === null && (
+          <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="font-bold">기존 비행 세션 상태 확인 필요</div>
+            <div className="mt-1">{recoveryError}</div>
+            <button
+              type="button"
+              onClick={() =>
+                setRecoveryReloadToken((current) => current + 1)
+              }
+              className="mt-3 rounded-lg bg-amber-900 px-3 py-2 text-sm font-bold text-white"
+            >
+              상태 다시 확인
+            </button>
+          </section>
+        )}
+
         {selectedDroneId !== null && (
           <section
             className={[
@@ -1293,20 +1531,26 @@ export function MobileFlightControl() {
                 selectedDroneId === null ||
                 !canOperate ||
                 flightGateBlocked ||
+                selectedRecoverySession !== null ||
+                recoveryBusy ||
                 sessionAction !== null
               }
               title={
-                flightGateBlocked
-                  ? currentFlightClearance?.reason
-                  : canOperate
-                    ? undefined
-                    : operateDeniedReason ?? undefined
+                selectedRecoverySession !== null
+                  ? "서버의 기존 ACTIVE 세션을 먼저 중단하세요."
+                  : flightGateBlocked
+                    ? currentFlightClearance?.reason
+                    : canOperate
+                      ? undefined
+                      : operateDeniedReason ?? undefined
               }
               className="rounded-xl bg-cyan-600 px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {sessionAction === "starting"
-                ? "세션 생성 중"
-                : "통합 비행 시작"}
+              {selectedRecoverySession !== null
+                ? "기존 세션 정리 필요"
+                : sessionAction === "starting"
+                  ? "세션 생성 중"
+                  : "통합 비행 시작"}
             </button>
             <button
               type="button"
