@@ -1518,7 +1518,7 @@ export function MobileFlightControl() {
           )}
 
           <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-            현재 PC에서는 수동 텔레메트리와 웹캠으로 검증합니다. 스마트폰 실제 센서·카메라는 신뢰된 HTTPS 인증서 적용 후 같은 화면에서 확인합니다.
+            스마트폰에서는 신뢰된 HTTPS 환경에서 실제 GPS·방향 센서와 후면 카메라를 통합 비행에 사용할 수 있습니다. PC에서는 수동 텔레메트리와 웹캠 테스트 모드를 사용할 수 있습니다.
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
