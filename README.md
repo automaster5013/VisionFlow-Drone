@@ -101,7 +101,7 @@
 
 ### 🌐 Frontend
 
-<img src="https://img.shields.io/badge/Next.js%2016.2.10-000000?style=for-the-badge&logo=nextdotjs&logoColor=white"> <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"> <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"> <img src="https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socketdotio&logoColor=white">
+<img src="https://img.shields.io/badge/Next.js%2016.2.12-000000?style=for-the-badge&logo=nextdotjs&logoColor=white"> <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"> <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"> <img src="https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socketdotio&logoColor=white">
 
 ### ☕ Backend
 
@@ -173,6 +173,47 @@ graph LR
 
 ---
 
+## 🔁 Verified CI/CD Pipeline
+
+VisionFlow-Drone은 소스 검증, 컨테이너 이미지 발행, 실제 배포, Health Check, 자동 Rollback을 분리한 CI/CD 구조를 사용합니다.
+
+```mermaid
+flowchart LR
+    Source["Public Source Repo"] --> CI["GitHub Actions CI<br/>Contract · Security · Traceability"]
+    CI --> Registry["Docker Hub<br/>Immutable SHA Images"]
+    Registry --> Deploy["Private Deploy Control"]
+    Deploy --> Runner["Windows Self-hosted Runner"]
+    Runner --> Gate["Release Safety Gate"]
+    Gate --> BackendCD["Backend Deploy"]
+    BackendCD --> AICD["AI Deploy"]
+    AICD --> FrontendCD["Frontend Deploy"]
+    FrontendCD --> Health["HTTP / HTTPS Health Check"]
+    Health --> Success["Deployment SUCCESS"]
+    BackendCD -. failure .-> Rollback["Automatic Rollback"]
+    AICD -. failure .-> Rollback
+    FrontendCD -. failure .-> Rollback
+    Health -. failure .-> Rollback
+    Rollback --> Previous["Previous Immutable SHA"]
+    Previous --> Recovery["Full Platform Health Check"]
+```
+
+### 검증 완료 항목
+
+- API Contract · Security · System Traceability CI Gate
+- Docker Hub Backend / AI / Frontend immutable SHA image publish
+- Private 배포 제어 저장소와 Windows self-hosted runner
+- Release SHA, clean workspace, Docker Hub image, ACTIVE flight, platform health Preflight
+- Backend → AI → Frontend 순차 CD 재배포
+- Backend / AI / Frontend / HTTPS Health Check
+- 의도적 장애 주입 후 이전 immutable SHA로 Automatic Rollback
+- Rollback 후 전체 플랫폼 Health Check 및 SHA 일관성 검증
+
+검증된 기준 Release는 `a6f29c6`이며, 제어된 Rollback 검증에서는 `a191563`을 Target으로 사용한 뒤 `a6f29c6`으로 자동 복구했습니다.
+
+자세한 공개 아키텍처·검증 범위는 [`docs/CI-CD-ARCHITECTURE.md`](docs/CI-CD-ARCHITECTURE.md)를 참고합니다.
+
+---
+
 ## 🌊 Data Flow
 
 1. **입력 수집**<br>
@@ -220,7 +261,7 @@ graph LR
 | 🛡️ 안전 탐지 | Helmet / PPE Detection | 🟡 모델 고도화 중 | 작업자와 안전모·보호구 착용 여부 분석 |
 | 🧍 위험 행동 | Human Pose Estimation | 🔵 Phase 3 확장 | 쓰러짐 등 위험 행동 탐지 로직 연구 및 적용 |
 | 📶 실기체 연계 | DJI / Wireless Video Adapter | 🔵 Phase 3 확장 | DJI Mini 4 Pro 영상 및 비행 데이터 연계 검증 |
-| 🔐 운영 보안 | HTTPS / Auth / Alerts | 🔵 후속 고도화 | 인증·인가, HTTPS, 긴급 알림, 감사 로그 강화 |
+| 🔐 운영 보안 | HTTPS / RBAC / QR Pairing / Audit | ✅ 핵심 구현 | HTTPS, 역할 기반 인증·인가, 브라우저 세션, 보안 QR 페어링, 감사 로그 |
 
 > 상태 표기: ✅ 구현 · 🟡 구현/검증 중 · 🔵 후속 확장
 
@@ -251,7 +292,7 @@ VisionFlow-Drone/
 
 ## 🚀 Quick Start
 
-현재 표준 실행 방식은 Docker Compose이며, GPU AI 서버와 모바일 HTTPS 오버레이를 함께 사용합니다.
+현재 공개 저장소의 로컬 개발 기본값은 **Docker Compose + CPU AI 프로필**입니다. 모바일 HTTPS 진입점은 Caddy 기반 별도 Compose 서비스로 관리합니다. 검증된 Release 배포는 Docker Hub immutable SHA 이미지와 Private CD 제어 저장소를 통해 수행합니다.
 
 ### 1) Clone
 
@@ -260,16 +301,25 @@ git clone https://github.com/automaster5013/VisionFlow-Drone.git
 cd VisionFlow-Drone
 ```
 
-### 2) GPU·모바일 HTTPS 통합 실행
+### 2) 기본 서비스 실행
 
 ```bash
-docker compose --env-file .env.docker -f compose.yaml -f compose.gpu.yaml -f compose.mobile-https.yaml up -d --wait
+docker compose --env-file .env.docker up -d --wait
 ```
 
-### 3) 서비스 상태 확인
+### 3) 모바일 HTTPS 진입점 실행
 
 ```bash
-docker compose --env-file .env.docker -f compose.yaml -f compose.gpu.yaml -f compose.mobile-https.yaml ps
+docker compose --env-file .env.docker -f compose.mobile-https.yaml up -d
+```
+
+> `visionflow-mobile-https`는 애플리케이션 Release Compose와 분리해 관리합니다. 운영 중 `--remove-orphans`를 사용하지 않습니다.
+
+### 4) 서비스 상태 확인
+
+```bash
+docker compose --env-file .env.docker ps
+docker ps --filter "name=visionflow-mobile-https"
 ```
 
 | 서비스 | 주소 |
@@ -281,7 +331,7 @@ docker compose --env-file .env.docker -f compose.yaml -f compose.gpu.yaml -f com
 | 모바일 HTTPS 진입점 | `https://localhost:3443` |
 | MySQL | `localhost:3307` |
 
-### 4) 기본 운영 점검
+### 5) 기본 운영 점검
 
 ```bat
 scripts\run-visionflow-acceptance.bat
@@ -329,8 +379,8 @@ scripts\run-visionflow-backup.bat --consistent
 
 - [x] 발표·데모 데이터 선별 정리와 복원 가능한 격리 백업
 - [x] GPU·모바일 HTTPS Compose 구성을 보존하는 일관성 백업
-- [ ] RBAC 및 운영자 브라우저 세션 모드 정상화
-- [ ] 스마트폰 RTSP·HTTPS 실센서 E2E 회귀 검증
+- [x] VIEWER/OPERATOR/ADMIN RBAC, 운영자 브라우저 세션, 보안 QR 페어링 검증
+- [x] 스마트폰 HTTPS 실센서·후면 카메라·YOLO 통합 E2E 회귀 검증
 - [ ] AI 탐지 바운딩박스·스냅숏 표시 회귀 검증
 
 ### 🔵 Phase 3 예정
@@ -340,9 +390,9 @@ scripts\run-visionflow-backup.bat --consistent
 - [ ] 실제 비행 데이터와 관제 텔레메트리 연결
 - [ ] Human Pose Estimation 기반 위험 행동 탐지
 - [ ] 이벤트 캡처, 경고 및 관리자 알림 기능
-- [ ] Spring Security 기반 인증·인가 정책 강화
-- [ ] HTTPS/Nginx 및 배포 환경 구성
-- [ ] GitHub Actions 기반 CI 품질 검사와 배포 자동화
+- [x] 역할 기반 인증·인가, 세션, 보안 QR 페어링 및 감사 로그 강화
+- [x] Caddy HTTPS 진입점 및 Docker Compose Release 배포 구성
+- [x] GitHub Actions CI + Private CD + Docker Hub immutable SHA + 자동 Rollback 검증
 - [ ] 최종 발표용 실시간 통합 시연 시나리오 완성
 
 ---
