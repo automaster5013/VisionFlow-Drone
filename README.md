@@ -27,14 +27,14 @@
 
 # 👁️ VisionFlow-Drone
 
-## 지능형 드론 관제 및 무선 Vision AI 표준 파이프라인
+## 무선 영상·텔레메트리 기반 지능형 드론 관제 및 Vision AI 표준 파이프라인
 
 ### 가상 드론 검증에서 실제 드론 관제로 성장하는 2차·3차 연계형 프로젝트
 
 [![Project](https://img.shields.io/badge/Project-VisionFlow--Drone-0A66C2?style=for-the-badge&logo=github&logoColor=white)](#)
 [![Team](https://img.shields.io/badge/Team-PyvaOps-6A5ACD?style=for-the-badge)](#)
 [![Phase](https://img.shields.io/badge/Phase%202-Completed-success?style=for-the-badge)](#)
-[![Status](https://img.shields.io/badge/Status-Phase%203%20Preparation-orange?style=for-the-badge)](#)
+[![Status](https://img.shields.io/badge/Status-Phase%203%20Kickoff%20Ready-0A66C2?style=for-the-badge)](Daily_Schedule/PHASE3_SCHEDULE.md)
 
 </div>
 
@@ -49,10 +49,31 @@
 - **Vision**: YOLO와 OpenCV 기반 영상 분석 및 객체 탐지
 - **Flow**: 영상, 위치, 배터리, 탐지 이벤트, 이력 데이터가 실시간으로 흐르는 통합 파이프라인
 
-2차 프로젝트에서는 **스마트폰·브라우저·더미 영상 기반 가상 드론**으로 전체 관제 파이프라인을 구현하고 통합 검증했습니다. 현재는 데이터·백업·운영 기준선을 정리하고 있으며, 3차 프로젝트에서는 **DJI Mini 4 Pro 실기체 연계**, 무선 영상 입력, 현장 시연 및 운영 안정화로 확장합니다.
+2차 프로젝트에서는 **스마트폰·브라우저·더미 영상 기반 가상 드론**으로 전체 관제 파이프라인을 구현하고, 실제 스마트폰 센서·후면 카메라·YOLO 통합 E2E와 보안·CI/CD·자동 Rollback까지 검증했습니다.
+
+3차 프로젝트(2026.08.18 ~ 2026.09.11)에서는 이 기준선을 유지하면서 **DJI Mini 4 Pro 실기체 연계**, 무선 영상 입력, Edge GPU Vision AI, 실제/준실제 텔레메트리 연결 및 현장형 관제 시연으로 확장합니다. AWS는 핵심 기능을 대체하지 않으며, **Go / No-Go 기술 타당성 Spike를 통과한 경우에만 Edge–Cloud 선택 확장**으로 적용합니다.
 
 > **핵심 방향**<br>
 > 특정 드론 기체나 단일 AI 모델에 종속되지 않고, 영상 입력원과 탐지 모델을 교체해도 재사용할 수 있는 **표준화된 Vision AI 관제 파이프라인**을 구축합니다.
+
+---
+
+## 📅 Phase 3 Work Schedule
+
+> **3차 프로젝트 공식 기간: 2026.08.18 ~ 2026.09.11**
+> 강사·멘토가 진행 상황을 바로 확인할 수 있도록 3차 프로젝트 상세 일정표를 별도 문서로 관리합니다.
+
+### 👉 [3차 프로젝트 상세 작업 일정표 바로가기](Daily_Schedule/PHASE3_SCHEDULE.md)
+
+핵심 우선순위는 다음과 같습니다.
+
+1. **DJI Mini 4 Pro 실기체 영상 입력 경로 검증**
+2. **AI 영상 추론 고도화 — YOLO26m Detection + Tracking + Pose + Segmentation + VisDrone 소형 객체 대응**
+3. **Edge GPU 기반 실시간 Multi-Task 추론 성능 최적화**
+4. **비행 세션·텔레메트리·AI Event·MySQL 통합**
+5. **Next.js 관제 대시보드 End-to-End 시연**
+6. **CI/CD·Health Check·Automatic Rollback 회귀 검증**
+7. **AWS는 Time-boxed Go / No-Go 통과 시에만 선택 확장**
 
 ---
 
@@ -83,17 +104,19 @@
 - FastAPI 기반 AI 영상 수집·추론 API
 - Spring Boot, FastAPI, Next.js 간 통합 검증
 
-### 🚀 Phase 3 — 실제 드론 연계 및 현장형 관제 고도화
+### 🚀 Phase 3 — 실기체·Edge AI 기반 현장형 관제 고도화
 
-- DJI Mini 4 Pro 기반 실제 비행·촬영 시나리오 검증
-- 무선 영상 입력 방식 검토 및 RTSP/중계 스트림 연계
-- 실제 드론 텔레메트리 또는 비행 데이터 어댑터 구현
-- 안전모·보호구 탐지 모델 고도화
-- 위험 행동 및 Human Pose Estimation 기능 확장
-- HTTPS, 인증·인가, 이벤트 알림 및 배포 자동화 강화
-- 발표·시연 환경을 위한 복구 절차와 운영 매뉴얼 정립
+- DJI Mini 4 Pro ↔ RC-N2 ↔ DJI Fly 실제 연결 및 Live View 검증
+- DJI Fly가 실제 지원하는 Live Streaming/무선 출력 인터페이스 확인 후 영상 경로 확정
+- 무선 영상 → Edge AI(FastAPI + YOLO/OpenCV) 수신·추론 파이프라인 구현
+- 실제 또는 확보 가능한 비행 데이터 Adapter와 Flight Session·Telemetry 연계
+- AI Event·Snapshot·Telemetry·비행 이력을 MySQL과 관제 화면에서 통합 추적
+- **AI 영상 추론 고도화:** `yolo26m.pt` Detection + Tracking + `yolo26m-pose.pt` Pose + `yolo26m-seg.pt` Segmentation 단계형 통합, `best.pt` 퀄리티 개선, VisDrone 기반 원거리·소형 객체 대응
+- 기존 HTTPS·RBAC·QR Pairing·CI/CD·Automatic Rollback의 3차 E2E 회귀 검증
+- AWS는 4~6시간 Time-boxed Go / No-Go Spike 통과 시 Event/Telemetry 중심 Edge–Cloud 확장만 최소 적용
+- 최종 발표·현장 시연을 위한 정상/대체 시나리오와 복구 Runbook 고정
 
-> DJI Mini 4 Pro의 영상·비행 데이터 연계 범위는 제조사 SDK, 조종기 구성, 네트워크 환경 및 지원 인터페이스를 검증한 뒤 확정합니다.
+> DJI Mini 4 Pro의 실제 영상·비행 데이터 연계 범위는 DJI Fly/RC-N2에서 확인되는 지원 인터페이스와 네트워크 환경을 기준으로 확정합니다. AWS GPU/EKS/SageMaker는 3차 핵심 성공 조건이 아닙니다.
 
 ---
 
@@ -383,17 +406,21 @@ scripts\run-visionflow-backup.bat --consistent
 - [x] 스마트폰 HTTPS 실센서·후면 카메라·YOLO 통합 E2E 회귀 검증
 - [ ] AI 탐지 바운딩박스·스냅숏 표시 회귀 검증
 
-### 🔵 Phase 3 예정
+### 🚀 Phase 3 실행 계획 — 2026.08.18 ~ 2026.09.11
 
-- [ ] DJI Mini 4 Pro 실제 촬영 영상 입력 검증
-- [ ] 무선 스트림 또는 중계 입력 어댑터 구현
-- [ ] 실제 비행 데이터와 관제 텔레메트리 연결
-- [ ] Human Pose Estimation 기반 위험 행동 탐지
-- [ ] 이벤트 캡처, 경고 및 관리자 알림 기능
+> 상세 일정 및 진행 상태: **[Phase 3 작업 일정표](Daily_Schedule/PHASE3_SCHEDULE.md)**
+
+- [ ] DJI Mini 4 Pro / RC-N2 / DJI Fly 실제 영상 입력 경로 검증
+- [ ] 무선 영상 수신 Adapter 또는 중계 경로 구현
+- [ ] Edge GPU YOLO/OpenCV 실시간 추론 및 성능 기준선 확보
+- [ ] 실제/준실제 비행 데이터와 Flight Session·Telemetry 연결
+- [ ] AI Event·Snapshot·Telemetry·MySQL·관제 Dashboard 통합 E2E
+- [ ] Helmet/PPE 정밀도 보완 및 Human Pose Estimation 선택 확장
 - [x] 역할 기반 인증·인가, 세션, 보안 QR 페어링 및 감사 로그 강화
 - [x] Caddy HTTPS 진입점 및 Docker Compose Release 배포 구성
 - [x] GitHub Actions CI + Private CD + Docker Hub immutable SHA + 자동 Rollback 검증
-- [ ] 최종 발표용 실시간 통합 시연 시나리오 완성
+- [ ] AWS Edge–Cloud Spike 최종 GO / NO-GO 판정 및 선택 확장
+- [ ] 최종 발표용 실기체 통합 시연·복구 시나리오 완성
 
 ---
 
