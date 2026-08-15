@@ -105,6 +105,13 @@ class PpeEvidence:
         return _rate(self.unknown_count, self.sample_count)
 
     @property
+    def current_streak_active(self) -> bool:
+        return (
+            self.current_streak_start_frame > 0
+            and self.current_streak_end_frame >= self.current_streak_start_frame
+        )
+
+    @property
     def current_streak_seconds(self) -> float:
         return _streak_seconds(
             self.current_streak_start_frame,
@@ -168,7 +175,7 @@ def evaluate_ppe_compliance(
         and evidence.helmet_rate >= policy.safe_min_helmet_rate
         and evidence.head_no_helmet_rate <= policy.safe_max_no_helmet_rate
         and evidence.unknown_rate <= policy.safe_max_unknown_rate
-        and evidence.current_streak_seconds == 0.0
+        and not evidence.current_streak_active
     )
     if safe:
         return _decision(
@@ -179,7 +186,7 @@ def evaluate_ppe_compliance(
 
     if (
         evidence.sample_count < policy.min_samples
-        and evidence.current_streak_seconds > 0.0
+        and evidence.current_streak_active
         and evidence.head_no_helmet_count > 0
     ):
         return _decision(
