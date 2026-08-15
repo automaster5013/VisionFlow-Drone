@@ -68,6 +68,9 @@ class Settings:
     phase3_enabled: bool
     phase3_ppe_model_path: str
     phase3_ppe_target_fps: float
+    phase3_pose_enabled: bool
+    phase3_pose_model_path: str
+    phase3_pose_target_fps: float
     phase3_depth_enabled: bool
     phase3_depth_model_path: str
     phase3_depth_image_size: int
@@ -168,6 +171,18 @@ class Settings:
             phase3_ppe_target_fps=_read_float(
                 "AI_PHASE3_PPE_TARGET_FPS",
                 10.0,
+            ),
+            phase3_pose_enabled=_read_bool(
+                "AI_PHASE3_POSE_ENABLED",
+                False,
+            ),
+            phase3_pose_model_path=os.getenv(
+                "AI_PHASE3_POSE_MODEL_PATH",
+                "/app/models/yolo26m-pose.pt",
+            ),
+            phase3_pose_target_fps=_read_float(
+                "AI_PHASE3_POSE_TARGET_FPS",
+                5.0,
             ),
             phase3_depth_enabled=_read_bool(
                 "AI_PHASE3_DEPTH_ENABLED",
@@ -310,6 +325,16 @@ class Settings:
                     "AI_PHASE3_PPE_TARGET_FPS는 양수여야 합니다."
                 )
 
+            if self.phase3_pose_enabled:
+                if not self.phase3_pose_model_path.strip():
+                    raise ValueError(
+                        "AI_PHASE3_POSE_MODEL_PATH must not be blank."
+                    )
+
+                if self.phase3_pose_target_fps <= 0:
+                    raise ValueError(
+                        "AI_PHASE3_POSE_TARGET_FPS must be positive."
+                    )
             if self.phase3_depth_enabled:
                 if not self.phase3_depth_model_path.strip():
                     raise ValueError(

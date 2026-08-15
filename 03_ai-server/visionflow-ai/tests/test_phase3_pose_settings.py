@@ -1,0 +1,119 @@
+from __future__ import annotations
+
+import pytest
+
+import app.config as config_module
+from app.config import Settings
+
+
+POSE_ENV_NAMES = (
+    "AI_PHASE3_ENABLED",
+    "AI_PHASE3_POSE_ENABLED",
+    "AI_PHASE3_POSE_MODEL_PATH",
+    "AI_PHASE3_POSE_TARGET_FPS",
+    "AI_PHASE3_DEPTH_ENABLED",
+)
+
+
+def _prepare_base_env(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(config_module, "load_dotenv", lambda: None)
+
+    for name in POSE_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+
+    video = tmp_path / "sample.mp4"
+    video.write_bytes(b"phase3-pose-settings-test")
+
+    monkeypatch.setenv("AI_DUMMY_VIDEO_PATH", str(video))
+    monkeypatch.setenv(
+        "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED",
+        "false",
+    )
+    monkeypatch.setenv("AI_STREAM_ENABLED", "false")
+
+
+def test_pose_is_disabled_by_default(monkeypatch, tmp_path) -> None:
+    _prepare_base_env(monkeypatch, tmp_path)
+
+    settings = Settings.from_env()
+
+    assert settings.phase3_pose_enabled is False
+    assert (
+        settings.phase3_pose_model_path
+        == "/app/models/yolo26m-pose.pt"
+    )
+    assert settings.phase3_pose_target_fps == 5.0
+
+
+def test_pose_reads_runtime_overrides(monkeypatch, tmp_path) -> None:
+    _prepare_base_env(monkeypatch, tmp_path)
+
+    monkeypatch.setenv("AI_PHASE3_ENABLED", "true")
+    monkeypatch.setenv("AI_PHASE3_POSE_ENABLED", "true")
+    monkeypatch.setenv(
+        "AI_PHASE3_POSE_MODEL_PATH",
+        "/models/custom-pose.pt",
+    )
+    monkeypatch.setenv("AI_PHASE3_POSE_TARGET_FPS", "4.0")
+    monkeypatch.setenv("AI_PHASE3_DEPTH_ENABLED", "false")
+
+    settings = Settings.from_env()
+
+    assert settings.phase3_pose_enabled is True
+    assert settings.phase3_pose_model_path == "/models/custom-pose.pt"
+    assert settings.phase3_pose_target_fps == 4.0
+
+
+def test_enabled_pose_requires_model_path(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    _prepare_base_env(monkeypatch, tmp_path)
+
+    monkeypatch.setenv("AI_PHASE3_ENABLED", "true")
+    monkeypatch.setenv("AI_PHASE3_POSE_ENABLED", "true")
+    monkeypatch.setenv("AI_PHASE3_POSE_MODEL_PATH", "   ")
+    monkeypatch.setenv("AI_PHASE3_DEPTH_ENABLED", "false")
+
+    with pytest.raises(
+        ValueError,
+        match="AI_PHASE3_POSE_MODEL_PATH",
+    ):
+        Settings.from_env()
+
+
+def test_enabled_pose_requires_positive_target_fps(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    _prepare_base_env(monkeypatch, tmp_path)
+
+    monkeypatch.setenv("AI_PHASE3_ENABLED", "true")
+    monkeypatch.setenv("AI_PHASE3_POSE_ENABLED", "true")
+    monkeypatch.setenv("AI_PHASE3_POSE_TARGET_FPS", "0")
+    monkeypatch.setenv("AI_PHASE3_DEPTH_ENABLED", "false")
+
+    with pytest.raises(
+        ValueError,
+        match="AI_PHASE3_POSE_TARGET_FPS",
+    ):
+        Settings.from_env()
+
+
+def test_disabled_phase3_ignores_dormant_invalid_pose_values(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    _prepare_base_env(monkeypatch, tmp_path)
+
+    monkeypatch.setenv("AI_PHASE3_ENABLED", "false")
+    monkeypatch.setenv("AI_PHASE3_POSE_ENABLED", "true")
+    monkeypatch.setenv("AI_PHASE3_POSE_MODEL_PATH", "   ")
+    monkeypatch.setenv("AI_PHASE3_POSE_TARGET_FPS", "-1")
+
+    settings = Settings.from_env()
+
+    assert settings.phase3_enabled is False
+    assert settings.phase3_pose_enabled is True
+    assert settings.phase3_pose_model_path == "   "
+    assert settings.phase3_pose_target_fps == -1.0
