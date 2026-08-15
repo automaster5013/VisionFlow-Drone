@@ -3,6 +3,10 @@ from __future__ import annotations
 from app.config import Settings
 from app.domain import SmartphoneInputMode, VideoSourceType
 from app.inference import YoloDetector
+from app.inference.phase3_runtime import (
+    Phase3Runtime,
+    create_phase3_runtime,
+)
 from app.metrics import InferencePerformanceMonitor, PerformanceThresholds
 from app.pipeline import InferencePipeline
 from app.reporting import SpringEventReporter
@@ -46,6 +50,41 @@ def create_source(settings: Settings) -> VideoSource:
         )
 
     raise NotImplementedError(f"{settings.source_type.value} 입력은 다음 단계에서 구현합니다.")
+
+
+def create_optional_phase3_runtime(
+    *,
+    settings: Settings,
+    source: VideoSource,
+) -> Phase3Runtime | None:
+    return create_phase3_runtime(
+        settings=settings,
+        source_fps=source.fps,
+    )
+
+
+def run_pipeline_with_optional_phase3(
+    *,
+    pipeline: InferencePipeline,
+    stream_server: AnalysisStreamServer | None,
+    phase3_runtime: Phase3Runtime | None,
+) -> None:
+    try:
+        if stream_server is not None:
+            stream_server.start()
+
+        if phase3_runtime is not None:
+            phase3_runtime.start()
+
+        pipeline.run()
+    except KeyboardInterrupt:
+        print("사용자 요청으로 분석을 종료합니다.", flush=True)
+    finally:
+        if phase3_runtime is not None:
+            phase3_runtime.close()
+
+        if stream_server is not None:
+            stream_server.close()
 
 
 def main() -> None:
@@ -131,6 +170,10 @@ def main() -> None:
         if frame_hub is not None
         else None
     )
+    phase3_runtime = create_optional_phase3_runtime(
+        settings=settings,
+        source=source,
+    )
     pipeline = InferencePipeline(
         source=source,
         detector=detector,
@@ -151,16 +194,11 @@ def main() -> None:
         performance_monitor=performance_monitor,
     )
 
-    try:
-        if stream_server is not None:
-            stream_server.start()
-
-        pipeline.run()
-    except KeyboardInterrupt:
-        print("사용자 요청으로 분석을 종료합니다.", flush=True)
-    finally:
-        if stream_server is not None:
-            stream_server.close()
+    run_pipeline_with_optional_phase3(
+        pipeline=pipeline,
+        stream_server=stream_server,
+        phase3_runtime=phase3_runtime,
+    )
 
 
 if __name__ == "__main__":
