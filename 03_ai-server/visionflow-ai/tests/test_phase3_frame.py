@@ -80,6 +80,10 @@ class _FakeModel:
 
 class _FakeRuntime:
     sample_stride_frames = 3
+    pose_enabled = False
+
+    def should_sample_pose(self, source_frame_index: int) -> bool:
+        return False
 
     def __init__(self) -> None:
         self.calls = []

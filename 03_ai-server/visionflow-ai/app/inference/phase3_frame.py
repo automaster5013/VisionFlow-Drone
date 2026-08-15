@@ -11,6 +11,10 @@ from ultralytics import YOLO
 from app.config import Settings
 from app.domain import Detection, FramePacket, InferencePacket
 from app.inference.phase3_association import TrackedPersonBox
+from app.inference.phase3_pose import (
+    Phase3PoseFrameResult,
+    build_pose_frame_result,
+)
 from app.inference.phase3_ppe_depth import PpeDepthFrameResult
 from app.inference.phase3_runtime import Phase3Runtime
 
@@ -24,6 +28,8 @@ class Phase3FrameAnalysis:
     ppe: PpeDepthFrameResult | None
     tracked_person_count: int
     ppe_sampled: bool
+    pose: Phase3PoseFrameResult | None = None
+    pose_sampled: bool = False
 
 
 class Phase3FrameAnalyzer:
@@ -38,6 +44,7 @@ class Phase3FrameAnalyzer:
         iou: float,
         image_size: int,
         device: str,
+        pose_model_path: str | None = None,
         model_factory: ModelFactory = YOLO,
     ) -> None:
         if source_fps <= 0:
@@ -54,6 +61,12 @@ class Phase3FrameAnalyzer:
             raise ValueError("image_size must be positive.")
         if not device.strip():
             raise ValueError("device must not be blank.")
+        if runtime.pose_enabled and (
+            pose_model_path is None or not pose_model_path.strip()
+        ):
+            raise ValueError(
+                "pose_model_path must not be blank when pose is enabled."
+            )
 
         self._runtime = runtime
         self._source_fps = float(source_fps)
@@ -63,6 +76,11 @@ class Phase3FrameAnalyzer:
         self._device = device
         self._track_model = model_factory(track_model_path)
         self._ppe_model = model_factory(ppe_model_path)
+        self._pose_model = (
+            model_factory(pose_model_path)
+            if runtime.pose_enabled and pose_model_path is not None
+            else None
+        )
 
     @property
     def sample_stride_frames(self) -> int:
@@ -82,24 +100,16 @@ class Phase3FrameAnalyzer:
         )
         inference_ms = (time.perf_counter() - started_at) * 1_000.0
 
-        if not track_results:
-            inference = InferencePacket(
-                frame=frame,
-                detections=(),
-                inference_ms=inference_ms,
-                annotated_image=frame.image.copy(),
-            )
-            return Phase3FrameAnalysis(
-                inference=inference,
-                ppe=None,
-                tracked_person_count=0,
-                ppe_sampled=False,
-            )
+        track_result = track_results[0] if track_results else None
 
-        track_result = track_results[0]
-        detections = _to_detections(track_result)
-        tracked_people = _to_tracked_people(track_result)
-        annotated_image = np.asarray(track_result.plot())
+        if track_result is None:
+            detections = ()
+            tracked_people = ()
+            annotated_image = frame.image.copy()
+        else:
+            detections = _to_detections(track_result)
+            tracked_people = _to_tracked_people(track_result)
+            annotated_image = np.asarray(track_result.plot())
 
         inference = InferencePacket(
             frame=frame,
@@ -111,44 +121,101 @@ class Phase3FrameAnalyzer:
         ppe_sampled = (
             frame.frame_index % self._runtime.sample_stride_frames == 0
         )
-        if not ppe_sampled:
-            return Phase3FrameAnalysis(
-                inference=inference,
-                ppe=None,
-                tracked_person_count=len(tracked_people),
-                ppe_sampled=False,
+        ppe_result: PpeDepthFrameResult | None = None
+
+        if ppe_sampled:
+            if tracked_people:
+                ppe_results = self._ppe_model.predict(
+                    source=frame.image,
+                    conf=self._confidence,
+                    iou=self._iou,
+                    imgsz=self._image_size,
+                    device=self._device,
+                    verbose=False,
+                )
+                ppe_detections = (
+                    _to_detections(ppe_results[0])
+                    if ppe_results
+                    else ()
+                )
+            else:
+                ppe_detections = ()
+
+            ppe_result = self._runtime.process_sample(
+                frame_index=frame.frame_index + 1,
+                event_time_sec=frame.frame_index / self._source_fps,
+                frame=frame.image,
+                tracks=tracked_people,
+                detections=ppe_detections,
             )
 
-        if tracked_people:
-            ppe_results = self._ppe_model.predict(
-                source=frame.image,
-                conf=self._confidence,
-                iou=self._iou,
-                imgsz=self._image_size,
-                device=self._device,
-                verbose=False,
-            )
-            ppe_detections = (
-                _to_detections(ppe_results[0])
-                if ppe_results
-                else ()
-            )
-        else:
-            ppe_detections = ()
-
-        ppe_result = self._runtime.process_sample(
-            frame_index=frame.frame_index + 1,
-            event_time_sec=frame.frame_index / self._source_fps,
-            frame=frame.image,
-            tracks=tracked_people,
-            detections=ppe_detections,
+        pose_result, pose_sampled = self._analyze_pose(
+            frame=frame,
+            tracked_people=tracked_people,
         )
 
         return Phase3FrameAnalysis(
             inference=inference,
             ppe=ppe_result,
             tracked_person_count=len(tracked_people),
-            ppe_sampled=True,
+            ppe_sampled=ppe_sampled,
+            pose=pose_result,
+            pose_sampled=pose_sampled,
+        )
+
+    def _analyze_pose(
+        self,
+        *,
+        frame: FramePacket,
+        tracked_people: tuple[TrackedPersonBox, ...],
+    ) -> tuple[Phase3PoseFrameResult | None, bool]:
+        if not self._runtime.pose_enabled:
+            return None, False
+
+        if not self._runtime.should_sample_pose(frame.frame_index):
+            return None, False
+
+        policy_frame_index = frame.frame_index + 1
+
+        if not tracked_people:
+            return (
+                Phase3PoseFrameResult(
+                    frame_index=policy_frame_index,
+                    observations=(),
+                ),
+                True,
+            )
+
+        if self._pose_model is None:
+            raise RuntimeError(
+                "Pose runtime is enabled but pose model is unavailable."
+            )
+
+        pose_results = self._pose_model.predict(
+            source=frame.image,
+            conf=self._confidence,
+            iou=self._iou,
+            imgsz=self._image_size,
+            device=self._device,
+            verbose=False,
+        )
+
+        if not pose_results:
+            return (
+                Phase3PoseFrameResult(
+                    frame_index=policy_frame_index,
+                    observations=(),
+                ),
+                True,
+            )
+
+        return (
+            build_pose_frame_result(
+                result=pose_results[0],
+                tracks=tracked_people,
+                frame_index=policy_frame_index,
+            ),
+            True,
         )
 
 
@@ -171,6 +238,11 @@ def create_phase3_frame_analyzer(
         iou=settings.iou,
         image_size=settings.image_size,
         device=settings.device,
+        pose_model_path=(
+            settings.phase3_pose_model_path
+            if runtime.pose_enabled
+            else None
+        ),
         model_factory=model_factory,
     )
 
