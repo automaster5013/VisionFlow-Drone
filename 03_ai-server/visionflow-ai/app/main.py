@@ -3,6 +3,10 @@ from __future__ import annotations
 from app.config import Settings
 from app.domain import SmartphoneInputMode, VideoSourceType
 from app.inference import YoloDetector
+from app.inference.phase3_frame import (
+    Phase3FrameAnalyzer,
+    create_phase3_frame_analyzer,
+)
 from app.inference.phase3_runtime import (
     Phase3Runtime,
     create_phase3_runtime,
@@ -59,6 +63,19 @@ def create_optional_phase3_runtime(
 ) -> Phase3Runtime | None:
     return create_phase3_runtime(
         settings=settings,
+        source_fps=source.fps,
+    )
+
+
+def create_optional_phase3_frame_analyzer(
+    *,
+    settings: Settings,
+    source: VideoSource,
+    phase3_runtime: Phase3Runtime | None,
+) -> Phase3FrameAnalyzer | None:
+    return create_phase3_frame_analyzer(
+        settings=settings,
+        runtime=phase3_runtime,
         source_fps=source.fps,
     )
 
@@ -174,9 +191,15 @@ def main() -> None:
         settings=settings,
         source=source,
     )
+    phase3_analyzer = create_optional_phase3_frame_analyzer(
+        settings=settings,
+        source=source,
+        phase3_runtime=phase3_runtime,
+    )
     pipeline = InferencePipeline(
         source=source,
         detector=detector,
+        phase3_analyzer=phase3_analyzer,
         save_annotated_video=settings.save_annotated_video,
         output_video_path=settings.output_video_path,
         show_preview=settings.show_preview,
