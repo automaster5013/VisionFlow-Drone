@@ -45,11 +45,28 @@ class Phase3Runtime:
     effective_ppe_fps: float
     coordinator: Phase3PpeDepthCoordinator | None = None
     depth_enricher: ManagedDepthEnricher | None = None
+    pose_stride_frames: int | None = None
+    effective_pose_fps: float = 0.0
     _started: bool = False
 
     @property
     def depth_enabled(self) -> bool:
         return self.coordinator is not None and self.depth_enricher is not None
+
+    @property
+    def pose_enabled(self) -> bool:
+        return self.pose_stride_frames is not None
+
+    def should_sample_pose(self, source_frame_index: int) -> bool:
+        if source_frame_index < 0:
+            raise ValueError(
+                "source_frame_index must be zero or positive."
+            )
+
+        if self.pose_stride_frames is None:
+            return False
+
+        return source_frame_index % self.pose_stride_frames == 0
 
     @property
     def started(self) -> bool:
@@ -152,11 +169,23 @@ def create_phase3_runtime(
         sample_stride_frames=sample_stride_frames,
     )
 
+    pose_stride_frames: int | None = None
+    effective_pose_fps = 0.0
+
+    if settings.phase3_pose_enabled:
+        pose_stride_frames = compute_sample_stride(
+            source_fps=source_fps,
+            target_fps=settings.phase3_pose_target_fps,
+        )
+        effective_pose_fps = source_fps / pose_stride_frames
+
     if not settings.phase3_depth_enabled:
         return Phase3Runtime(
             processor=processor,
             sample_stride_frames=sample_stride_frames,
             effective_ppe_fps=effective_ppe_fps,
+            pose_stride_frames=pose_stride_frames,
+            effective_pose_fps=effective_pose_fps,
         )
 
     estimator_factory = (
@@ -194,4 +223,6 @@ def create_phase3_runtime(
         effective_ppe_fps=effective_ppe_fps,
         coordinator=coordinator,
         depth_enricher=depth_enricher,
+        pose_stride_frames=pose_stride_frames,
+        effective_pose_fps=effective_pose_fps,
     )

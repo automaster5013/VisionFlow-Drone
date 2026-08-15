@@ -49,6 +49,9 @@ def _settings(
     return SimpleNamespace(
         phase3_enabled=enabled,
         phase3_ppe_target_fps=10.0,
+        phase3_pose_enabled=False,
+        phase3_pose_model_path="/models/yolo26m-pose.pt",
+        phase3_pose_target_fps=5.0,
         phase3_depth_enabled=depth_enabled,
         phase3_depth_model_path="/models/yolo26m-depth.pt",
         phase3_depth_image_size=768,
