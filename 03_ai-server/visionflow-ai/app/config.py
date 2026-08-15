@@ -65,6 +65,13 @@ class Settings:
     iou: float
     image_size: int
     device: str
+    phase3_enabled: bool
+    phase3_ppe_model_path: str
+    phase3_ppe_target_fps: float
+    phase3_depth_enabled: bool
+    phase3_depth_model_path: str
+    phase3_depth_image_size: int
+    phase3_depth_queue_capacity: int
     save_annotated_video: bool
     output_video_path: Path
     show_preview: bool
@@ -153,6 +160,31 @@ class Settings:
             iou=_read_float("AI_IOU", 0.70),
             image_size=_read_int("AI_IMAGE_SIZE", 640),
             device=os.getenv("AI_DEVICE", "cpu"),
+            phase3_enabled=_read_bool("AI_PHASE3_ENABLED", False),
+            phase3_ppe_model_path=os.getenv(
+                "AI_PHASE3_PPE_MODEL_PATH",
+                "/app/models/ppe-yolo26m-best.pt",
+            ),
+            phase3_ppe_target_fps=_read_float(
+                "AI_PHASE3_PPE_TARGET_FPS",
+                10.0,
+            ),
+            phase3_depth_enabled=_read_bool(
+                "AI_PHASE3_DEPTH_ENABLED",
+                True,
+            ),
+            phase3_depth_model_path=os.getenv(
+                "AI_PHASE3_DEPTH_MODEL_PATH",
+                "/app/models/yolo26m-depth.pt",
+            ),
+            phase3_depth_image_size=_read_int(
+                "AI_PHASE3_DEPTH_IMAGE_SIZE",
+                768,
+            ),
+            phase3_depth_queue_capacity=_read_int(
+                "AI_PHASE3_DEPTH_QUEUE_CAPACITY",
+                4,
+            ),
             save_annotated_video=_read_bool("AI_SAVE_ANNOTATED_VIDEO", True),
             output_video_path=Path(os.getenv("AI_OUTPUT_VIDEO_PATH", "output/annotated.mp4")),
             show_preview=_read_bool("AI_SHOW_PREVIEW", False),
@@ -266,6 +298,33 @@ class Settings:
                 "AI_REQUIRE_CUDA=true이면 AI_DEVICE에 "
                 "0, cuda 또는 cuda:0을 지정해야 합니다."
             )
+
+        if self.phase3_enabled:
+            if not self.phase3_ppe_model_path.strip():
+                raise ValueError(
+                    "AI_PHASE3_PPE_MODEL_PATH는 비어 있을 수 없습니다."
+                )
+
+            if self.phase3_ppe_target_fps <= 0:
+                raise ValueError(
+                    "AI_PHASE3_PPE_TARGET_FPS는 양수여야 합니다."
+                )
+
+            if self.phase3_depth_enabled:
+                if not self.phase3_depth_model_path.strip():
+                    raise ValueError(
+                        "AI_PHASE3_DEPTH_MODEL_PATH는 비어 있을 수 없습니다."
+                    )
+
+                if self.phase3_depth_image_size <= 0:
+                    raise ValueError(
+                        "AI_PHASE3_DEPTH_IMAGE_SIZE는 양수여야 합니다."
+                    )
+
+                if self.phase3_depth_queue_capacity <= 0:
+                    raise ValueError(
+                        "AI_PHASE3_DEPTH_QUEUE_CAPACITY는 양수여야 합니다."
+                    )
 
         if self.max_frames < 0:
             raise ValueError("AI_MAX_FRAMES는 0 이상이어야 합니다.")
