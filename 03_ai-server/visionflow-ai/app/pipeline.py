@@ -12,6 +12,7 @@ from numpy.typing import NDArray
 from app.domain import FramePacket, InferencePacket
 from app.inference import YoloDetector
 from app.inference.phase3_frame import Phase3FrameAnalyzer
+from app.inference.phase3_observability import Phase3ConsoleObserver
 from app.metrics import InferencePerformanceMonitor
 from app.reporting import EventReporter
 from app.sources import VideoSource
@@ -32,6 +33,7 @@ class InferencePipeline:
         source: VideoSource,
         detector: YoloDetector,
         phase3_analyzer: Phase3FrameAnalyzer | None = None,
+        phase3_observer: Phase3ConsoleObserver | None = None,
         save_annotated_video: bool,
         output_video_path: Path,
         show_preview: bool,
@@ -47,6 +49,7 @@ class InferencePipeline:
         self._source = source
         self._detector = detector
         self._phase3_analyzer = phase3_analyzer
+        self._phase3_observer = phase3_observer
         self._save_annotated_video = save_annotated_video
         self._output_video_path = output_video_path
         self._show_preview = show_preview
@@ -150,7 +153,12 @@ class InferencePipeline:
 
     def _infer_frame(self, frame: FramePacket) -> InferencePacket:
         if self._phase3_analyzer is not None:
-            return self._phase3_analyzer.analyze(frame).inference
+            analysis = self._phase3_analyzer.analyze(frame)
+
+            if self._phase3_observer is not None:
+                self._phase3_observer.record_analysis(analysis)
+
+            return analysis.inference
 
         return self._detector.infer(frame)
 

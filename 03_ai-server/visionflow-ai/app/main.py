@@ -7,6 +7,7 @@ from app.inference.phase3_frame import (
     Phase3FrameAnalyzer,
     create_phase3_frame_analyzer,
 )
+from app.inference.phase3_observability import Phase3ConsoleObserver
 from app.inference.phase3_runtime import (
     Phase3Runtime,
     create_phase3_runtime,
@@ -56,14 +57,31 @@ def create_source(settings: Settings) -> VideoSource:
     raise NotImplementedError(f"{settings.source_type.value} 입력은 다음 단계에서 구현합니다.")
 
 
+def create_optional_phase3_observer(
+    settings: Settings,
+) -> Phase3ConsoleObserver | None:
+    if not settings.phase3_enabled:
+        return None
+
+    return Phase3ConsoleObserver()
+
+
 def create_optional_phase3_runtime(
     *,
     settings: Settings,
     source: VideoSource,
+    phase3_observer: Phase3ConsoleObserver | None = None,
 ) -> Phase3Runtime | None:
+    if phase3_observer is None:
+        return create_phase3_runtime(
+            settings=settings,
+            source_fps=source.fps,
+        )
+
     return create_phase3_runtime(
         settings=settings,
         source_fps=source.fps,
+        on_depth_result=phase3_observer.on_depth_result,
     )
 
 
@@ -85,6 +103,7 @@ def run_pipeline_with_optional_phase3(
     pipeline: InferencePipeline,
     stream_server: AnalysisStreamServer | None,
     phase3_runtime: Phase3Runtime | None,
+    phase3_observer: Phase3ConsoleObserver | None = None,
 ) -> None:
     try:
         if stream_server is not None:
@@ -99,6 +118,9 @@ def run_pipeline_with_optional_phase3(
     finally:
         if phase3_runtime is not None:
             phase3_runtime.close()
+
+        if phase3_observer is not None:
+            phase3_observer.emit_summary()
 
         if stream_server is not None:
             stream_server.close()
@@ -187,9 +209,11 @@ def main() -> None:
         if frame_hub is not None
         else None
     )
+    phase3_observer = create_optional_phase3_observer(settings)
     phase3_runtime = create_optional_phase3_runtime(
         settings=settings,
         source=source,
+        phase3_observer=phase3_observer,
     )
     phase3_analyzer = create_optional_phase3_frame_analyzer(
         settings=settings,
@@ -200,6 +224,7 @@ def main() -> None:
         source=source,
         detector=detector,
         phase3_analyzer=phase3_analyzer,
+        phase3_observer=phase3_observer,
         save_annotated_video=settings.save_annotated_video,
         output_video_path=settings.output_video_path,
         show_preview=settings.show_preview,
@@ -221,6 +246,7 @@ def main() -> None:
         pipeline=pipeline,
         stream_server=stream_server,
         phase3_runtime=phase3_runtime,
+        phase3_observer=phase3_observer,
     )
 
 
