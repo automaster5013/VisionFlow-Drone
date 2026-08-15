@@ -9,8 +9,9 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from app.domain import InferencePacket
+from app.domain import FramePacket, InferencePacket
 from app.inference import YoloDetector
+from app.inference.phase3_frame import Phase3FrameAnalyzer
 from app.metrics import InferencePerformanceMonitor
 from app.reporting import EventReporter
 from app.sources import VideoSource
@@ -30,6 +31,7 @@ class InferencePipeline:
         *,
         source: VideoSource,
         detector: YoloDetector,
+        phase3_analyzer: Phase3FrameAnalyzer | None = None,
         save_annotated_video: bool,
         output_video_path: Path,
         show_preview: bool,
@@ -44,6 +46,7 @@ class InferencePipeline:
     ) -> None:
         self._source = source
         self._detector = detector
+        self._phase3_analyzer = phase3_analyzer
         self._save_annotated_video = save_annotated_video
         self._output_video_path = output_video_path
         self._show_preview = show_preview
@@ -85,7 +88,7 @@ class InferencePipeline:
                     if frame is None:
                         break
 
-                    inference = self._detector.infer(frame)
+                    inference = self._infer_frame(frame)
 
                     if self._performance_monitor is not None:
                         self._performance_monitor.record(inference)
@@ -144,6 +147,12 @@ class InferencePipeline:
                 cv2.destroyAllWindows()
 
         print(f"처리 완료: {processed_frames} 프레임", flush=True)
+
+    def _infer_frame(self, frame: FramePacket) -> InferencePacket:
+        if self._phase3_analyzer is not None:
+            return self._phase3_analyzer.analyze(frame).inference
+
+        return self._detector.infer(frame)
 
     # VisionFlow hard cooldown gate v2
     def _should_report_event(
