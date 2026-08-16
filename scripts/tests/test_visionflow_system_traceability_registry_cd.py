@@ -35,6 +35,21 @@ class SystemTraceabilityRegistryCdTest(unittest.TestCase):
         self.assertIn("actions/setup-java@v5", source)
         self.assertIn("actions/setup-node@v6", source)
         self.assertIn("./gradlew test --no-daemon", source)
+        self.assertIn(
+            "Start isolated MySQL 8.4 for backend tests",
+            source,
+        )
+        self.assertIn("mysql:8.4", source)
+        self.assertIn(
+            "--collation-server=utf8mb4_unicode_ci",
+            source,
+        )
+        self.assertIn(
+            "SPRING_DATASOURCE_URL: "
+            "jdbc:mysql://127.0.0.1:3306/visionflow",
+            source,
+        )
+        self.assertIn("Stop isolated MySQL", source)
         self.assertIn("npm run lint", source)
         self.assertIn("npm run build", source)
         self.assertIn("python -m pytest -q", source)
