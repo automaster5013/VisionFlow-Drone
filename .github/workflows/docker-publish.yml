@@ -1,6 +1,11 @@
 name: Publish VisionFlow images to Docker Hub
 
 on:
+  workflow_run:
+    workflows:
+      - API contract, security, and system traceability audit
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
@@ -17,24 +22,37 @@ env:
 jobs:
   prepare:
     name: Prepare immutable image version
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     outputs:
       full_sha: ${{ steps.version.outputs.full_sha }}
       short_sha: ${{ steps.version.outputs.short_sha }}
 
     steps:
-      - name: Check out dispatched main commit
+      - name: Check out exact release commit
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 1
 
       - name: Validate publish source
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
-            echo "::error::Docker Hub publishing is allowed only from the main branch."
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            if [[ "${{ github.event.workflow_run.conclusion }}" != "success" \
+               || "${{ github.event.workflow_run.event }}" != "push" \
+               || "${{ github.event.workflow_run.head_branch }}" != "main" ]]; then
+              echo "::error::Automatic workflow_run must come from a successful main push."
+              exit 1
+            fi
+          elif [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "::error::Manual Docker Hub publishing is allowed only from the main branch."
             exit 1
           fi
 
@@ -68,6 +86,8 @@ jobs:
             echo
             echo "- Commit: \`${FULL_SHA}\`"
             echo "- Repository: \`${{ vars.DOCKERHUB_USERNAME }}/${DOCKERHUB_REPOSITORY}\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- AI runtime: CUDA-enabled PyTorch; model weights remain external read-only artifacts"
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Require successful API audit for exact commit
@@ -107,10 +127,16 @@ jobs:
         include:
           - component: frontend
             context: ./01_frontend/visionflow-web
+            build_args: ""
           - component: backend
             context: ./02_backend/visionflow-api
+            build_args: ""
           - component: ai
             context: ./03_ai-server/visionflow-ai
+            build_args: |-
+              TORCH_VERSION=2.12.1
+              TORCHVISION_VERSION=0.27.1
+              TORCH_INDEX_URL=https://download.pytorch.org/whl/cu130
 
     steps:
       - name: Check out exact source commit
@@ -146,7 +172,11 @@ jobs:
           context: ${{ matrix.context }}
           push: true
           platforms: linux/amd64
+          build-args: ${{ matrix.build_args }}
           tags: ${{ steps.image.outputs.ref }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.prepare.outputs.full_sha }}
           cache-from: type=gha,scope=visionflow-${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=visionflow-${{ matrix.component }}
 

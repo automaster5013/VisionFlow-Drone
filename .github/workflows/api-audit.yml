@@ -3,6 +3,7 @@ name: API contract, security, and system traceability audit
 on:
   pull_request:
     paths:
+      - "**"
       - ".github/workflows/api-audit.yml"
       - ".github/workflows/docker-publish.yml"
       - ".env.example"
@@ -61,6 +62,7 @@ on:
     branches:
       - main
     paths:
+      - "**"
       - ".github/workflows/api-audit.yml"
       - ".github/workflows/docker-publish.yml"
       - ".env.example"
@@ -137,10 +139,86 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v6
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: 02_backend/visionflow-api/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Start isolated MySQL 8.4 for backend tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d             --name visionflow-ci-mysql             -e MYSQL_DATABASE=visionflow             -e MYSQL_USER=visionflow             -e MYSQL_PASSWORD=visionflow-ci-password             -e MYSQL_ROOT_PASSWORD=visionflow-ci-root             -p 3306:3306             mysql:8.4             --character-set-server=utf8mb4             --collation-server=utf8mb4_unicode_ci
+
+          for attempt in {1..60}; do
+            if docker exec visionflow-ci-mysql               mysqladmin ping               -h 127.0.0.1               -uroot               -pvisionflow-ci-root               --silent; then
+              echo "MYSQL_CI_READY=PASS"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "::error::MySQL 8.4 did not become ready."
+          docker logs visionflow-ci-mysql || true
+          exit 1
+
+      - name: Run backend tests
+        working-directory: 02_backend/visionflow-api
+        shell: bash
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/visionflow?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+          SPRING_DATASOURCE_USERNAME: visionflow
+          SPRING_DATASOURCE_PASSWORD: visionflow-ci-password
+        run: |
+          chmod +x gradlew
+          ./gradlew test --no-daemon
+
+      - name: Stop isolated MySQL
+        if: always()
+        shell: bash
+        run: |
+          docker rm -f visionflow-ci-mysql >/dev/null 2>&1 || true
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: 01_frontend/visionflow-web/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: 01_frontend/visionflow-web
+        run: npm ci
+
+      - name: Run frontend lint
+        working-directory: 01_frontend/visionflow-web
+        run: npm run lint
+
+      - name: Run frontend production build
+        working-directory: 01_frontend/visionflow-web
+        run: npm run build
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: 03_ai-server/visionflow-ai/requirements.txt
+
+      - name: Install AI test dependencies
+        working-directory: 03_ai-server/visionflow-ai
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install             "torch==2.12.1"             "torchvision==0.27.1"             --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
+
+      - name: Run AI regression tests
+        working-directory: 03_ai-server/visionflow-ai
+        run: python -m pytest -q
 
       - name: Validate audit sources
         run: |
