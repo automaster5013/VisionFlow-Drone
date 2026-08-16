@@ -44,6 +44,17 @@ class _FakePhase3Runtime:
         self._events.append("phase3.close")
 
 
+class _FakePhase3Reporter:
+    def __init__(self, events) -> None:
+        self._events = events
+
+    def start(self) -> None:
+        self._events.append("phase3.reporter.start")
+
+    def close(self) -> None:
+        self._events.append("phase3.reporter.close")
+
+
 def test_create_optional_phase3_runtime_forwards_settings_and_source_fps(
     monkeypatch,
 ) -> None:
@@ -140,4 +151,25 @@ def test_lifecycle_allows_no_stream_server() -> None:
         "phase3.start",
         "pipeline.run",
         "phase3.close",
+    ]
+
+
+def test_lifecycle_keeps_phase3_reporter_alive_until_depth_runtime_closes() -> None:
+    events = []
+
+    app_main.run_pipeline_with_optional_phase3(
+        pipeline=_FakePipeline(events),
+        stream_server=_FakeStreamServer(events),
+        phase3_runtime=_FakePhase3Runtime(events),
+        phase3_reporter=_FakePhase3Reporter(events),
+    )
+
+    assert events == [
+        "stream.start",
+        "phase3.reporter.start",
+        "phase3.start",
+        "pipeline.run",
+        "phase3.close",
+        "phase3.reporter.close",
+        "stream.close",
     ]

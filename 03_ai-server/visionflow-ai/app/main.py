@@ -22,6 +22,7 @@ from app.sources import (
     VideoSource,
 )
 from app.streaming import AnalysisStreamServer, AnnotatedFrameHub
+from app.phase3_reporting import Phase3EventReporter, Phase3EventReporterLike
 
 
 def create_source(settings: Settings) -> VideoSource:
@@ -57,13 +58,29 @@ def create_source(settings: Settings) -> VideoSource:
     raise NotImplementedError(f"{settings.source_type.value} 입력은 다음 단계에서 구현합니다.")
 
 
+def create_optional_phase3_reporter(
+    settings: Settings,
+) -> Phase3EventReporterLike | None:
+    if not settings.phase3_enabled or not settings.phase3_report_events:
+        return None
+
+    return Phase3EventReporter(
+        event_url=settings.backend_phase3_event_url,
+        timeout_seconds=settings.report_timeout_seconds,
+        max_retries=settings.report_max_retries,
+        queue_capacity=settings.report_queue_capacity,
+    )
+
+
 def create_optional_phase3_observer(
     settings: Settings,
+    *,
+    phase3_reporter: Phase3EventReporterLike | None = None,
 ) -> Phase3ConsoleObserver | None:
     if not settings.phase3_enabled:
         return None
 
-    return Phase3ConsoleObserver()
+    return Phase3ConsoleObserver(reporter=phase3_reporter)
 
 
 def create_optional_phase3_runtime(
@@ -103,11 +120,15 @@ def run_pipeline_with_optional_phase3(
     pipeline: InferencePipeline,
     stream_server: AnalysisStreamServer | None,
     phase3_runtime: Phase3Runtime | None,
+    phase3_reporter: Phase3EventReporterLike | None = None,
     phase3_observer: Phase3ConsoleObserver | None = None,
 ) -> None:
     try:
         if stream_server is not None:
             stream_server.start()
+
+        if phase3_reporter is not None:
+            phase3_reporter.start()
 
         if phase3_runtime is not None:
             phase3_runtime.start()
@@ -118,6 +139,9 @@ def run_pipeline_with_optional_phase3(
     finally:
         if phase3_runtime is not None:
             phase3_runtime.close()
+
+        if phase3_reporter is not None:
+            phase3_reporter.close()
 
         if phase3_observer is not None:
             phase3_observer.emit_summary()
@@ -188,6 +212,7 @@ def main() -> None:
         if settings.report_events
         else None
     )
+    phase3_reporter = create_optional_phase3_reporter(settings)
     frame_hub = (
         AnnotatedFrameHub(jpeg_quality=settings.stream_jpeg_quality)
         if settings.stream_enabled
@@ -209,7 +234,10 @@ def main() -> None:
         if frame_hub is not None
         else None
     )
-    phase3_observer = create_optional_phase3_observer(settings)
+    phase3_observer = create_optional_phase3_observer(
+        settings,
+        phase3_reporter=phase3_reporter,
+    )
     phase3_runtime = create_optional_phase3_runtime(
         settings=settings,
         source=source,
@@ -246,6 +274,7 @@ def main() -> None:
         pipeline=pipeline,
         stream_server=stream_server,
         phase3_runtime=phase3_runtime,
+        phase3_reporter=phase3_reporter,
         phase3_observer=phase3_observer,
     )
 

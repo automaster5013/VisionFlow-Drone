@@ -29,6 +29,18 @@ from app.inference.phase3_processor import (
 )
 
 
+class _FakePhase3Reporter:
+    def __init__(self) -> None:
+        self.events = []
+        self.depths = []
+
+    def submit_event(self, payload) -> None:
+        self.events.append(payload)
+
+    def submit_depth(self, event_key, payload) -> None:
+        self.depths.append((event_key, payload))
+
+
 def _inference() -> InferencePacket:
     frame = FramePacket(
         source_id="camera-1",
@@ -228,3 +240,70 @@ def test_emit_summary_reports_all_counters() -> None:
     assert "DEPTH_TRIGGERS_ACCEPTED=1" in output
     assert "DEPTH_TRIGGERS_REJECTED=0" in output
     assert "DEPTH_RESULTS=0" in output
+
+
+def test_ppe_trigger_is_forwarded_to_phase3_reporter() -> None:
+    reporter = _FakePhase3Reporter()
+    observer = Phase3ConsoleObserver(
+        stream=StringIO(),
+        reporter=reporter,
+    )
+
+    observer.record_analysis(_analysis())
+
+    assert len(reporter.events) == 1
+
+    payload = reporter.events[0]
+    assert payload["eventKey"] == "camera-1:session-1:NO_HELMET:1"
+    assert payload["sourceId"] == "camera-1"
+    assert payload["sessionId"] == "session-1"
+    assert payload["sourceType"] == "DUMMY_VIDEO"
+    assert payload["droneId"] == 1
+    assert payload["trackId"] == 1
+    assert payload["frameIndex"] == 28
+    assert payload["ppeState"] == "CONFIRMED_NO_HELMET"
+    assert payload["noHelmetRate"] == 1.0
+    assert payload["helmetRate"] == 0.0
+    assert payload["unknownRate"] == 0.0
+    assert payload["streakSeconds"] == 0.9
+
+def test_depth_result_is_forwarded_to_phase3_reporter() -> None:
+    reporter = _FakePhase3Reporter()
+    observer = Phase3ConsoleObserver(
+        stream=StringIO(),
+        reporter=reporter,
+    )
+
+    observer.on_depth_result(
+        DepthEnrichmentResult(
+            event_key="camera-1:session-1:NO_HELMET:1",
+            track_id=1,
+            frame_index=28,
+            event_time_sec=0.933,
+            person_box=TrackedPersonBox(
+                track_id=1,
+                x1=10,
+                y1=10,
+                x2=100,
+                y2=200,
+            ),
+            measurement=DepthMeasurement(
+                estimated_depth_m=1.844,
+                scene_q33_m=1.648,
+                scene_q66_m=2.170,
+                bucket=DepthBucket.MID,
+            ),
+            enrichment_latency_ms=66.44,
+        )
+    )
+
+    assert len(reporter.depths) == 1
+
+    event_key, payload = reporter.depths[0]
+
+    assert event_key == "camera-1:session-1:NO_HELMET:1"
+    assert payload["estimatedDepthM"] == 1.844
+    assert payload["sceneQ33M"] == 1.648
+    assert payload["sceneQ66M"] == 2.170
+    assert payload["depthBucket"] == "MID"
+    assert payload["enrichmentLatencyMs"] == 66.44

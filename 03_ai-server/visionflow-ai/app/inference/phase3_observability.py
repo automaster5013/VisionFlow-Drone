@@ -9,6 +9,7 @@ from app.domain import InferencePacket
 from app.inference.phase3_depth_enrichment import DepthEnrichmentResult
 from app.inference.phase3_pose import Phase3PoseFrameResult
 from app.inference.phase3_ppe_depth import PpeDepthFrameResult
+from app.phase3_reporting import Phase3EventReporterLike
 
 
 class Phase3AnalysisLike(Protocol):
@@ -33,8 +34,14 @@ class Phase3ObservabilitySnapshot:
 
 
 class Phase3ConsoleObserver:
-    def __init__(self, *, stream: TextIO | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        stream: TextIO | None = None,
+        reporter: Phase3EventReporterLike | None = None,
+    ) -> None:
         self._stream = stream if stream is not None else sys.stdout
+        self._reporter = reporter
         self._lock = threading.Lock()
 
         self._frames_analyzed = 0
@@ -91,6 +98,27 @@ class Phase3ConsoleObserver:
                     f"STREAK_SEC={snapshot.current_streak_seconds:.3f}"
                 )
 
+                if self._reporter is not None:
+                    frame = analysis.inference.frame
+
+                    self._reporter.submit_event(
+                        {
+                            "eventKey": trigger.event_key,
+                            "sourceId": frame.source_id,
+                            "sessionId": frame.session_id,
+                            "sourceType": frame.source_type.value,
+                            "droneId": frame.drone_id,
+                            "trackId": trigger.track_id,
+                            "frameIndex": analysis.ppe.ppe.frame_index,
+                            "capturedAt": frame.captured_at.isoformat(),
+                            "ppeState": assessment.state.value,
+                            "noHelmetRate": snapshot.head_no_helmet_rate,
+                            "helmetRate": snapshot.helmet_rate,
+                            "unknownRate": snapshot.unknown_rate,
+                            "streakSeconds": snapshot.current_streak_seconds,
+                        }
+                    )
+
     def on_depth_result(self, result: DepthEnrichmentResult) -> None:
         measurement = result.measurement
 
@@ -108,6 +136,18 @@ class Phase3ConsoleObserver:
                 f"DEPTH_BUCKET={measurement.bucket.value} "
                 f"ENRICHMENT_LATENCY_MS={result.enrichment_latency_ms:.2f}"
             )
+
+            if self._reporter is not None:
+                self._reporter.submit_depth(
+                    result.event_key,
+                    {
+                        "estimatedDepthM": measurement.estimated_depth_m,
+                        "sceneQ33M": measurement.scene_q33_m,
+                        "sceneQ66M": measurement.scene_q66_m,
+                        "depthBucket": measurement.bucket.value,
+                        "enrichmentLatencyMs": result.enrichment_latency_ms,
+                    },
+                )
 
     def snapshot(self) -> Phase3ObservabilitySnapshot:
         with self._lock:
