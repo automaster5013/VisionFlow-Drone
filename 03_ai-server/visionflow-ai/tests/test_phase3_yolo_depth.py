@@ -93,6 +93,25 @@ def test_estimator_returns_person_lower_half_metric_depth() -> None:
     assert call["verbose"] is False
 
 
+def test_estimator_warmup_runs_synthetic_prediction() -> None:
+    model = _FakeModel(np.ones((4, 4), dtype=np.float32))
+    estimator = YoloDepthEstimator(
+        model_path="depth.pt",
+        image_size=768,
+        device="0",
+        model=model,
+    )
+
+    estimator.warmup()
+
+    assert len(model.calls) == 1
+    call = model.calls[0]
+    assert call["source"].shape == (768, 768, 3)
+    assert call["imgsz"] == 768
+    assert call["device"] == "0"
+    assert call["verbose"] is False
+
+
 def test_estimator_scales_person_box_when_depth_resolution_differs() -> None:
     depth = np.array(
         [
