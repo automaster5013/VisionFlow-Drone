@@ -7,6 +7,7 @@ from typing import Protocol, TextIO
 
 from app.domain import InferencePacket
 from app.inference.phase3_depth_enrichment import DepthEnrichmentResult
+from app.inference.phase3_pose import Phase3PoseFrameResult
 from app.inference.phase3_ppe_depth import PpeDepthFrameResult
 
 
@@ -14,12 +15,17 @@ class Phase3AnalysisLike(Protocol):
     inference: InferencePacket
     ppe: PpeDepthFrameResult | None
     ppe_sampled: bool
+    pose: Phase3PoseFrameResult | None
+    pose_sampled: bool
 
 
 @dataclass(frozen=True, slots=True)
 class Phase3ObservabilitySnapshot:
     frames_analyzed: int
     ppe_samples: int
+    pose_samples: int
+    pose_assigned: int
+    pose_unassigned: int
     depth_trigger_attempts: int
     depth_triggers_accepted: int
     depth_triggers_rejected: int
@@ -33,6 +39,9 @@ class Phase3ConsoleObserver:
 
         self._frames_analyzed = 0
         self._ppe_samples = 0
+        self._pose_samples = 0
+        self._pose_assigned = 0
+        self._pose_unassigned = 0
         self._depth_trigger_attempts = 0
         self._depth_triggers_accepted = 0
         self._depth_triggers_rejected = 0
@@ -43,6 +52,18 @@ class Phase3ConsoleObserver:
             self._frames_analyzed += 1
             if analysis.ppe_sampled:
                 self._ppe_samples += 1
+
+            pose_sampled = bool(
+                getattr(analysis, "pose_sampled", False)
+            )
+            pose = getattr(analysis, "pose", None)
+
+            if pose_sampled:
+                self._pose_samples += 1
+
+                if pose is not None:
+                    self._pose_assigned += pose.assigned_count
+                    self._pose_unassigned += pose.unassigned_count
 
             if analysis.ppe is None:
                 return
@@ -93,6 +114,9 @@ class Phase3ConsoleObserver:
             return Phase3ObservabilitySnapshot(
                 frames_analyzed=self._frames_analyzed,
                 ppe_samples=self._ppe_samples,
+                pose_samples=self._pose_samples,
+                pose_assigned=self._pose_assigned,
+                pose_unassigned=self._pose_unassigned,
                 depth_trigger_attempts=self._depth_trigger_attempts,
                 depth_triggers_accepted=self._depth_triggers_accepted,
                 depth_triggers_rejected=self._depth_triggers_rejected,
@@ -106,6 +130,9 @@ class Phase3ConsoleObserver:
                 "PHASE3_SUMMARY "
                 f"FRAMES_ANALYZED={snapshot.frames_analyzed} "
                 f"PPE_SAMPLES={snapshot.ppe_samples} "
+                f"POSE_SAMPLES={snapshot.pose_samples} "
+                f"POSE_ASSIGNED={snapshot.pose_assigned} "
+                f"POSE_UNASSIGNED={snapshot.pose_unassigned} "
                 f"DEPTH_TRIGGER_ATTEMPTS={snapshot.depth_trigger_attempts} "
                 f"DEPTH_TRIGGERS_ACCEPTED={snapshot.depth_triggers_accepted} "
                 f"DEPTH_TRIGGERS_REJECTED={snapshot.depth_triggers_rejected} "

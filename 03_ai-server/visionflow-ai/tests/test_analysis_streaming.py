@@ -76,6 +76,7 @@ def test_stream_api_returns_status_and_latest_jpeg() -> None:
     app = create_stream_app(
         hub,
         allowed_origins=("http://localhost:3000",),
+        internal_security_enabled=False,
         performance_monitor=performance_monitor,
         model_status_provider=lambda: {
             "profile": "test-cpu",

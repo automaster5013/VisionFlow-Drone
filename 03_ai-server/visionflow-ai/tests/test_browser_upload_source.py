@@ -89,6 +89,7 @@ def test_ingest_api_accepts_jpeg_and_exposes_status() -> None:
     app = create_stream_app(
         AnnotatedFrameHub(jpeg_quality=80),
         allowed_origins=("http://localhost:3000",),
+        internal_security_enabled=False,
         ingest_source=source,
         ingest_max_payload_bytes=100_000,
     )
@@ -126,6 +127,7 @@ def test_ingest_api_rejects_payload_over_limit() -> None:
     app = create_stream_app(
         AnnotatedFrameHub(jpeg_quality=80),
         allowed_origins=("http://localhost:3000",),
+        internal_security_enabled=False,
         ingest_source=source,
         ingest_max_payload_bytes=10,
     )
