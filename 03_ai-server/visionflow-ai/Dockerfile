@@ -4,6 +4,7 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
+ENV YOLO_CONFIG_DIR=/tmp
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
