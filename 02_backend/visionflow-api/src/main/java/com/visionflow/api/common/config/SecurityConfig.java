@@ -145,8 +145,18 @@ public class SecurityConfig {
                                     HttpMethod.PUT,
                                     "/api/ai/events/*/snapshot"
                             )
-                            .permitAll()
-                            .requestMatchers(
+                           .permitAll()
+                           .requestMatchers(
+                                    HttpMethod.POST,
+                                    "/api/ai/phase3/events"
+                           )
+                          .permitAll()
+                          .requestMatchers(
+                                    HttpMethod.PUT,
+                                    "/api/ai/phase3/events/*/depth"
+                           )
+                           .permitAll()
+                           .requestMatchers(
                                     HttpMethod.DELETE,
                                     "/api/drones/*"
                             )

@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "baselineCommit": "fc794e571c39fb3ea1cede7d5509816f483c5664",
   "expectedCounts": {
-    "backend": 76,
+    "backend": 78,
     "frontend": 78,
     "ai": 9,
-    "tables": 16,
-    "entities": 15,
-    "repositories": 15,
+    "tables": 17,
+    "entities": 16,
+    "repositories": 16,
     "foreignKeys": 12
   },
   "tables": [
@@ -73,6 +73,13 @@
       "createdIn": "V10__create_ai_alert.sql",
       "entity": "AiAlert",
       "repository": "AiAlertRepository",
+      "classification": "CORE"
+    },
+    {
+      "name": "ai_phase3_event",
+      "createdIn": "V24__create_ai_phase3_event.sql",
+      "entity": "AiPhase3Event",
+      "repository": "AiPhase3EventRepository",
       "classification": "CORE"
     },
     {
@@ -207,6 +214,7 @@
         "drone_telemetry_history",
         "ai_inference_event",
         "ai_alert",
+        "ai_phase3_event",
         "incident",
         "demo_scenario",
         "maintenance_work_order"
@@ -221,6 +229,7 @@
         "flight_session",
         "ai_inference_event",
         "ai_alert",
+        "ai_phase3_event",
         "incident",
         "demo_scenario",
         "flight_quality_assessment",
@@ -424,9 +433,10 @@
     {
       "key": "ai-event-alert",
       "title": "AI 이벤트·경보 영속화",
-      "description": "AI 추론 결과·탐지·스냅숏 메타데이터·경보와 Incident 연계",
+      "description": "AI 추론 결과·탐지·스냅숏 메타데이터·경보와 Incident 연계 및 Phase 3 PPE·Depth 이벤트 영속화",
       "backendPatterns": [
-        "^(GET|POST|PUT|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$"
+        "^(GET|POST|PUT|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$",
+        "^(POST|PUT) /api/ai/phase3/events(?:/.*)?$"
       ],
       "frontendPatterns": [
         "^(GET|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$"
@@ -434,6 +444,7 @@
       "aiPatterns": [],
       "tables": [
         "ai_inference_event",
+        "ai_phase3_event",
         "ai_detection",
         "ai_alert",
         "drone",

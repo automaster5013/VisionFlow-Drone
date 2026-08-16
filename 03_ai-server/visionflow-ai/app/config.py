@@ -75,6 +75,8 @@ class Settings:
     phase3_depth_model_path: str
     phase3_depth_image_size: int
     phase3_depth_queue_capacity: int
+    phase3_report_events: bool
+    backend_phase3_event_url: str
     save_annotated_video: bool
     output_video_path: Path
     show_preview: bool
@@ -199,6 +201,14 @@ class Settings:
             phase3_depth_queue_capacity=_read_int(
                 "AI_PHASE3_DEPTH_QUEUE_CAPACITY",
                 4,
+            ),
+            phase3_report_events=_read_bool(
+                "AI_PHASE3_REPORT_EVENTS",
+                False,
+            ),
+            backend_phase3_event_url=os.getenv(
+                "AI_BACKEND_PHASE3_EVENT_URL",
+                "http://localhost:8080/api/ai/phase3/events",
             ),
             save_annotated_video=_read_bool("AI_SAVE_ANNOTATED_VIDEO", True),
             output_video_path=Path(os.getenv("AI_OUTPUT_VIDEO_PATH", "output/annotated.mp4")),

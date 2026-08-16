@@ -30,6 +30,10 @@ def test_phase3_is_disabled_by_default(monkeypatch, tmp_path) -> None:
     )
     assert settings.phase3_depth_image_size == 768
     assert settings.phase3_depth_queue_capacity == 4
+    assert settings.phase3_report_events is False
+    assert settings.backend_phase3_event_url == (
+        "http://localhost:8080/api/ai/phase3/events"
+    )
 
 
 def test_phase3_reads_runtime_overrides(monkeypatch, tmp_path) -> None:
@@ -41,6 +45,11 @@ def test_phase3_reads_runtime_overrides(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("AI_PHASE3_DEPTH_MODEL_PATH", "/models/custom-depth.pt")
     monkeypatch.setenv("AI_PHASE3_DEPTH_IMAGE_SIZE", "640")
     monkeypatch.setenv("AI_PHASE3_DEPTH_QUEUE_CAPACITY", "8")
+    monkeypatch.setenv("AI_PHASE3_REPORT_EVENTS", "true")
+    monkeypatch.setenv(
+        "AI_BACKEND_PHASE3_EVENT_URL",
+        "http://backend.test/api/ai/phase3/events",
+    )
 
     settings = Settings.from_env()
 
@@ -51,6 +60,10 @@ def test_phase3_reads_runtime_overrides(monkeypatch, tmp_path) -> None:
     assert settings.phase3_depth_model_path == "/models/custom-depth.pt"
     assert settings.phase3_depth_image_size == 640
     assert settings.phase3_depth_queue_capacity == 8
+    assert settings.phase3_report_events is True
+    assert settings.backend_phase3_event_url == (
+        "http://backend.test/api/ai/phase3/events"
+    )
 
 
 def test_enabled_phase3_requires_ppe_model_path(
