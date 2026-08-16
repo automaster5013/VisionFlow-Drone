@@ -45,6 +45,7 @@ class Phase3Runtime:
     effective_ppe_fps: float
     coordinator: Phase3PpeDepthCoordinator | None = None
     depth_enricher: ManagedDepthEnricher | None = None
+    depth_estimator: DepthEstimator | None = None
     pose_stride_frames: int | None = None
     effective_pose_fps: float = 0.0
     _started: bool = False
@@ -75,6 +76,11 @@ class Phase3Runtime:
     def start(self) -> None:
         if self._started:
             return
+
+        if self.depth_estimator is not None:
+            warmup = getattr(self.depth_estimator, "warmup", None)
+            if callable(warmup):
+                warmup()
 
         if self.depth_enricher is not None:
             self.depth_enricher.start()
@@ -223,6 +229,7 @@ def create_phase3_runtime(
         effective_ppe_fps=effective_ppe_fps,
         coordinator=coordinator,
         depth_enricher=depth_enricher,
+        depth_estimator=depth_estimator,
         pose_stride_frames=pose_stride_frames,
         effective_pose_fps=effective_pose_fps,
     )

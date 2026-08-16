@@ -46,6 +46,18 @@ class YoloDepthEstimator:
     def device(self) -> str:
         return self._device
 
+    def warmup(self) -> None:
+        frame = np.zeros(
+            (self._image_size, self._image_size, 3),
+            dtype=np.uint8,
+        )
+        self._model.predict(
+            source=frame,
+            imgsz=self._image_size,
+            device=self._device,
+            verbose=False,
+        )
+
     def estimate(
         self,
         *,

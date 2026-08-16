@@ -16,6 +16,10 @@ from app.inference.phase3_runtime import (
 class _FakeEstimator:
     def __init__(self, **kwargs) -> None:
         self.kwargs = kwargs
+        self.warmed = False
+
+    def warmup(self) -> None:
+        self.warmed = True
 
 
 class _FakeEnricher:
@@ -201,6 +205,7 @@ def test_depth_enabled_builds_managed_runtime_with_settings() -> None:
     runtime.start()
     assert runtime.started is True
     assert enricher.started is True
+    assert estimator.warmed is True
 
     runtime.close()
     assert runtime.started is False
