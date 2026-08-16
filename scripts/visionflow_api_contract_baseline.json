@@ -3,7 +3,7 @@
   "project": "visionflow",
   "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
   "expectedCounts": {
-    "backend": 76,
+    "backend": 78,
     "frontend": 78,
     "ai": 9
   },
@@ -281,6 +281,16 @@
       "method": "PUT",
       "path": "/api/ai/events/{}/snapshot",
       "reason": "AI 서버의 내부 스냅숏 업로드"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/phase3/events",
+      "reason": "AI 서버의 Phase 3 PPE 이벤트 저장 입력"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/ai/phase3/events/{}/depth",
+      "reason": "AI 서버의 Phase 3 비동기 Depth enrichment 입력"
     }
   ],
   "advisoryBackendOnlyOperations": [],
