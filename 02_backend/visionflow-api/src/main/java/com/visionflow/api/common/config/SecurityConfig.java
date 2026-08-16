@@ -120,6 +120,7 @@ public class SecurityConfig {
                                     HttpMethod.GET,
                                     "/api/ai/alerts/**",
                                     "/api/ai/events/**",
+                                    "/api/ai/phase3/events/**",
                                     "/api/incidents/**"
                             )
                             .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")

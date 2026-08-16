@@ -26,6 +26,7 @@ import {
 } from "@/types/event-operations";
 import { parseIncidentList } from "@/types/incident";
 import type { EventTimeRange } from "@/types/operator-console-settings";
+import { parsePhase3EventList } from "@/types/phase3-event";
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
 const DISPLAY_LIMIT = 100;
@@ -34,11 +35,17 @@ type SourceFilter = "" | EventOperationsSource;
 type SeverityFilter = "" | EventOperationsSeverity;
 type LifecycleFilter = "" | EventOperationsLifecycle;
 type TimeRangeFilter = EventTimeRange;
-type SourceHealthKey = "aiEvents" | "aiAlerts" | "geofenceEvents" | "incidents";
+type SourceHealthKey =
+  | "aiEvents"
+  | "phase3Events"
+  | "aiAlerts"
+  | "geofenceEvents"
+  | "incidents";
 
 const EMPTY_SOURCES: EventOperationsSources = {
   drones: [],
   aiEvents: [],
+  phase3Events: [],
   aiAlerts: [],
   geofenceEvents: [],
   incidents: [],
@@ -59,6 +66,12 @@ const SOURCE_PRESENTATION: Record<
     shortLabel: "AI",
     badge: "bg-violet-100 text-violet-800",
     marker: "border-violet-200 bg-violet-50 text-violet-700",
+  },
+  AI_PHASE3: {
+    label: "AI Phase 3",
+    shortLabel: "P3",
+    badge: "bg-emerald-100 text-emerald-800",
+    marker: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   GEOFENCE: {
     label: "지오펜스",
@@ -85,6 +98,7 @@ const SEVERITY_PRESENTATION: Record<
 
 const SOURCE_HEALTH_LABELS: Record<SourceHealthKey, string> = {
   aiEvents: "AI 추론",
+  phase3Events: "Phase 3 PPE·Depth",
   aiAlerts: "AI 경보",
   geofenceEvents: "지오펜스",
   incidents: "Incident",
@@ -197,10 +211,17 @@ export function EventOperationsCenter() {
 
     if (!silent) setRefreshing(true);
 
-    const [droneResult, aiEventResult, aiAlertResult, geofenceResult, incidentResult] =
-      await Promise.allSettled([
+    const [
+      droneResult,
+      aiEventResult,
+      phase3EventResult,
+      aiAlertResult,
+      geofenceResult,
+      incidentResult,
+    ] = await Promise.allSettled([
         fetchJson("/api/drones", controller.signal),
         fetchJson("/api/ai/events?limit=100", controller.signal),
+        fetchJson("/api/ai/phase3/events?limit=100", controller.signal),
         fetchJson("/api/ai/alerts?limit=200", controller.signal),
         fetchJson("/api/geofences/events?activeOnly=false&limit=100", controller.signal),
         fetchJson("/api/incidents?limit=200", controller.signal),
@@ -216,6 +237,10 @@ export function EventOperationsCenter() {
     const parsedAiEvents =
       aiEventResult.status === "fulfilled"
         ? parseEventOperationsAiEvents(aiEventResult.value)
+        : null;
+    const parsedPhase3Events =
+      phase3EventResult.status === "fulfilled"
+        ? parsePhase3EventList(phase3EventResult.value)
         : null;
     const parsedAiAlerts =
       aiAlertResult.status === "fulfilled"
@@ -235,6 +260,15 @@ export function EventOperationsCenter() {
         aiEventResult.status === "fulfilled"
           ? "AI 추론 이벤트 응답 형식이 올바르지 않습니다."
           : resultError(aiEventResult, "AI 추론 이벤트를 조회하지 못했습니다.");
+    }
+    if (!parsedPhase3Events) {
+      nextErrors.phase3Events =
+        phase3EventResult.status === "fulfilled"
+          ? "Phase 3 이벤트 응답 형식이 올바르지 않습니다."
+          : resultError(
+              phase3EventResult,
+              "Phase 3 PPE·Depth 이벤트를 조회하지 못했습니다.",
+            );
     }
     if (!parsedAiAlerts) {
       nextErrors.aiAlerts =
@@ -258,6 +292,7 @@ export function EventOperationsCenter() {
     setSources((current) => ({
       drones: parsedDrones ?? current.drones,
       aiEvents: parsedAiEvents ?? current.aiEvents,
+      phase3Events: parsedPhase3Events ?? current.phase3Events,
       aiAlerts: parsedAiAlerts ?? current.aiAlerts,
       geofenceEvents: parsedGeofenceEvents ?? current.geofenceEvents,
       incidents: parsedIncidents ?? current.incidents,
@@ -266,6 +301,7 @@ export function EventOperationsCenter() {
     setSourceErrors(nextErrors);
     const successfulSourceCount = [
       parsedAiEvents,
+      parsedPhase3Events,
       parsedAiAlerts,
       parsedGeofenceEvents,
       parsedIncidents,
@@ -372,7 +408,7 @@ export function EventOperationsCenter() {
             통합 이벤트 관제 센터
           </h1>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            AI 추론·경보, 지오펜스 위반과 Incident를 시간순으로 통합해
+            AI 추론·경보, Phase 3 PPE·Depth, 지오펜스 위반과 Incident를 시간순으로 통합해
             기체별 운영 상황과 후속 조치 경로를 한 화면에서 확인합니다.
           </p>
         </div>
@@ -412,7 +448,7 @@ export function EventOperationsCenter() {
                 ? "border-emerald-300/40 bg-emerald-400/15 text-emerald-100"
                 : "border-amber-300/40 bg-amber-400/15 text-amber-100"
             }`}>
-              {sourceErrorCount === 0 ? "4개 소스 정상" : `${4 - sourceErrorCount}/4 소스 수신`}
+              {sourceErrorCount === 0 ? "5개 소스 정상" : `${5 - sourceErrorCount}/5 소스 수신`}
             </span>
             <span className="rounded-full border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-slate-300">
               {lastUpdatedAt
@@ -429,7 +465,7 @@ export function EventOperationsCenter() {
           <SummaryCard label="최근 1시간 AI 추론" value={kpis.recentInference} unit="건" tone="violet" />
         </div>
 
-        <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
           {(Object.keys(SOURCE_HEALTH_LABELS) as SourceHealthKey[]).map((key) => (
             <div
               key={key}
@@ -476,6 +512,7 @@ export function EventOperationsCenter() {
             <option value="">전체 소스</option>
             <option value="AI_ALERT">AI 경보</option>
             <option value="AI_INFERENCE">AI 추론</option>
+            <option value="AI_PHASE3">AI Phase 3</option>
             <option value="GEOFENCE">지오펜스</option>
             <option value="INCIDENT">Incident</option>
           </FilterSelect>

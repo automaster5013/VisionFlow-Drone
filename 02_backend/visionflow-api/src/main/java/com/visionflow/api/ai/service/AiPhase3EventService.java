@@ -8,10 +8,12 @@ import com.visionflow.api.ai.repository.AiPhase3EventRepository;
 import com.visionflow.api.common.exception.ResourceNotFoundException;
 import com.visionflow.api.drone.repository.DroneRepository;
 import com.visionflow.api.flight.service.FlightSessionCorrelationGuard;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -51,6 +53,26 @@ public class AiPhase3EventService {
         return eventRepository.findByEventKey(request.eventKey().trim())
                 .map(AiPhase3EventResponse::from)
                 .orElseGet(() -> createNew(request, sessionId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AiPhase3EventResponse> findRecent(
+            Long droneId,
+            int limit
+    ) {
+        int safeLimit = Math.max(1, Math.min(limit, 200));
+        PageRequest pageRequest = PageRequest.of(0, safeLimit);
+
+        List<AiPhase3Event> events = droneId == null
+                ? eventRepository.findAllByOrderByCapturedAtDesc(pageRequest)
+                : eventRepository.findAllByDroneIdOrderByCapturedAtDesc(
+                        droneId,
+                        pageRequest
+                );
+
+        return events.stream()
+                .map(AiPhase3EventResponse::from)
+                .toList();
     }
 
     @Transactional

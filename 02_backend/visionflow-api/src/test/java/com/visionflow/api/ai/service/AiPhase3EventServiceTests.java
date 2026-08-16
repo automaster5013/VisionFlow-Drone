@@ -9,10 +9,13 @@ import com.visionflow.api.ai.repository.AiPhase3EventRepository;
 import com.visionflow.api.drone.repository.DroneRepository;
 import com.visionflow.api.flight.service.FlightSessionCorrelationGuard;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,6 +91,45 @@ class AiPhase3EventServiceTests {
         assertThat(response.estimatedDepthM()).isNull();
 
         verify(eventRepository).saveAndFlush(any(AiPhase3Event.class));
+    }
+
+    @Test
+    void findRecentBoundsLimitAndMapsLatestEvents() {
+        AiPhase3Event event = AiPhase3Event.create(
+                "source-1:session-1:NO_HELMET:7",
+                "source-1",
+                "session-1",
+                VideoSourceType.DUMMY_VIDEO,
+                1L,
+                7L,
+                28L,
+                Instant.parse("2026-08-16T09:00:00Z"),
+                "CONFIRMED_NO_HELMET",
+                new BigDecimal("0.875000"),
+                new BigDecimal("0.062500"),
+                new BigDecimal("0.062500"),
+                new BigDecimal("2.400")
+        );
+        ReflectionTestUtils.setField(event, "id", 101L);
+
+        when(eventRepository.findAllByOrderByCapturedAtDesc(
+                any(Pageable.class)
+        )).thenReturn(List.of(event));
+
+        List<AiPhase3EventResponse> responses =
+                service.findRecent(null, 999);
+
+        ArgumentCaptor<Pageable> pageable =
+                ArgumentCaptor.forClass(Pageable.class);
+        verify(eventRepository)
+                .findAllByOrderByCapturedAtDesc(pageable.capture());
+
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(200);
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).id()).isEqualTo(101L);
+        assertThat(responses.get(0).ppeState())
+                .isEqualTo("CONFIRMED_NO_HELMET");
+        assertThat(responses.get(0).trackId()).isEqualTo(7L);
     }
 
     @Test
