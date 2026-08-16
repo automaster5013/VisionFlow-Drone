@@ -3,8 +3,8 @@
   "project": "visionflow",
   "baselineCommit": "4537e9bc7d8b2e332efbe096e07a02e4c62b5343",
   "expectedCounts": {
-    "backend": 78,
-    "frontend": 78,
+    "backend": 79,
+    "frontend": 79,
     "ai": 9
   },
   "requiredBackendAccess": [
@@ -111,6 +111,14 @@
         "ROLES_VIEWER_OPERATOR_ADMIN"
       ],
       "reason": "AI 추론 이벤트는 인증된 역할만 조회"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/phase3/events",
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
+      "reason": "Phase 3 PPE·Depth 이벤트 목록은 인증된 역할만 조회"
     },
     {
       "method": "GET",
@@ -396,6 +404,11 @@
       "path": "/api/ai/events/**",
       "severity": "HIGH",
       "reason": "AI 추론 이벤트와 스냅숏"
+    },
+    {
+      "path": "/api/ai/phase3/events/**",
+      "severity": "HIGH",
+      "reason": "Phase 3 PPE·Depth 판정과 거리 enrichment"
     },
     {
       "path": "/api/drones/**",

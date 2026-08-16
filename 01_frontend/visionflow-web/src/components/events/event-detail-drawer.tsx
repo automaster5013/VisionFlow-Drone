@@ -30,6 +30,11 @@ const SOURCE_PRESENTATION: Record<
     eyebrow: "AI Inference",
     badge: "border-violet-300/40 bg-violet-400/15 text-violet-100",
   },
+  AI_PHASE3: {
+    label: "AI Phase 3",
+    eyebrow: "PPE + Depth",
+    badge: "border-emerald-300/40 bg-emerald-400/15 text-emerald-100",
+  },
   GEOFENCE: {
     label: "지오펜스",
     eyebrow: "Geofence Event",

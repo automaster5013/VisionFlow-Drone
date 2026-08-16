@@ -9,13 +9,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @Validated
 @RestController
@@ -37,6 +40,14 @@ public class AiPhase3EventController {
             AiPhase3EventCreateRequest request
     ) {
         return eventService.create(request);
+    }
+
+    @GetMapping
+    public List<AiPhase3EventResponse> findRecent(
+            @RequestParam(required = false) Long droneId,
+            @RequestParam(defaultValue = "100") int limit
+    ) {
+        return eventService.findRecent(droneId, limit);
     }
 
     @PutMapping("/{eventKey}/depth")

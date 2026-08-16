@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "baselineCommit": "fc794e571c39fb3ea1cede7d5509816f483c5664",
   "expectedCounts": {
-    "backend": 78,
-    "frontend": 78,
+    "backend": 79,
+    "frontend": 79,
     "ai": 9,
     "tables": 17,
     "entities": 16,
@@ -436,10 +436,11 @@
       "description": "AI 추론 결과·탐지·스냅숏 메타데이터·경보와 Incident 연계 및 Phase 3 PPE·Depth 이벤트 영속화",
       "backendPatterns": [
         "^(GET|POST|PUT|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$",
-        "^(POST|PUT) /api/ai/phase3/events(?:/.*)?$"
+        "^(GET|POST|PUT) /api/ai/phase3/events(?:/.*)?$"
       ],
       "frontendPatterns": [
-        "^(GET|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$"
+        "^(GET|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$",
+        "^GET /api/ai/phase3/events(?:/.*)?$"
       ],
       "aiPatterns": [],
       "tables": [

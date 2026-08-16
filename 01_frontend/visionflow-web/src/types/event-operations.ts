@@ -6,10 +6,12 @@ import type {
 import type { Drone } from "@/types/drone";
 import type { GeofenceEvent } from "@/types/geofence";
 import type { IncidentItem, IncidentSourceType } from "@/types/incident";
+import type { Phase3Event } from "@/types/phase3-event";
 
 export type EventOperationsSource =
   | "AI_ALERT"
   | "AI_INFERENCE"
+  | "AI_PHASE3"
   | "GEOFENCE"
   | "INCIDENT";
 
@@ -49,6 +51,7 @@ export interface EventOperationsItem {
 export interface EventOperationsSources {
   drones: Drone[];
   aiEvents: AiInferenceEvent[];
+  phase3Events: Phase3Event[];
   aiAlerts: AiAlertItem[];
   geofenceEvents: GeofenceEvent[];
   incidents: IncidentItem[];
@@ -207,9 +210,22 @@ function confidenceLabel(value: number): string {
   return `${(Number(value) * 100).toFixed(1)}%`;
 }
 
+function depthBucketLabel(
+  value: Phase3Event["depthBucket"],
+): string {
+  if (value === null) return "분석 대기";
+  return {
+    NEAR: "근거리",
+    MID: "중거리",
+    FAR: "원거리",
+    UNKNOWN: "미확정",
+  }[value];
+}
+
 export function buildEventOperationsTimeline({
   drones,
   aiEvents,
+  phase3Events,
   aiAlerts,
   geofenceEvents,
   incidents,
@@ -289,6 +305,71 @@ export function buildEventOperationsTimeline({
       { label: "탐지 수", value: `${event.detectionCount}개` },
     ],
   }));
+
+  const phase3Items: EventOperationsItem[] = phase3Events.map((event) => {
+    const confirmed = event.ppeState === "CONFIRMED_NO_HELMET";
+    const depthAvailable = event.estimatedDepthM !== null;
+    const depthSummary = depthAvailable
+      ? ` · 추정 거리 ${Number(event.estimatedDepthM).toFixed(2)}m (${depthBucketLabel(event.depthBucket)})`
+      : " · Depth 분석 대기";
+
+    return {
+      key: `AI_PHASE3:${event.id}`,
+      source: "AI_PHASE3",
+      sourceId: event.id,
+      droneId: event.droneId,
+      droneLabel: droneLabel(event.droneId),
+      sessionId: event.sessionId,
+      occurredAt: event.capturedAt,
+      title: confirmed ? "헬멧 미착용 확인" : `PPE 상태 ${event.ppeState}`,
+      summary:
+        `Track #${event.trackId} · 미착용 ${confidenceLabel(event.noHelmetRate)}` +
+        depthSummary,
+      severity: confirmed ? "CRITICAL" : "WARNING",
+      status: depthAvailable ? "DEPTH_ENRICHED" : "DEPTH_PENDING",
+      statusLabel: depthAvailable ? "거리 분석 완료" : "거리 분석 중",
+      lifecycle: confirmed ? "NEEDS_ACTION" : "MONITORING",
+      snapshotEventId: null,
+      snapshotAvailable: false,
+      incidentId: null,
+      incidentSourceType: null,
+      details: [
+        { label: "PPE 상태", value: event.ppeState },
+        { label: "영상 소스", value: aiSourceLabel(event.sourceType) },
+        { label: "Track", value: `#${event.trackId}` },
+        { label: "프레임", value: `#${event.frameIndex}` },
+        { label: "미착용 비율", value: confidenceLabel(event.noHelmetRate) },
+        { label: "Helmet 비율", value: confidenceLabel(event.helmetRate) },
+        { label: "Unknown 비율", value: confidenceLabel(event.unknownRate) },
+        {
+          label: "연속 감지",
+          value: `${Number(event.streakSeconds).toFixed(2)}초`,
+        },
+        {
+          label: "추정 거리",
+          value:
+            event.estimatedDepthM === null
+              ? "분석 대기"
+              : `${Number(event.estimatedDepthM).toFixed(3)}m`,
+        },
+        { label: "Depth 구간", value: depthBucketLabel(event.depthBucket) },
+        {
+          label: "Scene Q33 / Q66",
+          value:
+            event.sceneQ33M === null || event.sceneQ66M === null
+              ? "분석 대기"
+              : `${Number(event.sceneQ33M).toFixed(3)}m / ${Number(event.sceneQ66M).toFixed(3)}m`,
+        },
+        {
+          label: "Depth 지연",
+          value:
+            event.enrichmentLatencyMs === null
+              ? "분석 대기"
+              : `${Number(event.enrichmentLatencyMs).toFixed(2)}ms`,
+        },
+      ],
+    };
+  });
 
   const geofenceItems: EventOperationsItem[] = geofenceEvents.map((event) => ({
     key: `GEOFENCE:${event.id}`,
@@ -381,6 +462,7 @@ export function buildEventOperationsTimeline({
   return [
     ...alertItems,
     ...inferenceItems,
+    ...phase3Items,
     ...geofenceItems,
     ...incidentItems,
   ].sort((first, second) => {
