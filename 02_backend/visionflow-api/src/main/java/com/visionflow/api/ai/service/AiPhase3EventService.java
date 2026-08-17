@@ -8,6 +8,8 @@ import com.visionflow.api.ai.repository.AiPhase3EventRepository;
 import com.visionflow.api.common.exception.ResourceNotFoundException;
 import com.visionflow.api.drone.repository.DroneRepository;
 import com.visionflow.api.flight.service.FlightSessionCorrelationGuard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,9 @@ import java.util.Set;
 
 @Service
 public class AiPhase3EventService {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(AiPhase3EventService.class);
 
     private static final Set<String> DEPTH_BUCKETS = Set.of(
             "NEAR",
@@ -44,15 +49,26 @@ public class AiPhase3EventService {
     public AiPhase3EventResponse create(
             AiPhase3EventCreateRequest request
     ) {
+        String eventKey = request.eventKey().trim();
         String sessionId =
                 sessionCorrelationGuard.requireOwnedSessionForUpdate(
                         request.sessionId(),
                         request.droneId()
                 );
 
-        return eventRepository.findByEventKey(request.eventKey().trim())
-                .map(AiPhase3EventResponse::from)
-                .orElseGet(() -> createNew(request, sessionId));
+        return eventRepository.findByEventKey(eventKey)
+                .map(event -> {
+                    AiPhase3EventResponse response =
+                            AiPhase3EventResponse.from(event);
+                    logEventIngest("duplicate", response);
+                    return response;
+                })
+                .orElseGet(() -> {
+                    AiPhase3EventResponse response =
+                            createNew(request, sessionId);
+                    logEventIngest("created", response);
+                    return response;
+                });
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +123,63 @@ public class AiPhase3EventService {
         );
 
         event = eventRepository.saveAndFlush(event);
-        return AiPhase3EventResponse.from(event);
+
+        AiPhase3EventResponse response =
+                AiPhase3EventResponse.from(event);
+        logDepthEnrichment(response);
+        return response;
+    }
+
+    private static void logEventIngest(
+            String outcome,
+            AiPhase3EventResponse response
+    ) {
+        LOGGER.info(
+                "VISIONFLOW_PHASE3_EVENT_INGEST "
+                        + "outcome={} eventKey=\"{}\" eventId={} "
+                        + "droneId={} sessionId=\"{}\" sourceId=\"{}\" "
+                        + "trackId={} frameIndex={} ppeState=\"{}\"",
+                outcome,
+                safeLogValue(response.eventKey()),
+                response.id(),
+                response.droneId(),
+                safeLogValue(response.sessionId()),
+                safeLogValue(response.sourceId()),
+                response.trackId(),
+                response.frameIndex(),
+                safeLogValue(response.ppeState())
+        );
+    }
+
+    private static void logDepthEnrichment(
+            AiPhase3EventResponse response
+    ) {
+        LOGGER.info(
+                "VISIONFLOW_PHASE3_DEPTH_ENRICH "
+                        + "outcome=updated eventKey=\"{}\" eventId={} "
+                        + "droneId={} sessionId=\"{}\" depthBucket=\"{}\" "
+                        + "estimatedDepthM={} enrichmentLatencyMs={}",
+                safeLogValue(response.eventKey()),
+                response.id(),
+                response.droneId(),
+                safeLogValue(response.sessionId()),
+                safeLogValue(response.depthBucket()),
+                response.estimatedDepthM(),
+                response.enrichmentLatencyMs()
+        );
+    }
+
+    private static String safeLogValue(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
     }
 
     private AiPhase3EventResponse createNew(
