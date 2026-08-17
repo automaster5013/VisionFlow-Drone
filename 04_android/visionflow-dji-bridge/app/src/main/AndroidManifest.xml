@@ -1,33 +1,23 @@
-<?xml version='1.0' encoding='utf-8'?>
-<manifest xmlns:android='http://schemas.android.com/apk/res/android'>
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name='android.permission.INTERNET' />
-    <uses-permission android:name='android.permission.ACCESS_NETWORK_STATE' />
-    <uses-permission android:name='android.permission.ACCESS_WIFI_STATE' />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
-    <uses-feature android:name='android.hardware.usb.host' android:required='false' />
-    <uses-feature android:name='android.hardware.usb.accessory' android:required='true' />
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.accessory" android:required="true" />
 
-    <application
-        android:name='.VisionFlowDjiApplication'
-        android:allowBackup='false'
-        android:extractNativeLibs='true'
-        android:label='VisionFlow DJI Bridge'
-        android:theme='@android:style/Theme.Material.Light.NoActionBar'>
+    <application android:name=".VisionFlowDjiApplication" android:allowBackup="false" android:extractNativeLibs="true" android:label="VisionFlow DJI Bridge" android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
-        <meta-data
-            android:name='com.dji.sdk.API_KEY'
-            android:value='${DJI_API_KEY}' />
+        <meta-data android:name="com.dji.sdk.API_KEY" android:value="${DJI_API_KEY}" />
 
-        <activity
-            android:name='.MainActivity'
-            android:exported='true'
-            android:screenOrientation='landscape'>
+        <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape">
             <intent-filter>
-                <action android:name='android.intent.action.MAIN' />
-                <category android:name='android.intent.category.LAUNCHER' />
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        <intent-filter><action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" /></intent-filter><meta-data android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" android:resource="@xml/accessory_filter" /></activity>
 
     </application>
 
