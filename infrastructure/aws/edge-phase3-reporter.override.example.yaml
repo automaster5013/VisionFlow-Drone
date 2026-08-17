@@ -1,0 +1,6 @@
+services:
+  ai-server:
+    environment:
+      AI_PHASE3_REPORT_EVENTS: "true"
+      AI_SESSION_ID: ${VISIONFLOW_AWS_SESSION_ID:?VISIONFLOW_AWS_SESSION_ID is required}
+      AI_BACKEND_PHASE3_EVENT_URL: ${VISIONFLOW_AWS_BACKEND_URL:?VISIONFLOW_AWS_BACKEND_URL is required}/api/ai/phase3/events
