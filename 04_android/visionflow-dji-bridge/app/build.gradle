@@ -1,0 +1,52 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace 'com.visionflow.dji.bridge'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.visionflow.dji.bridge'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+        manifestPlaceholders = [DJI_API_KEY: (project.findProperty('DJI_API_KEY') ?: System.getenv('DJI_API_KEY') ?: 'DJI_APP_KEY_NOT_CONFIGURED')]
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+        freeCompilerArgs += ['-Xjvm-default=all']
+    }
+
+    packagingOptions {
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+        doNotStrip '*/*/libdji*.so'
+        doNotStrip '*/*/libDJI*.so'
+        doNotStrip '*/*/libmrtc*.so'
+    }
+}
+
+dependencies {
+    compileOnly 'com.dji:dji-sdk-v5-aircraft-provided:5.18.0'
+    implementation 'com.dji:dji-sdk-v5-aircraft:5.18.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.8.0'
+}
