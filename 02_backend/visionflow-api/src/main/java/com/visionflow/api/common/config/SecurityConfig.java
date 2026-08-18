@@ -76,6 +76,11 @@ public class SecurityConfig {
                             .permitAll()
                             .requestMatchers(
                                     HttpMethod.POST,
+                                    "/api/security/password"
+                            )
+                            .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
+                            .requestMatchers(
+                                    HttpMethod.POST,
                                     "/api/security/pairings",
                                     "/api/security/pairings/*/approve"
                             )

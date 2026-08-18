@@ -21,6 +21,7 @@ interface BackendOperatorSession {
   token: string;
   username: string;
   role: string;
+  passwordChangeRequired: boolean;
   expiresAt: string;
 }
 
@@ -37,6 +38,7 @@ function isBackendOperatorSession(
     candidate.token.length >= 40 &&
     typeof candidate.username === "string" &&
     typeof candidate.role === "string" &&
+    typeof candidate.passwordChangeRequired === "boolean" &&
     typeof candidate.expiresAt === "string" &&
     Number.isFinite(new Date(candidate.expiresAt).getTime())
   );
@@ -104,6 +106,20 @@ export async function POST(request: NextRequest) {
   }
 
   const body: unknown = await request.json().catch(() => null);
+  const username =
+    typeof body === "object" &&
+    body !== null &&
+    "username" in body &&
+    typeof body.username === "string"
+      ? body.username.trim()
+      : "";
+  const password =
+    typeof body === "object" &&
+    body !== null &&
+    "password" in body &&
+    typeof body.password === "string"
+      ? body.password
+      : "";
   const operatorKey =
     typeof body === "object" &&
     body !== null &&
@@ -112,7 +128,28 @@ export async function POST(request: NextRequest) {
       ? body.operatorKey.trim()
       : "";
 
-  if (operatorKey.length < 24 || operatorKey.length > 4096) {
+  const passwordLogin = username.length > 0 || password.length > 0;
+  if (
+    passwordLogin &&
+    (username.length === 0 ||
+      username.length > 100 ||
+      password.length === 0 ||
+      password.length > 4096)
+  ) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: "INVALID_OPERATOR_LOGIN_REQUEST",
+        message: "사용자 ID와 비밀번호를 확인하세요.",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (
+    !passwordLogin &&
+    (operatorKey.length < 24 || operatorKey.length > 4096)
+  ) {
     return NextResponse.json(
       {
         success: false,
@@ -123,15 +160,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const backendHeaders = new Headers({
+    Accept: "application/json",
+  });
+  let backendRequestBody: string | undefined;
+  if (passwordLogin) {
+    backendHeaders.set("Content-Type", "application/json");
+    backendRequestBody = JSON.stringify({ username, password });
+  } else {
+    backendHeaders.set(OPERATOR_KEY_HEADER, operatorKey);
+  }
+
   try {
     const backendResponse = await fetch(
       `${BACKEND_API_URL}/api/security/sessions`,
       {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          [OPERATOR_KEY_HEADER]: operatorKey,
-        },
+        headers: backendHeaders,
+        body: backendRequestBody,
         cache: "no-store",
         signal: AbortSignal.timeout(5_000),
       },
@@ -161,6 +207,7 @@ export async function POST(request: NextRequest) {
       authenticated: true,
       username: backendBody.username,
       role: backendBody.role,
+      passwordChangeRequired: backendBody.passwordChangeRequired,
       expiresAt: backendBody.expiresAt,
     });
     response.cookies.set({

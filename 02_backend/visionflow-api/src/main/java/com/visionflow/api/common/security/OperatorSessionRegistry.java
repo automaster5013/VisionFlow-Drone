@@ -220,6 +220,26 @@ public class OperatorSessionRegistry {
                 .toList();
     }
 
+    public synchronized List<OperatorSessionSummary> revokeAllForUsername(
+            String username
+    ) {
+        if (username == null || username.isBlank()) {
+            return List.of();
+        }
+        removeExpired(clock.instant());
+        String normalized = username.trim();
+        List<Map.Entry<String, SessionEntry>> targets = sessions
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().principal().username()
+                        .equalsIgnoreCase(normalized))
+                .toList();
+        return targets.stream()
+                .filter(entry -> sessions.remove(entry.getKey(), entry.getValue()))
+                .map(entry -> entry.getValue().toSummary(false, idleTimeout))
+                .toList();
+    }
+
     int activeSessionCount() {
         removeExpired(clock.instant());
         return sessions.size();

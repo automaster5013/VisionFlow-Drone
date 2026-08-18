@@ -3,6 +3,7 @@ package com.visionflow.api.common.security;
 import com.visionflow.api.audit.domain.AuditAction;
 import com.visionflow.api.audit.service.AuditLogService;
 import com.visionflow.api.common.exception.ErrorResponse;
+import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,19 +39,22 @@ public class OperatorSecurityController {
     private final OperatorPairingRegistry pairingRegistry;
     private final OperatorLoginAttemptGuard loginAttemptGuard;
     private final AuditLogService auditLogService;
+    private final OperatorUserAuthenticationService userAuthenticationService;
 
     public OperatorSecurityController(
             OperatorCredentialRegistry credentialRegistry,
             OperatorSessionRegistry sessionRegistry,
             OperatorPairingRegistry pairingRegistry,
             OperatorLoginAttemptGuard loginAttemptGuard,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            OperatorUserAuthenticationService userAuthenticationService
     ) {
         this.credentialRegistry = credentialRegistry;
         this.sessionRegistry = sessionRegistry;
         this.pairingRegistry = pairingRegistry;
         this.loginAttemptGuard = loginAttemptGuard;
         this.auditLogService = auditLogService;
+        this.userAuthenticationService = userAuthenticationService;
     }
 
     @GetMapping("/me")
@@ -85,7 +89,11 @@ public class OperatorSecurityController {
     }
 
     @PostMapping("/sessions")
-    public ResponseEntity<?> createSession(HttpServletRequest request) {
+    public ResponseEntity<?> createSession(
+            @Valid @RequestBody(required = false)
+            OperatorLoginRequest loginRequest,
+            HttpServletRequest request
+    ) {
         if (!credentialRegistry.isEnabled()) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
@@ -106,10 +114,20 @@ public class OperatorSecurityController {
             return loginRateLimited(current);
         }
 
-        String presentedKey = request.getHeader(
-                OperatorAuthenticationFilter.OPERATOR_KEY_HEADER
-        );
-        Optional<OperatorPrincipal> resolved = credentialRegistry.resolve(presentedKey);
+        boolean passwordLogin = loginRequest != null;
+        Optional<OperatorPrincipal> resolved;
+        if (passwordLogin) {
+            resolved = userAuthenticationService.authenticate(
+                    loginRequest.username(),
+                    loginRequest.password()
+            );
+        } else {
+            String presentedKey = request.getHeader(
+                    OperatorAuthenticationFilter.OPERATOR_KEY_HEADER
+            );
+            resolved = credentialRegistry.resolve(presentedKey);
+        }
+
         if (resolved.isEmpty()) {
             OperatorLoginAttemptGuard.AttemptDecision failed =
                     loginAttemptGuard.recordFailure(clientFingerprint);
@@ -124,7 +142,8 @@ public class OperatorSecurityController {
                     Map.of(
                             "failureCount", failed.failureCount(),
                             "remainingAttempts", failed.remainingAttempts(),
-                            "retryAfterSeconds", failed.retryAfterSeconds()
+                            "retryAfterSeconds", failed.retryAfterSeconds(),
+                            "credentialType", passwordLogin ? "PASSWORD" : "API_KEY"
                     ),
                     ANONYMOUS_ACTOR
             );
@@ -135,8 +154,12 @@ public class OperatorSecurityController {
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(
                             ErrorResponse.of(
-                                    "INVALID_OPERATOR_KEY",
-                                    "운영자 인증 키가 올바르지 않습니다."
+                                    passwordLogin
+                                            ? "INVALID_OPERATOR_CREDENTIALS"
+                                            : "INVALID_OPERATOR_KEY",
+                                    passwordLogin
+                                            ? "사용자 ID 또는 비밀번호가 올바르지 않습니다."
+                                            : "운영자 인증 키가 올바르지 않습니다."
                             )
                     );
         }
@@ -154,7 +177,8 @@ public class OperatorSecurityController {
                 Map.of(
                         "role", principal.role().name(),
                         "clientFingerprint", clientFingerprint,
-                        "expiresAt", session.expiresAt().toString()
+                        "expiresAt", session.expiresAt().toString(),
+                        "credentialType", passwordLogin ? "PASSWORD" : "API_KEY"
                 ),
                 principal.username()
         );

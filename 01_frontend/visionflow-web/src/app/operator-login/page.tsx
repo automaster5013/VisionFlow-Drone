@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { OperatorAccountLoginForm } from "@/components/security/operator-account-login-form";
 import { OperatorLoginForm } from "@/components/security/operator-login-form";
 import { getOperatorAuthMode } from "@/lib/server/operator-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
@@ -45,9 +46,12 @@ export default async function OperatorLoginPage({
           운영자 로그인
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          스마트폰은 PC에서 생성한 5분 일회용 QR 로그인을 권장합니다.
-          장기 역할 KEY는 초기 설정·복구용으로만 사용하고 브라우저에는 저장하지 않습니다.
+          개인 계정으로 로그인합니다. VIEWER, OPERATOR, ADMIN 권한은 계정에
+          지정되어 있으며 서버가 자동으로 적용합니다. 모바일 장치에서는 아래
+          QR 연결 절차를 사용할 수 있습니다.
         </p>
+
+        <OperatorAccountLoginForm returnTo={returnTo} />
 
         <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
           <p className="text-sm font-bold text-sky-900">
@@ -65,7 +69,7 @@ export default async function OperatorLoginPage({
           </Link>
         </div>
 
-        <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <details hidden className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <summary className="cursor-pointer text-sm font-bold text-slate-800">
             비상·초기 설정용 KEY 로그인
           </summary>
