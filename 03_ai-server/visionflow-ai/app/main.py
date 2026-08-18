@@ -20,6 +20,7 @@ from app.sources import (
     DummyVideoSource,
     SmartphoneLiveSource,
     VideoSource,
+    create_dji_live_source,
 )
 from app.streaming import AnalysisStreamServer, AnnotatedFrameHub
 from app.phase3_reporting import Phase3EventReporter, Phase3EventReporterLike
@@ -35,6 +36,9 @@ def create_source(settings: Settings) -> VideoSource:
             loop=settings.loop_video,
             realtime=settings.realtime_playback,
         )
+
+    if settings.source_type is VideoSourceType.DJI_LIVE:
+        return create_dji_live_source(settings)
 
     if settings.source_type is VideoSourceType.SMARTPHONE_LIVE:
         if settings.smartphone_input_mode is SmartphoneInputMode.BROWSER_UPLOAD:
