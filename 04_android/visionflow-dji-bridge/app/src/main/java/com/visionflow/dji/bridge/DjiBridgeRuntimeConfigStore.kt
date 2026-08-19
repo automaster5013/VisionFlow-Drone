@@ -28,8 +28,14 @@ class DjiBridgeRuntimeConfigStore(
         config: DjiBridgeRuntimeConfig,
         djiBridgeKey: String,
     ) {
-        secretStore.save(djiBridgeKey)
+        saveCredential(djiBridgeKey)
+        saveProfile(config)
+    }
 
+    @Synchronized
+    fun saveProfile(
+        config: DjiBridgeRuntimeConfig,
+    ) {
         val committed =
             preferences.edit()
                 .putString(
@@ -49,6 +55,11 @@ class DjiBridgeRuntimeConfigStore(
         check(committed) {
             "DJI bridge runtime profile could not be persisted"
         }
+    }
+
+    @Synchronized
+    fun saveCredential(djiBridgeKey: String) {
+        secretStore.save(djiBridgeKey)
     }
 
     @Synchronized
