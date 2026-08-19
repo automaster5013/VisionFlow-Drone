@@ -19,12 +19,20 @@ def run_id():
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
-def run_stream(label, command, cwd, log_path=None, interactive=False):
+def run_stream(
+    label,
+    command,
+    cwd,
+    log_path=None,
+    interactive=False,
+    success_status="PASS",
+):
     print(f"\n=== {label} ===")
     print("[CMD] " + subprocess.list2cmdline(command))
     if interactive:
         code = subprocess.run(command, cwd=cwd).returncode
-        print(f"[{'PASS' if code == 0 else 'FAIL'}] {label} - exit={code}")
+        status = success_status if code == 0 else "FAIL"
+        print(f"[{status}] {label} - exit={code}")
         return code
 
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -43,7 +51,8 @@ def run_stream(label, command, cwd, log_path=None, interactive=False):
             print(line, end="")
             log.write(line)
         code = p.wait()
-    print(f"[{'PASS' if code == 0 else 'FAIL'}] {label} - exit={code}")
+    status = success_status if code == 0 else "FAIL"
+    print(f"[{status}] {label} - exit={code}")
     return code
 
 
@@ -95,6 +104,10 @@ def main():
     parser.add_argument("--skip-dji-software-gate", action="store_true")
     parser.add_argument("--skip-dji-android-bridge-gate", action="store_true")
     parser.add_argument(
+        "--skip-dji-provisioning-device-gate",
+        action="store_true",
+    )
+    parser.add_argument(
         "--skip-dji-android-bridge-robustness",
         action="store_true",
     )
@@ -126,6 +139,12 @@ def main():
         / "phase3-dji-simulator"
         / "phase3_dji_android_bridge_robustness.py"
     )
+    dji_provisioning_device = (
+        root
+        / "scripts"
+        / "phase3-dji-simulator"
+        / "phase3_dji_provisioning_device_gate.py"
+    )
 
     required = [
         backend / "gradlew.bat",
@@ -135,6 +154,7 @@ def main():
         software,
         dji_bridge,
         dji_bridge_robustness,
+        dji_provisioning_device,
     ]
     missing = [str(p) for p in required if not p.exists()]
     if missing:
@@ -165,13 +185,40 @@ def main():
         dji_bridge_command.append("--skip-build")
 
     steps = [
-        ("Git whitespace check", ["git", "-C", str(root), "diff", "--check"], root, False),
-        ("Backend test suite", None if args.skip_backend_tests else cmd("gradlew.bat", "test"), backend, False),
-        ("Frontend lint", cmd("npm", "run", "lint"), frontend, False),
-        ("Frontend production build", None if args.skip_frontend_build else cmd("npm", "run", "build"), frontend, False),
-        ("Android DJI Bridge assembleDebug", None if args.skip_android_build else cmd("gradlew.bat", ":app:assembleDebug"), android, False),
-        ("Auth / RBAC runtime E2E", None if args.skip_auth_gate else [sys.executable, str(auth)], root, True),
-        ("DJI software-only integration gate", None if args.skip_dji_software_gate else [sys.executable, str(software), "--repo-root", str(root)], root, False),
+        ("Git whitespace check", ["git", "-C", str(root), "diff", "--check"], root, False, "PASS"),
+        ("Backend test suite", None if args.skip_backend_tests else cmd("gradlew.bat", "test"), backend, False, "PASS"),
+        ("Frontend lint", cmd("npm", "run", "lint"), frontend, False, "PASS"),
+        ("Frontend production build", None if args.skip_frontend_build else cmd("npm", "run", "build"), frontend, False, "PASS"),
+        (
+            "Android DJI Bridge unit tests + assembleDebug",
+            None
+            if args.skip_android_build
+            else cmd(
+                "gradlew.bat",
+                ":app:testDebugUnitTest",
+                ":app:assembleDebug",
+            ),
+            android,
+            False,
+            "PASS",
+        ),
+        (
+            "Android provisioning / Keystore device readiness",
+            None
+            if args.skip_dji_provisioning_device_gate
+            else [
+                sys.executable,
+                str(dji_provisioning_device),
+                "--repo-root",
+                str(root),
+                "--skip-build",
+            ],
+            root,
+            False,
+            "WAIT",
+        ),
+        ("Auth / RBAC runtime E2E", None if args.skip_auth_gate else [sys.executable, str(auth)], root, True, "PASS"),
+        ("DJI software-only integration gate", None if args.skip_dji_software_gate else [sys.executable, str(software), "--repo-root", str(root)], root, False, "PASS"),
         (
             "DJI Android Bridge encoded ingress gate",
             None
@@ -179,6 +226,7 @@ def main():
             else dji_bridge_command,
             root,
             False,
+            "PASS",
         ),
         (
             "DJI Android Bridge robustness gate",
@@ -192,18 +240,32 @@ def main():
             ],
             root,
             False,
+            "PASS",
         ),
     ]
 
     results = []
     failed = False
-    for index, (label, command, cwd, interactive) in enumerate(steps, start=1):
+    for index, (
+        label,
+        command,
+        cwd,
+        interactive,
+        success_status,
+    ) in enumerate(steps, start=1):
         if command is None or failed:
             results.append({"name": label, "status": "SKIPPED"})
             continue
         log_path = run_dir / f"{index:02d}.log"
-        code = run_stream(label, command, cwd, log_path, interactive)
-        status = "PASS" if code == 0 else "FAIL"
+        code = run_stream(
+            label,
+            command,
+            cwd,
+            log_path,
+            interactive,
+            success_status,
+        )
+        status = success_status if code == 0 else "FAIL"
         results.append({"name": label, "status": status, "exitCode": code, "log": None if interactive else str(log_path)})
         if code != 0:
             failed = True
