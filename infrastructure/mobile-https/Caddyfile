@@ -12,6 +12,9 @@
         @health path /healthz
         respond @health "ok" 200
 
+        @dji_ai_ingest path /api/ingest/dji/*
+        reverse_proxy @dji_ai_ingest host.docker.internal:8000
+
         @backend_websocket path /ws /ws/*
         reverse_proxy @backend_websocket host.docker.internal:8080
 
