@@ -93,6 +93,19 @@ def main():
     parser.add_argument("--skip-android-build", action="store_true")
     parser.add_argument("--skip-auth-gate", action="store_true")
     parser.add_argument("--skip-dji-software-gate", action="store_true")
+    parser.add_argument("--skip-dji-android-bridge-gate", action="store_true")
+    parser.add_argument(
+        "--skip-dji-android-bridge-robustness",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--reuse-dji-android-bridge-image",
+        action="store_true",
+        help=(
+            "Reuse visionflow-ai-server:phase3-android-bridge-v1 "
+            "instead of rebuilding it."
+        ),
+    )
     args = parser.parse_args()
 
     root = Path(args.repo_root).resolve()
@@ -101,8 +114,28 @@ def main():
     android = root / "04_android" / "visionflow-dji-bridge"
     auth = root / "scripts" / "phase3-auth-e2e" / "phase3_auth_e2e.py"
     software = root / "scripts" / "phase3-dji-simulator" / "phase3_software_gate.py"
+    dji_bridge = (
+        root
+        / "scripts"
+        / "phase3-dji-simulator"
+        / "phase3_dji_android_bridge_gate.py"
+    )
+    dji_bridge_robustness = (
+        root
+        / "scripts"
+        / "phase3-dji-simulator"
+        / "phase3_dji_android_bridge_robustness.py"
+    )
 
-    required = [backend / "gradlew.bat", frontend / "package.json", android / "gradlew.bat", auth, software]
+    required = [
+        backend / "gradlew.bat",
+        frontend / "package.json",
+        android / "gradlew.bat",
+        auth,
+        software,
+        dji_bridge,
+        dji_bridge_robustness,
+    ]
     missing = [str(p) for p in required if not p.exists()]
     if missing:
         print("[FAIL] Missing prerequisites: " + ", ".join(missing), file=sys.stderr)
@@ -122,6 +155,15 @@ def main():
     run_dir = root / "artifacts" / "phase3-local-acceptance" / run_id()
     run_dir.mkdir(parents=True, exist_ok=True)
 
+    dji_bridge_command = [
+        sys.executable,
+        str(dji_bridge),
+        "--repo-root",
+        str(root),
+    ]
+    if args.reuse_dji_android_bridge_image:
+        dji_bridge_command.append("--skip-build")
+
     steps = [
         ("Git whitespace check", ["git", "-C", str(root), "diff", "--check"], root, False),
         ("Backend test suite", None if args.skip_backend_tests else cmd("gradlew.bat", "test"), backend, False),
@@ -130,6 +172,27 @@ def main():
         ("Android DJI Bridge assembleDebug", None if args.skip_android_build else cmd("gradlew.bat", ":app:assembleDebug"), android, False),
         ("Auth / RBAC runtime E2E", None if args.skip_auth_gate else [sys.executable, str(auth)], root, True),
         ("DJI software-only integration gate", None if args.skip_dji_software_gate else [sys.executable, str(software), "--repo-root", str(root)], root, False),
+        (
+            "DJI Android Bridge encoded ingress gate",
+            None
+            if args.skip_dji_android_bridge_gate
+            else dji_bridge_command,
+            root,
+            False,
+        ),
+        (
+            "DJI Android Bridge robustness gate",
+            None
+            if args.skip_dji_android_bridge_robustness
+            else [
+                sys.executable,
+                str(dji_bridge_robustness),
+                "--repo-root",
+                str(root),
+            ],
+            root,
+            False,
+        ),
     ]
 
     results = []
