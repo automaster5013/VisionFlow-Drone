@@ -186,6 +186,7 @@ services:
       VISIONFLOW_WEB_AUTH_MODE: ${VISIONFLOW_WEB_AUTH_MODE:-session}
       VISIONFLOW_WEB_SECURE_COOKIES: ${VISIONFLOW_WEB_SECURE_COOKIES:-true}
       VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY: /app/artifacts/mobile-readiness
+      VISIONFLOW_MOBILE_HTTPS_RUNTIME_FILE: /app/artifacts/mobile-https-runtime/network-profile.json
 
       NEXT_PUBLIC_WEBSOCKET_URL: ${NEXT_PUBLIC_WEBSOCKET_URL:-ws://localhost:8080/ws}
       NEXT_PUBLIC_AI_STREAM_URL: ${NEXT_PUBLIC_AI_STREAM_URL:-/api/ai/stream/annotated}
@@ -193,6 +194,7 @@ services:
       TZ: Asia/Seoul
     volumes:
       - ./artifacts/mobile-readiness:/app/artifacts/mobile-readiness:ro
+      - ./artifacts/mobile-https/runtime:/app/artifacts/mobile-https-runtime:ro
     depends_on:
       backend-api:
         condition: service_healthy

@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useOperatorAccess } from "@/components/security/operator-access-provider";
+import type { MobileHttpsRuntimeProfile } from "@/types/mobile-https-runtime";
 
 type PairingRole = "VIEWER" | "OPERATOR" | "ADMIN";
 type PairingStatus =
@@ -52,6 +53,19 @@ function bodyMessage(value: unknown, fallback: string): string {
     typeof value.message === "string"
     ? value.message
     : fallback;
+}
+
+async function loadMobileHttpsRuntime(): Promise<MobileHttpsRuntimeProfile | null> {
+  const response = await fetch("/api/mobile/runtime-network", {
+    cache: "no-store",
+  });
+  const body: unknown = await response.json().catch(() => null);
+
+  if (!response.ok || typeof body !== "object" || body === null) {
+    return null;
+  }
+
+  return body as MobileHttpsRuntimeProfile;
 }
 
 function normalizeMobileOrigin(value: string): string {
@@ -103,6 +117,10 @@ export function OperatorPairingConsole() {
   const [pairingUrl, setPairingUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [runtimeProfile, setRuntimeProfile] =
+    useState<MobileHttpsRuntimeProfile | null>(null);
+  const [runtimeLoading, setRuntimeLoading] = useState(false);
+  const [mobileOriginManual, setMobileOriginManual] = useState(false);
   const issuerRole = isPairingRole(status?.role) ? status.role : null;
 
   const allowedRoles = useMemo<PairingRole[]>(() => {
@@ -116,6 +134,8 @@ export function OperatorPairingConsole() {
   }, [issuerRole]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const timer = window.setTimeout(() => {
       const currentHost = window.location.hostname;
       const currentIsLan =
@@ -125,8 +145,6 @@ export function OperatorPairingConsole() {
       const remembered =
         window.localStorage.getItem("visionflow.mobilePairingOrigin") ?? "";
 
-      setMobileOrigin(currentIsLan ? window.location.origin : remembered);
-
       if (issuerRole === "VIEWER") {
         setTargetRole("VIEWER");
       } else if (issuerRole === "OPERATOR") {
@@ -134,9 +152,46 @@ export function OperatorPairingConsole() {
       } else if (issuerRole === "ADMIN") {
         setTargetRole("OPERATOR");
       }
+
+      async function initializeMobileOrigin() {
+        setRuntimeLoading(true);
+
+        try {
+          const profile = await loadMobileHttpsRuntime();
+          if (cancelled) {
+            return;
+          }
+
+          setRuntimeProfile(profile);
+
+          if (profile?.origin) {
+            setMobileOrigin(profile.origin);
+            setMobileOriginManual(false);
+            return;
+          }
+
+          if (currentIsLan && window.location.protocol === "https:") {
+            setMobileOrigin(window.location.origin);
+            setMobileOriginManual(false);
+            return;
+          }
+
+          setMobileOrigin(remembered);
+          setMobileOriginManual(Boolean(remembered));
+        } finally {
+          if (!cancelled) {
+            setRuntimeLoading(false);
+          }
+        }
+      }
+
+      void initializeMobileOrigin();
     }, 0);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [issuerRole]);
 
   useEffect(() => {
@@ -208,6 +263,35 @@ export function OperatorPairingConsole() {
     };
   }, [creation]);
 
+  async function refreshMobileOrigin() {
+    setRuntimeLoading(true);
+    setError(null);
+
+    try {
+      const profile = await loadMobileHttpsRuntime();
+      setRuntimeProfile(profile);
+
+      if (!profile) {
+        throw new Error(
+          "Windows host 자동 감지 정보를 읽지 못했습니다. Runtime Agent가 실행 중인지 확인하세요.",
+        );
+      }
+
+      if (profile.origin) {
+        setMobileOrigin(profile.origin);
+        setMobileOriginManual(false);
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "스마트폰 HTTPS 주소를 다시 감지하지 못했습니다.",
+      );
+    } finally {
+      setRuntimeLoading(false);
+    }
+  }
+
   async function createPairing() {
     if (!issuerRole || !allowedRoles.includes(targetRole)) {
       setError("현재 역할에서 발급할 수 없는 모바일 권한입니다.");
@@ -220,6 +304,13 @@ export function OperatorPairingConsole() {
 
     try {
       const origin = normalizeMobileOrigin(mobileOrigin);
+      const usingDetectedOrigin =
+        !mobileOriginManual && runtimeProfile?.origin === origin;
+
+      if (usingDetectedOrigin && !runtimeProfile.ready) {
+        throw new Error(runtimeProfile.message);
+      }
+
       window.localStorage.setItem("visionflow.mobilePairingOrigin", origin);
 
       const response = await fetch("/api/operator/pairings", {
@@ -338,6 +429,30 @@ export function OperatorPairingConsole() {
   const remainingLabel = creation
     ? new Date(creation.expiresAt).toLocaleTimeString("ko-KR")
     : null;
+  const detectedOriginBlocked =
+    !mobileOriginManual &&
+    runtimeProfile?.origin === mobileOrigin.trim() &&
+    !runtimeProfile.ready;
+  const runtimeTone = mobileOriginManual
+    ? "border-amber-200 bg-amber-50 text-amber-800"
+    : runtimeProfile?.ready
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : runtimeProfile?.state === "BLOCKED"
+        ? "border-red-200 bg-red-50 text-red-800"
+        : runtimeProfile?.state === "STALE"
+          ? "border-amber-200 bg-amber-50 text-amber-800"
+          : "border-slate-200 bg-slate-50 text-slate-600";
+  const runtimeLabel = mobileOriginManual
+    ? "수동 주소"
+    : runtimeLoading
+      ? "주소 감지 중"
+      : runtimeProfile?.ready
+        ? "자동 감지됨 · HTTPS 정상"
+        : runtimeProfile?.state === "BLOCKED"
+          ? "자동 감지됨 · HTTPS 확인 필요"
+          : runtimeProfile?.state === "STALE"
+            ? "자동 감지 정보 만료"
+            : "자동 감지 대기";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -357,24 +472,59 @@ export function OperatorPairingConsole() {
 
       <section className="grid gap-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-2">
         <div className="space-y-4">
-          <label className="block text-sm font-bold text-slate-700">
-            스마트폰 접속용 HTTPS 주소
-            <input
-              value={mobileOrigin}
-              onChange={(event) => setMobileOrigin(event.target.value)}
-              disabled={Boolean(creation)}
-              placeholder="예: https://192.168.10.108:3443"
-              required
-              aria-describedby="mobile-pairing-origin-help"
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-sm"
-            />
-            <span
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-slate-700">
+              스마트폰 접속용 HTTPS 주소
+              <input
+                value={mobileOrigin}
+                onChange={(event) => {
+                  setMobileOrigin(event.target.value);
+                  setMobileOriginManual(true);
+                }}
+                disabled={Boolean(creation)}
+                placeholder="예: https://192.168.10.108:3443"
+                required
+                aria-describedby="mobile-pairing-origin-help"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-sm"
+              />
+            </label>
+
+            <div className={`rounded-xl border p-3 text-xs ${runtimeTone}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-black">{runtimeLabel}</p>
+                  <p className="mt-1 leading-5">
+                    {mobileOriginManual
+                      ? "직접 입력한 주소입니다. 자동 SAN/HTTPS 검증 결과는 적용되지 않습니다."
+                      : runtimeProfile?.message ??
+                        "Windows host Runtime Agent의 네트워크 정보를 기다리고 있습니다."}
+                  </p>
+                </div>
+                {!creation && (
+                  <button
+                    type="button"
+                    onClick={() => void refreshMobileOrigin()}
+                    disabled={runtimeLoading}
+                    className="shrink-0 rounded-lg border border-current/20 bg-white/70 px-3 py-2 font-bold disabled:opacity-50"
+                  >
+                    {runtimeLoading ? "감지 중..." : "주소 다시 감지"}
+                  </button>
+                )}
+              </div>
+              {runtimeProfile?.hostIp && !mobileOriginManual && (
+                <p className="mt-2 font-mono">
+                  Host {runtimeProfile.hostIp} · Port {runtimeProfile.port}
+                </p>
+              )}
+            </div>
+
+            <p
               id="mobile-pairing-origin-help"
-              className="mt-2 block text-xs leading-5 text-slate-500"
+              className="text-xs leading-5 text-slate-500"
             >
-              회색 예시는 입력값이 아닙니다. localhost로 접속 중이면 PC의 현재 LAN HTTPS 주소를 직접 입력하세요.
-            </span>
-          </label>
+              자동 감지 주소는 인증서 SAN과 HTTPS /healthz까지 확인합니다. 필요하면 입력창을 직접 수정해 수동 override할 수 있습니다.
+            </p>
+          </div>
 
           <label className="block text-sm font-bold text-slate-700">
             스마트폰에 부여할 역할
@@ -412,7 +562,12 @@ export function OperatorPairingConsole() {
             <button
               type="button"
               onClick={() => void createPairing()}
-              disabled={busy || !issuerRole}
+              disabled={
+                busy ||
+                !issuerRole ||
+                runtimeLoading ||
+                detectedOriginBlocked
+              }
               className="w-full rounded-xl bg-slate-950 px-4 py-3 font-bold text-white hover:bg-slate-800 disabled:opacity-50"
             >
               {busy ? "QR 생성 중..." : "5분 일회용 QR 생성"}
@@ -465,11 +620,18 @@ export function OperatorPairingConsole() {
               </p>
             </>
           ) : (
-            <p className="text-sm leading-6 text-slate-500">
-              현재 PC가 localhost로 열려 있다면 위 주소에
-              <br />
-              스마트폰에서 접근 가능한 LAN HTTPS 주소를 입력하세요.
-            </p>
+            <div className="space-y-2 text-sm leading-6 text-slate-500">
+              <p>
+                QR 생성 전에 Windows host의 현재 LAN 주소와
+                <br />
+                mobile HTTPS 상태를 자동으로 확인합니다.
+              </p>
+              {runtimeProfile?.origin && !mobileOriginManual && (
+                <p className="font-mono text-xs text-slate-600">
+                  {runtimeProfile.origin}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </section>
