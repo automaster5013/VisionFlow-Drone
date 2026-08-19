@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -15,6 +16,36 @@ from pathlib import Path
 class GateStep:
     name: str
     command: tuple[str, ...]
+
+
+def _utf8_child_environment() -> dict[str, str]:
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    return env
+
+
+def _configure_stdout_for_pipe() -> None:
+    if sys.stdout.isatty():
+        return
+
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8", errors="replace")
+
+
+def _console_write(text: str) -> None:
+    try:
+        sys.stdout.write(text)
+        sys.stdout.flush()
+    except UnicodeEncodeError:
+        encoding = sys.stdout.encoding or "utf-8"
+        safe = (
+            text.encode(encoding, errors="replace")
+            .decode(encoding, errors="replace")
+        )
+        sys.stdout.write(safe)
+        sys.stdout.flush()
 
 
 def utc_now() -> str:
@@ -202,11 +233,12 @@ def run_step(
             text=True,
             encoding="utf-8",
             errors="replace",
+            env=_utf8_child_environment(),
         )
         assert process.stdout is not None
 
         for line in process.stdout:
-            print(line, end="")
+            _console_write(line)
             log.write(line)
 
         return_code = process.wait()
@@ -258,6 +290,7 @@ def write_summary(
 
 
 def main() -> int:
+    _configure_stdout_for_pipe()
     args = parse_args()
     root = Path(args.repo_root).resolve()
     backend_url = args.backend_url.rstrip("/")
