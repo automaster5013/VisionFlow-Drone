@@ -13,10 +13,17 @@ import javax.crypto.spec.GCMParameterSpec
 
 internal class DjiBridgeSecretStore(
     context: Context,
+    storageSuffix: String = "",
 ) {
+    private val normalizedStorageSuffix =
+        validateStorageSuffix(storageSuffix)
+    private val preferencesName =
+        PREFERENCES_NAME + normalizedStorageSuffix
+    private val keyAlias =
+        KEY_ALIAS + normalizedStorageSuffix
     private val preferences =
         context.applicationContext.getSharedPreferences(
-            PREFERENCES_NAME,
+            preferencesName,
             Context.MODE_PRIVATE,
         )
 
@@ -125,8 +132,8 @@ internal class DjiBridgeSecretStore(
             KeyStore.getInstance(ANDROID_KEYSTORE).apply {
                 load(null)
             }
-        if (keyStore.containsAlias(KEY_ALIAS)) {
-            keyStore.deleteEntry(KEY_ALIAS)
+        if (keyStore.containsAlias(keyAlias)) {
+            keyStore.deleteEntry(keyAlias)
         }
     }
 
@@ -137,7 +144,7 @@ internal class DjiBridgeSecretStore(
             }
         val existing =
             keyStore.getKey(
-                KEY_ALIAS,
+                keyAlias,
                 null,
             ) as? SecretKey
         if (existing != null) {
@@ -151,7 +158,7 @@ internal class DjiBridgeSecretStore(
             )
         keyGenerator.init(
             KeyGenParameterSpec.Builder(
-                KEY_ALIAS,
+                keyAlias,
                 KeyProperties.PURPOSE_ENCRYPT or
                     KeyProperties.PURPOSE_DECRYPT,
             )
@@ -166,6 +173,17 @@ internal class DjiBridgeSecretStore(
     }
 
     companion object {
+        internal fun validateStorageSuffix(value: String): String {
+            require(
+                value.isEmpty() ||
+                    STORAGE_SUFFIX_PATTERN.matches(value)
+            ) {
+                "storageSuffix must be empty or match " +
+                    "_[A-Za-z0-9_-]{1,40}"
+            }
+            return value
+        }
+
         private const val MIN_SECRET_LENGTH = 32
         private const val PREFERENCES_NAME =
             "visionflow_dji_bridge_secret"
@@ -176,5 +194,7 @@ internal class DjiBridgeSecretStore(
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val GCM_TAG_LENGTH_BITS = 128
+        private val STORAGE_SUFFIX_PATTERN =
+            Regex("^_[A-Za-z0-9_-]{1,40}$")
     }
 }

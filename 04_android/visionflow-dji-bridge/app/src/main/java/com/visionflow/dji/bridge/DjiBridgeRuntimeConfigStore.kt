@@ -11,17 +11,28 @@ data class DjiBridgeRuntimeSnapshot(
     val sourceId: String?,
 )
 
-class DjiBridgeRuntimeConfigStore(
+class DjiBridgeRuntimeConfigStore private constructor(
     context: Context,
+    storageSuffix: String,
 ) {
+    constructor(context: Context) : this(
+        context,
+        "",
+    )
+
+    private val normalizedStorageSuffix =
+        DjiBridgeSecretStore.validateStorageSuffix(storageSuffix)
     private val appContext = context.applicationContext
     private val preferences =
         appContext.getSharedPreferences(
-            PREFERENCES_NAME,
+            PREFERENCES_NAME + normalizedStorageSuffix,
             Context.MODE_PRIVATE,
         )
     private val secretStore =
-        DjiBridgeSecretStore(appContext)
+        DjiBridgeSecretStore(
+            appContext,
+            normalizedStorageSuffix,
+        )
 
     @Synchronized
     fun save(
@@ -151,6 +162,15 @@ class DjiBridgeRuntimeConfigStore(
     }
 
     companion object {
+        internal fun isolatedForDiagnostics(
+            context: Context,
+            storageSuffix: String,
+        ): DjiBridgeRuntimeConfigStore =
+            DjiBridgeRuntimeConfigStore(
+                context,
+                storageSuffix,
+            )
+
         private const val PREFERENCES_NAME =
             "visionflow_dji_bridge_runtime"
         private const val KEY_EDGE_AI_BASE_URL =
