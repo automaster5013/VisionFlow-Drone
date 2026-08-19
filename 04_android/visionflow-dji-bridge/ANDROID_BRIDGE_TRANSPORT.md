@@ -87,6 +87,35 @@ Android는 `https://<EDGE_LAN_IP>:3443` 경로를 사용하며 cleartext HTTP는
 허용하지 않습니다. Debug build에서 mkcert 사용자 CA를 신뢰하는 절차는
 `scripts/phase3-dji-simulator/DJI_ANDROID_NETWORK_READINESS.md`를 따릅니다.
 
+## Android runtime configuration
+
+`DjiSdkBootstrap.kt`와 실제 MSDK callback을 연결하기 전에 runtime 설정은
+독립 계층으로 관리합니다.
+
+```text
+DjiBridgeRuntimeConfig
+  edgeAiBaseUrl = https://<EDGE_LAN_IP>:3443
+  droneId       = positive integer
+  sourceId      = 1..100 chars
+
+DjiBridgeRuntimeConfigStore
+  non-secret profile -> private SharedPreferences
+  DJI bridge key     -> Android Keystore AES/GCM encrypted payload
+  sessionId          -> not persisted; supplied per flight session
+```
+
+Bridge key는 평문 SharedPreferences, source tree, Gradle property 또는 APK
+resource에 저장하지 않습니다. `snapshot()`은 key 존재 여부만 반환하고 secret
+값은 반환하지 않습니다.
+
+`createUploader(sessionId)`는 저장된 HTTPS profile과 DJI 전용 key를 조합해
+`DjiEncodedStreamUploader`를 생성합니다. sessionId는 1~36자로 검증한 뒤에만
+사용합니다.
+
+현재 단계에서는 이 config store를 `DjiSdkBootstrap.kt`에 연결하지 않습니다.
+실기체 MSDK byte framing을 확인한 뒤 bootstrap callback과 uploader lifecycle을
+연결합니다.
+
 ## Hardware WAIT boundary
 
 소프트웨어 Gate가 PASS해도 아래 항목은 실기체 검증 전까지 WAIT입니다.
