@@ -7,6 +7,7 @@ from pathlib import Path
 from app.config import Settings
 from app.domain import FramePacket, VideoSourceType
 from app.sources.base import VideoSource
+from app.sources.dji_android_bridge import DjiAndroidBridgeSource
 from app.sources.dummy_video import DummyVideoSource
 
 
@@ -60,9 +61,29 @@ def create_dji_live_source(settings: Settings) -> VideoSource:
         )
 
     if mode is DjiInputMode.ANDROID_BRIDGE:
-        raise NotImplementedError(
-            "DJI_LIVE ANDROID_BRIDGE 입력은 실제 MSDK encoded stream "
-            "Adapter 단계에서 연결합니다."
+        return DjiAndroidBridgeSource(
+            fps=_read_float(
+                "AI_DJI_BRIDGE_FPS",
+                10.0,
+            ),
+            queue_capacity=_read_int(
+                "AI_DJI_BRIDGE_QUEUE_CAPACITY",
+                8,
+            ),
+            ffmpeg_executable=(
+                os.getenv(
+                    "AI_DJI_BRIDGE_FFMPEG",
+                    "ffmpeg",
+                ).strip()
+                or "ffmpeg"
+            ),
+            decoder_log_level=(
+                os.getenv(
+                    "AI_DJI_BRIDGE_DECODER_LOG_LEVEL",
+                    "warning",
+                ).strip()
+                or "warning"
+            ),
         )
 
     raise AssertionError(f"Unhandled DJI input mode: {mode}")
@@ -93,3 +114,13 @@ def _read_bool(name: str, default: bool) -> bool:
         "yes",
         "on",
     }
+
+
+def _read_int(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    return default if raw is None else int(raw)
+
+
+def _read_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    return default if raw is None else float(raw)

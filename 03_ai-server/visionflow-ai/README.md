@@ -7,7 +7,8 @@
 - `DUMMY_VIDEO`: MP4 등 저장 영상
 - `SMARTPHONE_LIVE + STREAM_URL`: 스마트폰 RTSP 또는 HTTP/MJPEG URL
 - `SMARTPHONE_LIVE + BROWSER_UPLOAD`: Next.js `/mobile-camera`에서 업로드한 JPEG 프레임
-- `DJI_LIVE`: 3차 프로젝트 확장 지점이며 아직 구현하지 않음
+- `DJI_LIVE + REPLAY_FILE`: 저장 영상을 DJI 의미론으로 재생하는 소프트웨어 검증 입력
+- `DJI_LIVE + ANDROID_BRIDGE`: Android MSDK H.264/H.265 encoded stream을 Edge AI에서 디코딩하는 입력
 
 브라우저 업로드도 백엔드 이벤트에는 `SMARTPHONE_LIVE`로 기록됩니다. 따라서 Spring Boot와 MySQL의 기존 `sourceType` 계약은 변경하지 않습니다.
 

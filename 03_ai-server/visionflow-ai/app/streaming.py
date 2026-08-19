@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import threading
 import time
 from secrets import compare_digest
@@ -18,6 +19,7 @@ from fastapi.security import APIKeyHeader
 from app.domain import InferencePacket
 from app.metrics import InferencePerformanceMonitor
 from app.sources.browser_upload import BrowserUploadSource
+from app.sources.dji_android_bridge import DjiAndroidBridgeSource
 
 MJPEG_BOUNDARY = "visionflow-frame"
 AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
@@ -291,6 +293,14 @@ def create_stream_app(
         def ingest_status() -> dict[str, object]:
             return ingest_source.status()
 
+    if (
+        ingest_source is not None
+        and not isinstance(
+            ingest_source,
+            DjiAndroidBridgeSource,
+        )
+    ):
+
         @app.post(
             "/api/ingest/frame",
             dependencies=[Depends(require_ai_internal_key)],
@@ -311,7 +321,10 @@ def create_stream_app(
                 Query(alias="capturedAt"),
             ] = None,
         ) -> dict[str, object]:
-            content_type = request.headers.get("content-type", "").split(";", 1)[0]
+            content_type = request.headers.get(
+                "content-type",
+                "",
+            ).split(";", 1)[0]
 
             if content_type.lower() != "image/jpeg":
                 raise HTTPException(
@@ -353,9 +366,144 @@ def create_stream_app(
                     captured_at=captured_at,
                 )
             except ValueError as error:
-                raise HTTPException(status_code=400, detail=str(error)) from error
+                raise HTTPException(
+                    status_code=400,
+                    detail=str(error),
+                ) from error
             except RuntimeError as error:
-                raise HTTPException(status_code=503, detail=str(error)) from error
+                raise HTTPException(
+                    status_code=503,
+                    detail=str(error),
+                ) from error
+
+    if isinstance(ingest_source, DjiAndroidBridgeSource):
+
+        @app.get(
+            "/api/ingest/dji/status",
+            dependencies=[Depends(require_ai_internal_key)],
+        )
+        def dji_ingest_status() -> dict[str, object]:
+            return ingest_source.status()
+
+        @app.post(
+            "/api/ingest/dji/stream",
+            dependencies=[Depends(require_ai_internal_key)],
+        )
+        async def ingest_dji_stream(
+            request: Request,
+            drone_id: Annotated[int, Query(alias="droneId", ge=1)],
+            source_id: Annotated[
+                str,
+                Query(alias="sourceId", min_length=1, max_length=100),
+            ],
+            session_id: Annotated[
+                str,
+                Query(alias="sessionId", min_length=1, max_length=36),
+            ],
+            codec: Annotated[
+                str,
+                Query(alias="codec", min_length=4, max_length=4),
+            ] = "H264",
+        ) -> dict[str, object]:
+            try:
+                normalized_codec = ingest_source.normalize_codec(codec)
+            except ValueError as error:
+                raise HTTPException(
+                    status_code=400,
+                    detail=str(error),
+                ) from error
+
+            content_type = request.headers.get(
+                "content-type",
+                "",
+            ).split(";", 1)[0].strip().lower()
+            expected_content_types = (
+                {"video/h264"}
+                if normalized_codec == "H264"
+                else {"video/h265", "video/hevc"}
+            )
+            if content_type not in expected_content_types:
+                expected = " or ".join(
+                    sorted(expected_content_types)
+                )
+                raise HTTPException(
+                    status_code=415,
+                    detail=(
+                        "DJI encoded stream Content-Type은 "
+                        f"{expected}여야 합니다."
+                    ),
+                )
+
+            try:
+                token = ingest_source.begin_stream(
+                    source_id=source_id,
+                    session_id=session_id,
+                    drone_id=drone_id,
+                    codec=normalized_codec,
+                )
+            except ValueError as error:
+                raise HTTPException(
+                    status_code=400,
+                    detail=str(error),
+                ) from error
+            except RuntimeError as error:
+                raise HTTPException(
+                    status_code=409,
+                    detail=str(error),
+                ) from error
+
+            result: dict[str, object] | None = None
+
+            try:
+                async for chunk in request.stream():
+                    if not chunk:
+                        continue
+                    await asyncio.to_thread(
+                        ingest_source.submit_encoded,
+                        token,
+                        chunk,
+                    )
+            except RuntimeError as error:
+                raise HTTPException(
+                    status_code=503,
+                    detail=str(error),
+                ) from error
+            finally:
+                result = await asyncio.to_thread(
+                    ingest_source.end_stream,
+                    token,
+                )
+
+            encoded_bytes = int(
+                result.get("encodedBytes", 0)
+            )
+            decoded_frames = int(
+                result.get("decodedFrames", 0)
+            )
+            decoder_exit_code = int(
+                result.get("decoderExitCode", -1)
+            )
+
+            if encoded_bytes <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="DJI encoded stream 본문이 비어 있습니다.",
+                )
+            if decoder_exit_code != 0 or decoded_frames <= 0:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "message": (
+                            "DJI encoded stream을 영상 프레임으로 "
+                            "디코딩하지 못했습니다."
+                        ),
+                        "decoderExitCode": decoder_exit_code,
+                        "decodedFrames": decoded_frames,
+                        "decoderLog": result.get("decoderLog"),
+                    },
+                )
+
+            return result
 
     return app
 

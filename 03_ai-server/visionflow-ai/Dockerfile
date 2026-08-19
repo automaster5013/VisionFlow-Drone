@@ -26,6 +26,12 @@ RUN python -m pip install --upgrade pip \
         --index-url "${TORCH_INDEX_URL}" \
     && python -m pip install -r requirements.txt
 
+# Keep the expensive Python/Torch dependency layers reusable when only
+# the DJI encoded-stream runtime changes.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY . .
 RUN mkdir -p /app/output /app/data/dummy /app/models \
     && useradd --create-home --uid 1001 visionflow \
