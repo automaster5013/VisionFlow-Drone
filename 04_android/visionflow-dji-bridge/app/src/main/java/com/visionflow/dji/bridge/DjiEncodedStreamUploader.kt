@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 class DjiEncodedStreamUploader(
     private val edgeAiBaseUrl: String,
-    private val aiInternalKey: String,
+    private val djiBridgeKey: String,
     private val droneId: Long,
     private val sourceId: String,
     private val sessionId: String,
@@ -52,6 +52,9 @@ class DjiEncodedStreamUploader(
         }
         require(sessionId.isNotBlank()) {
             "sessionId must not be blank"
+        }
+        require(djiBridgeKey.length >= 32) {
+            "djiBridgeKey must be at least 32 characters"
         }
     }
 
@@ -156,12 +159,10 @@ class DjiEncodedStreamUploader(
                             "Content-Type",
                             codec.contentType,
                         )
-                        if (aiInternalKey.isNotBlank()) {
-                            setRequestProperty(
-                                AI_KEY_HEADER,
-                                aiInternalKey,
-                            )
-                        }
+                        setRequestProperty(
+                            DJI_KEY_HEADER,
+                            djiBridgeKey,
+                        )
                     }
 
             connection = current
@@ -245,7 +246,7 @@ class DjiEncodedStreamUploader(
 
     companion object {
         private const val TAG = "VisionFlowDJI"
-        private const val AI_KEY_HEADER = "X-VisionFlow-AI-Key"
+        private const val DJI_KEY_HEADER = "X-VisionFlow-DJI-Key"
         private const val INGEST_PATH = "/api/ingest/dji/stream"
     }
 }

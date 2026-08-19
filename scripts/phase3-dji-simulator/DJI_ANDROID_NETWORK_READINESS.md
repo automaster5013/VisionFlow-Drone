@@ -21,6 +21,13 @@ docker compose --env-file .env.docker -f compose.yaml -f compose.dji-bridge.yaml
 
 GPU 모드가 필요한 경우 기존 `compose.gpu.yaml`과 모델 override를 함께 사용합니다.
 
+DJI override는 일반 AI 내부 키와 분리된 32자 이상의 전용 secret을 요구합니다.
+실제 값은 `.env.docker` 같은 Git 비추적 runtime 환경 파일에만 둡니다.
+
+```dotenv
+VISIONFLOW_DJI_BRIDGE_KEY=<distinct-32+-character-secret>
+```
+
 ## TLS 인증서
 
 Android는 Edge PC의 LAN 주소로 접속하므로 현재 LAN IPv4가
@@ -91,6 +98,7 @@ Caddy Via header confirmation
 Android cleartext denied
 Android debug user-CA trust configured
 DJI compose override exists
+DJI compose override requires dedicated bridge key
 running AI profile recorded (switch itself is deferred)
 ```
 

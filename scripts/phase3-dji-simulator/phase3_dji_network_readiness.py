@@ -436,14 +436,17 @@ def main() -> int:
                 "AI_SOURCE_TYPE: DJI_LIVE",
                 "AI_DJI_INPUT_MODE: ANDROID_BRIDGE",
                 "AI_DJI_BRIDGE_FFMPEG:",
+                "VISIONFLOW_DJI_BRIDGE_KEY:",
             ),
         )
         summary["compose"] = {
             "djiOverride": str(compose_dji),
             "sourceType": "DJI_LIVE",
             "inputMode": "ANDROID_BRIDGE",
+            "dedicatedBridgeKeyRequired": True,
         }
         print("[PASS] DJI compose override configured")
+        print("[PASS] DJI compose override requires dedicated bridge key")
 
         runtime = inspect_running_ai()
         summary["runtime"] = runtime

@@ -13,6 +13,10 @@ from app.sources.dji_android_bridge import DjiAndroidBridgeSource
 from app.streaming import AnnotatedFrameHub, create_stream_app
 
 
+DJI_BRIDGE_KEY_HEADER = "X-VisionFlow-DJI-Key"
+DJI_BRIDGE_KEY = "dji-bridge-test-key-0123456789abcdef"
+
+
 def _require_ffmpeg() -> str:
     executable = shutil.which("ffmpeg")
     if executable is not None:
@@ -113,6 +117,7 @@ def _client(
         allowed_origins=("http://localhost:3000",),
         ingest_source=source,
         internal_security_enabled=False,
+        dji_bridge_api_key=DJI_BRIDGE_KEY,
     )
     return TestClient(app)
 
@@ -133,7 +138,10 @@ def _post_stream(
             "sessionId": "phase3-bridge-robustness",
             "codec": codec,
         },
-        headers={"Content-Type": content_type},
+        headers={
+            "Content-Type": content_type,
+            DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY,
+        },
         content=payload,
     )
 
@@ -188,7 +196,10 @@ def test_decoder_failure_releases_stream_for_reconnect() -> None:
         )
         assert failed.status_code == 422, failed.text
 
-        after_failure = client.get("/api/ingest/dji/status")
+        after_failure = client.get(
+            "/api/ingest/dji/status",
+            headers={DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY},
+        )
         assert after_failure.status_code == 200
         failure_status = after_failure.json()
         assert failure_status["activeStream"] is False
@@ -205,7 +216,10 @@ def test_decoder_failure_releases_stream_for_reconnect() -> None:
         assert recovered.status_code == 200, recovered.text
         assert recovered.json()["decodedFrames"] >= 1
 
-        after_reconnect = client.get("/api/ingest/dji/status")
+        after_reconnect = client.get(
+            "/api/ingest/dji/status",
+            headers={DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY},
+        )
         assert after_reconnect.status_code == 200
         reconnect_status = after_reconnect.json()
         assert reconnect_status["activeStream"] is False
@@ -237,7 +251,10 @@ def test_decoded_frame_backpressure_keeps_latest_complete_frame() -> None:
         body = response.json()
         assert body["decodedFrames"] >= 2
 
-        status_response = client.get("/api/ingest/dji/status")
+        status_response = client.get(
+            "/api/ingest/dji/status",
+            headers={DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY},
+        )
         assert status_response.status_code == 200
         status = status_response.json()
 

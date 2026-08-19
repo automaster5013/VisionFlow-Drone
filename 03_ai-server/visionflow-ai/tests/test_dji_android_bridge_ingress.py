@@ -13,6 +13,12 @@ from app.sources.dji_android_bridge import DjiAndroidBridgeSource
 from app.streaming import AnnotatedFrameHub, create_stream_app
 
 
+AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
+DJI_BRIDGE_KEY_HEADER = "X-VisionFlow-DJI-Key"
+AI_INTERNAL_KEY = "ai-internal-test-key-0123456789abcdef"
+DJI_BRIDGE_KEY = "dji-bridge-test-key-0123456789abcdef"
+
+
 def _require_ffmpeg() -> str:
     executable = shutil.which("ffmpeg")
     if executable is not None:
@@ -90,6 +96,76 @@ def test_android_bridge_normalizes_h265_aliases() -> None:
     assert DjiAndroidBridgeSource.normalize_codec("hevc") == "H265"
 
 
+def test_android_bridge_requires_distinct_dedicated_key() -> None:
+    source = DjiAndroidBridgeSource(
+        fps=10.0,
+        queue_capacity=3,
+        ffmpeg_executable=(
+            "visionflow-ffmpeg-not-required-for-this-test"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="VISIONFLOW_DJI_BRIDGE_KEY"):
+        create_stream_app(
+            AnnotatedFrameHub(jpeg_quality=80),
+            allowed_origins=("http://localhost:3000",),
+            ingest_source=source,
+            internal_security_enabled=False,
+        )
+
+    with pytest.raises(ValueError, match="서로 달라야"):
+        create_stream_app(
+            AnnotatedFrameHub(jpeg_quality=80),
+            allowed_origins=("http://localhost:3000",),
+            ingest_source=source,
+            internal_api_key=DJI_BRIDGE_KEY,
+            dji_bridge_api_key=DJI_BRIDGE_KEY,
+        )
+
+
+def test_android_bridge_key_cannot_access_general_ai_endpoints() -> None:
+    source = DjiAndroidBridgeSource(
+        fps=10.0,
+        queue_capacity=3,
+        ffmpeg_executable=(
+            "visionflow-ffmpeg-not-required-for-this-test"
+        ),
+    )
+    app = create_stream_app(
+        AnnotatedFrameHub(jpeg_quality=80),
+        allowed_origins=("http://localhost:3000",),
+        ingest_source=source,
+        internal_security_enabled=True,
+        internal_api_key=AI_INTERNAL_KEY,
+        dji_bridge_api_key=DJI_BRIDGE_KEY,
+    )
+
+    with source, TestClient(app) as client:
+        missing = client.get("/api/ingest/dji/status")
+        ai_key_only = client.get(
+            "/api/ingest/dji/status",
+            headers={AI_INTERNAL_KEY_HEADER: AI_INTERNAL_KEY},
+        )
+        dji_status = client.get(
+            "/api/ingest/dji/status",
+            headers={DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY},
+        )
+        dji_to_general = client.get(
+            "/api/streams/status",
+            headers={DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY},
+        )
+        ai_to_general = client.get(
+            "/api/streams/status",
+            headers={AI_INTERNAL_KEY_HEADER: AI_INTERNAL_KEY},
+        )
+
+    assert missing.status_code == 401
+    assert ai_key_only.status_code == 401
+    assert dji_status.status_code == 200
+    assert dji_to_general.status_code == 401
+    assert ai_to_general.status_code == 200
+
+
 def test_android_bridge_rejects_wrong_stream_content_type() -> None:
     source = DjiAndroidBridgeSource(
         fps=10.0,
@@ -103,6 +179,7 @@ def test_android_bridge_rejects_wrong_stream_content_type() -> None:
         allowed_origins=("http://localhost:3000",),
         ingest_source=source,
         internal_security_enabled=False,
+        dji_bridge_api_key=DJI_BRIDGE_KEY,
     )
 
     with source, TestClient(app) as client:
@@ -114,7 +191,10 @@ def test_android_bridge_rejects_wrong_stream_content_type() -> None:
                 "sessionId": "session-test",
                 "codec": "H264",
             },
-            headers={"Content-Type": "image/jpeg"},
+            headers={
+                "Content-Type": "image/jpeg",
+                DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY,
+            },
             content=b"not-used",
         )
 
@@ -129,6 +209,7 @@ def test_android_bridge_h264_http_ingress_emits_dji_live_packet() -> None:
         allowed_origins=("http://localhost:3000",),
         ingest_source=source,
         internal_security_enabled=False,
+        dji_bridge_api_key=DJI_BRIDGE_KEY,
     )
 
     with source, TestClient(app) as client:
@@ -144,7 +225,10 @@ def test_android_bridge_h264_http_ingress_emits_dji_live_packet() -> None:
                 "sessionId": "session-test",
                 "codec": "H264",
             },
-            headers={"Content-Type": "video/h264"},
+            headers={
+                "Content-Type": "video/h264",
+                DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY,
+            },
             content=h264,
         )
 
@@ -164,7 +248,10 @@ def test_android_bridge_h264_http_ingress_emits_dji_live_packet() -> None:
         assert packet.drone_id == 1
         assert packet.image.shape[:2] == (48, 64)
 
-        status = client.get("/api/ingest/dji/status")
+        status = client.get(
+            "/api/ingest/dji/status",
+            headers={DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY},
+        )
         assert status.status_code == 200
         assert status.json()["decodedFrames"] >= 1
         assert status.json()["activeStream"] is False

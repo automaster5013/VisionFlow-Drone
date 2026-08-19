@@ -34,7 +34,7 @@ AI_DJI_BRIDGE_DECODER_LOG_LEVEL=warning
 ## HTTP contract
 
 ```text
-POST http://<EDGE_AI_HOST>:8000/api/ingest/dji/stream
+POST https://<EDGE_LAN_IP>:3443/api/ingest/dji/stream
   ?droneId=<positive integer>
   &sourceId=<1..100 chars>
   &sessionId=<1..36 chars>
@@ -49,7 +49,7 @@ Content-Type: video/h264
 Content-Type: video/h265
 # video/hevc is also accepted by Edge AI.
 
-X-VisionFlow-AI-Key: <runtime internal key>
+X-VisionFlow-DJI-Key: <runtime DJI bridge key>
 ```
 
 Body는 한 camera stream 동안 지속되는 H.264/H.265 elementary-stream bytes입니다.
@@ -75,13 +75,17 @@ AI 추론 지연이 증가할 때 오래된 *decoded frame*은 생략할 수 있
 
 ## Security / Android network
 
-`X-VisionFlow-AI-Key`는 Git에 저장하지 않습니다. 실제 Android 연결 시 runtime
-설정으로 주입합니다.
+`VISIONFLOW_DJI_BRIDGE_KEY`와 `X-VisionFlow-DJI-Key`는 Android DJI Bridge
+전용 credential입니다. 일반 AI 내부 서비스가 사용하는
+`VISIONFLOW_AI_INTERNAL_KEY` / `X-VisionFlow-AI-Key`와 반드시 다른 값을
+사용하며 Git에 저장하지 않습니다.
 
-실기체에서 `http://<LAN-IP>:8000`을 사용할 경우 Android cleartext 정책도 별도로
-검증해야 합니다. 가능하면 HTTPS를 사용하고, cleartext 허용이 필요한 경우에는
-개발용 LAN 범위로 제한합니다. 이 patch는 Android network security policy를
-변경하지 않습니다.
+DJI 전용 키는 `/api/ingest/dji/status`와 `/api/ingest/dji/stream`에만
+사용합니다. 모델/메트릭/일반 스트림 API에는 기존 AI internal key가 필요합니다.
+
+Android는 `https://<EDGE_LAN_IP>:3443` 경로를 사용하며 cleartext HTTP는
+허용하지 않습니다. Debug build에서 mkcert 사용자 CA를 신뢰하는 절차는
+`scripts/phase3-dji-simulator/DJI_ANDROID_NETWORK_READINESS.md`를 따릅니다.
 
 ## Hardware WAIT boundary
 

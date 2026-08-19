@@ -234,6 +234,7 @@ def main() -> None:
             model_status_provider=detector.status,
             internal_security_enabled=settings.ai_internal_security_enabled,
             internal_api_key=settings.ai_internal_key,
+            dji_bridge_api_key=settings.dji_bridge_key,
         )
         if frame_hub is not None
         else None

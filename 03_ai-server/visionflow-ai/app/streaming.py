@@ -23,6 +23,7 @@ from app.sources.dji_android_bridge import DjiAndroidBridgeSource
 
 MJPEG_BOUNDARY = "visionflow-frame"
 AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
+DJI_BRIDGE_KEY_HEADER = "X-VisionFlow-DJI-Key"
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,6 +159,7 @@ def create_stream_app(
     model_status_provider: Callable[[], dict[str, object]] | None = None,
     internal_security_enabled: bool = True,
     internal_api_key: str = "",
+    dji_bridge_api_key: str = "",
 ) -> FastAPI:
     app = FastAPI(
         title="VisionFlow AI Analysis Stream",
@@ -174,6 +176,24 @@ def create_stream_app(
         name=AI_INTERNAL_KEY_HEADER,
         auto_error=False,
     )
+    dji_bridge_key_header = APIKeyHeader(
+        name=DJI_BRIDGE_KEY_HEADER,
+        auto_error=False,
+    )
+
+    if isinstance(ingest_source, DjiAndroidBridgeSource):
+        if len(dji_bridge_api_key) < 32:
+            raise ValueError(
+                "VISIONFLOW_DJI_BRIDGE_KEY는 DJI Android Bridge 입력에서 "
+                "32자 이상이어야 합니다."
+            )
+        if (
+            internal_api_key
+            and compare_digest(dji_bridge_api_key, internal_api_key)
+        ):
+            raise ValueError(
+                "DJI Bridge key와 AI internal key는 서로 달라야 합니다."
+            )
 
     async def require_ai_internal_key(
         provided_key: str | None = Security(api_key_header),
@@ -186,6 +206,21 @@ def create_stream_app(
                 detail={
                     "code": "AI_INTERNAL_AUTHENTICATION_REQUIRED",
                     "message": "AI 내부 서비스 인증이 필요합니다.",
+                },
+            )
+
+    async def require_dji_bridge_key(
+        provided_key: str | None = Security(dji_bridge_key_header),
+    ) -> None:
+        if (
+            not provided_key
+            or not compare_digest(provided_key, dji_bridge_api_key)
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "code": "DJI_BRIDGE_AUTHENTICATION_REQUIRED",
+                    "message": "DJI Android Bridge 인증이 필요합니다.",
                 },
             )
 
@@ -380,14 +415,14 @@ def create_stream_app(
 
         @app.get(
             "/api/ingest/dji/status",
-            dependencies=[Depends(require_ai_internal_key)],
+            dependencies=[Depends(require_dji_bridge_key)],
         )
         def dji_ingest_status() -> dict[str, object]:
             return ingest_source.status()
 
         @app.post(
             "/api/ingest/dji/stream",
-            dependencies=[Depends(require_ai_internal_key)],
+            dependencies=[Depends(require_dji_bridge_key)],
         )
         async def ingest_dji_stream(
             request: Request,
@@ -522,6 +557,7 @@ class AnalysisStreamServer:
         model_status_provider: Callable[[], dict[str, object]] | None = None,
         internal_security_enabled: bool = True,
         internal_api_key: str = "",
+        dji_bridge_api_key: str = "",
     ) -> None:
         self._hub = hub
         self._host = host
@@ -537,6 +573,7 @@ class AnalysisStreamServer:
                     model_status_provider=model_status_provider,
                     internal_security_enabled=internal_security_enabled,
                     internal_api_key=internal_api_key,
+                    dji_bridge_api_key=dji_bridge_api_key,
                 ),
                 host=host,
                 port=port,

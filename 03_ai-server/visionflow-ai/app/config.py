@@ -97,6 +97,7 @@ class Settings:
     stream_allowed_origins: tuple[str, ...]
     ai_internal_security_enabled: bool
     ai_internal_key: str
+    dji_bridge_key: str
     performance_warning_p95_ms: float
     performance_critical_p95_ms: float
     performance_warning_processing_ratio: float
@@ -254,6 +255,9 @@ class Settings:
                 True,
             ),
             ai_internal_key=os.getenv("VISIONFLOW_AI_INTERNAL_KEY", "").strip(),
+            dji_bridge_key=os.getenv(
+                "VISIONFLOW_DJI_BRIDGE_KEY", ""
+            ).strip(),
             performance_warning_p95_ms=_read_float(
                 "AI_PERFORMANCE_WARNING_P95_MS",
                 250.0,
@@ -405,6 +409,21 @@ class Settings:
             raise ValueError(
                 "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED=true이면 "
                 "VISIONFLOW_AI_INTERNAL_KEY를 32자 이상으로 설정해야 합니다."
+            )
+
+        if self.dji_bridge_key and len(self.dji_bridge_key) < 32:
+            raise ValueError(
+                "VISIONFLOW_DJI_BRIDGE_KEY는 설정할 경우 "
+                "32자 이상이어야 합니다."
+            )
+
+        if (
+            self.dji_bridge_key
+            and self.ai_internal_key
+            and self.dji_bridge_key == self.ai_internal_key
+        ):
+            raise ValueError(
+                "VISIONFLOW_DJI_BRIDGE_KEY와 VISIONFLOW_AI_INTERNAL_KEY는 서로 달라야 합니다."
             )
 
         if not (
