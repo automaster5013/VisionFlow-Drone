@@ -34,7 +34,7 @@
 [![Project](https://img.shields.io/badge/Project-VisionFlow--Drone-0A66C2?style=for-the-badge&logo=github&logoColor=white)](#)
 [![Team](https://img.shields.io/badge/Team-PyvaOps-6A5ACD?style=for-the-badge)](#)
 [![Phase](https://img.shields.io/badge/Phase%202-Completed-success?style=for-the-badge)](#)
-[![Status](https://img.shields.io/badge/Status-Phase%203%20Kickoff%20Ready-0A66C2?style=for-the-badge)](Daily_Schedule/PHASE3_SCHEDULE.md)
+[![Status](https://img.shields.io/badge/Phase%203-Kickoff%2008.19-0A66C2?style=for-the-badge)](Daily_Schedule/PHASE3_SCHEDULE.md)
 
 </div>
 
@@ -51,7 +51,7 @@
 
 2차 프로젝트에서는 **스마트폰·브라우저·더미 영상 기반 가상 드론**으로 전체 관제 파이프라인을 구현하고, 실제 스마트폰 센서·후면 카메라·YOLO 통합 E2E와 보안·CI/CD·자동 Rollback까지 검증했습니다.
 
-3차 프로젝트(2026.08.18 ~ 2026.09.11)에서는 이 기준선을 유지하면서 **DJI Mini 4 Pro 실기체 연계**, 무선 영상 입력, Edge GPU Vision AI, 실제/준실제 텔레메트리 연결 및 현장형 관제 시연으로 확장합니다. AWS는 핵심 기능을 대체하지 않으며, **Go / No-Go 기술 타당성 Spike를 통과한 경우에만 Edge–Cloud 선택 확장**으로 적용합니다.
+3차 프로젝트(2026.08.19 ~ 2026.09.11)에서는 이 기준선을 유지하면서 **DJI Mini 4 Pro + RC-N2 + Android DJI MSDK Bridge 실기체 연계**, encoded camera stream, Edge GPU Vision AI, 실제/준실제 텔레메트리 연결 및 현장형 관제 시연으로 확장합니다. AWS는 핵심 기능을 대체하지 않으며, **Core P0 일정에 영향을 주지 않는 범위에서만 Edge–Cloud 선택 확장**으로 적용합니다.
 
 > **핵심 방향**<br>
 > 특정 드론 기체나 단일 AI 모델에 종속되지 않고, 영상 입력원과 탐지 모델을 교체해도 재사용할 수 있는 **표준화된 Vision AI 관제 파이프라인**을 구축합니다.
@@ -60,20 +60,30 @@
 
 ## 📅 Phase 3 Work Schedule
 
-> **3차 프로젝트 공식 기간: 2026.08.18 ~ 2026.09.11**
+> **3차 프로젝트 공식 기간: 2026.08.19 ~ 2026.09.11**
 > 강사·멘토가 진행 상황을 바로 확인할 수 있도록 3차 프로젝트 상세 일정표를 별도 문서로 관리합니다.
 
 ### 👉 [3차 프로젝트 상세 작업 일정표 바로가기](Daily_Schedule/PHASE3_SCHEDULE.md)
 
 핵심 우선순위는 다음과 같습니다.
 
-1. **DJI Mini 4 Pro 실기체 영상 입력 경로 검증**
-2. **AI 영상 추론 고도화 — YOLO26m Detection + Tracking + Pose + Segmentation + VisDrone 소형 객체 대응**
-3. **Edge GPU 기반 실시간 Multi-Task 추론 성능 최적화**
-4. **비행 세션·텔레메트리·AI Event·MySQL 통합**
-5. **Next.js 관제 대시보드 End-to-End 시연**
-6. **CI/CD·Health Check·Automatic Rollback 회귀 검증**
-7. **AWS는 Time-boxed Go / No-Go 통과 시에만 선택 확장**
+1. **DJI Mini 4 Pro / RC-N2 / Android MSDK Bridge 실제 장치 연결 및 encoded camera stream 검증**
+2. **MSDK 영상·텔레메트리 → Edge AI / Backend 입력 어댑터 확정**
+3. **AI 영상 추론 고도화 — YOLO26m Detection + Tracking + Pose + Segmentation + VisDrone 소형 객체 대응**
+4. **Edge GPU 기반 실시간 Multi-Task 추론 성능 최적화**
+5. **비행 세션·텔레메트리·AI Event·MySQL 통합**
+6. **개인 계정 로그인·RBAC·세션·QR Pairing·Audit 회귀 검증**
+7. **Next.js 관제 대시보드 End-to-End 시연**
+8. **CI/CD·Health Check·Automatic Rollback 회귀 검증**
+9. **AWS는 Core P0 완료 후 선택 확장**
+
+### ✅ Phase 3 Pre-Kickoff Baseline — 2026.08.18
+
+- **운영자 인증 UX 개선:** 개인 ID/비밀번호 로그인, DB 귀속 RBAC, 자동 생성 임시 비밀번호와 최초 변경 강제, HttpOnly 세션, 모바일 QR Pairing 분리
+- **Phase 3 Backend 검증:** `DJI_LIVE` Event ingest/depth enrichment와 observability log를 Docker Hub 이미지 런타임까지 검증
+- **DJI Android Bridge 준비:** `DjiSdkBootstrap.kt` camera availability/encoded stream listener 컴파일 및 `app-debug.apk` 빌드 PASS. 실제 ADB 장치·encoded stream 런타임 검증은 Kickoff 첫 Gate
+- **Docker 발표 기준선:** Frontend/Backend/AI/MySQL/Caddy 5개 이미지와 5개 healthy 컨테이너로 정리, Build Cache 0B
+- **AWS 비용 제어:** EC2 `VisionFlow-Drone`은 중지, Elastic IP 유지. AWS는 Core P0 완료 후 선택 확장
 
 ---
 
@@ -106,17 +116,17 @@
 
 ### 🚀 Phase 3 — 실기체·Edge AI 기반 현장형 관제 고도화
 
-- DJI Mini 4 Pro ↔ RC-N2 ↔ DJI Fly 실제 연결 및 Live View 검증
-- DJI Fly가 실제 지원하는 Live Streaming/무선 출력 인터페이스 확인 후 영상 경로 확정
-- 무선 영상 → Edge AI(FastAPI + YOLO/OpenCV) 수신·추론 파이프라인 구현
-- 실제 또는 확보 가능한 비행 데이터 Adapter와 Flight Session·Telemetry 연계
+- DJI Mini 4 Pro ↔ RC-N2 ↔ Android DJI MSDK Bridge 실제 장치 연결 검증
+- `ICameraStreamManager` 기반 camera availability 및 encoded stream packet 수신 경로 검증
+- Android Bridge encoded stream → Edge AI(FastAPI + YOLO/OpenCV) 수신·추론 파이프라인 구현
+- DJI FlightController/Product/RemoteController Key 기반 텔레메트리 Adapter와 Flight Session 연계
 - AI Event·Snapshot·Telemetry·비행 이력을 MySQL과 관제 화면에서 통합 추적
 - **AI 영상 추론 고도화:** `yolo26m.pt` Detection + Tracking + `yolo26m-pose.pt` Pose + `yolo26m-seg.pt` Segmentation 단계형 통합, `best.pt` 퀄리티 개선, VisDrone 기반 원거리·소형 객체 대응
 - 기존 HTTPS·RBAC·QR Pairing·CI/CD·Automatic Rollback의 3차 E2E 회귀 검증
 - AWS는 4~6시간 Time-boxed Go / No-Go Spike 통과 시 Event/Telemetry 중심 Edge–Cloud 확장만 최소 적용
 - 최종 발표·현장 시연을 위한 정상/대체 시나리오와 복구 Runbook 고정
 
-> DJI Mini 4 Pro의 실제 영상·비행 데이터 연계 범위는 DJI Fly/RC-N2에서 확인되는 지원 인터페이스와 네트워크 환경을 기준으로 확정합니다. AWS GPU/EKS/SageMaker는 3차 핵심 성공 조건이 아닙니다.
+> DJI Mini 4 Pro의 실제 영상·비행 데이터 연계 범위는 RC-N2 + Android DJI MSDK에서 확인되는 camera stream·key-value interface와 네트워크 환경을 기준으로 확정합니다. AWS GPU/EKS/SageMaker는 3차 핵심 성공 조건이 아닙니다.
 
 ---
 
@@ -153,7 +163,9 @@ VisionFlow-Drone은 UI, 관제 비즈니스 로직, AI 추론, 데이터 저장�
 graph LR
     subgraph Input["Input / Drone Zone"]
         VirtualDrone["📱 Virtual Drone<br/>Browser · Smartphone · Test Video"]
-        RealDrone["🚁 Real Drone<br/>DJI Mini 4 Pro · Phase 3"]
+        RealDrone["🚁 Real Drone<br/>DJI Mini 4 Pro · RC-N2"]
+        DjiBridge["📱 Android DJI MSDK Bridge"]
+        RealDrone --> DjiBridge
     end
 
     subgraph AI["AI Vision Zone"]
@@ -178,8 +190,8 @@ graph LR
 
     VirtualDrone -->|"Video Frame / Telemetry"| FastAPI
     VirtualDrone -->|"Telemetry / Flight Session"| SpringBoot
-    RealDrone -.->|"Wireless Video / Telemetry Adapter"| FastAPI
-    RealDrone -.->|"Phase 3 Integration"| SpringBoot
+    DjiBridge -.->|"Encoded Camera Stream"| FastAPI
+    DjiBridge -.->|"DJI Telemetry"| SpringBoot
     FastAPI -->|"Detection Result / Event"| SpringBoot
     SpringBoot <--> Dashboard
 
@@ -283,8 +295,8 @@ flowchart LR
 | 🤖 AI 수집 | Frame Ingest API | ✅ 구현 | 브라우저·스마트폰·시험 영상 프레임을 FastAPI로 전달 |
 | 🛡️ 안전 탐지 | Helmet / PPE Detection | 🟡 모델 고도화 중 | 작업자와 안전모·보호구 착용 여부 분석 |
 | 🧍 위험 행동 | Human Pose Estimation | 🔵 Phase 3 확장 | 쓰러짐 등 위험 행동 탐지 로직 연구 및 적용 |
-| 📶 실기체 연계 | DJI / Wireless Video Adapter | 🔵 Phase 3 확장 | DJI Mini 4 Pro 영상 및 비행 데이터 연계 검증 |
-| 🔐 운영 보안 | HTTPS / RBAC / QR Pairing / Audit | ✅ 핵심 구현 | HTTPS, 역할 기반 인증·인가, 브라우저 세션, 보안 QR 페어링, 감사 로그 |
+| 📶 실기체 연계 | Android DJI MSDK Bridge | 🟡 실기체 검증 준비 | Debug APK 빌드 완료, camera availability/encoded stream 및 DJI telemetry 실장비 검증 대기 |
+| 🔐 운영 보안 | Account Login / RBAC / Session / QR Pairing / Audit | ✅ 3차 선행 개선 | 개인 계정 로그인, 서버 Role 자동 적용, 초기 비밀번호 자동 생성·최초 변경 강제, HttpOnly 세션, 모바일 QR 페어링, 감사 로그 |
 
 > 상태 표기: ✅ 구현 · 🟡 구현/검증 중 · 🔵 후속 확장
 
@@ -300,7 +312,9 @@ VisionFlow-Drone/
 │   └── visionflow-api/            # Spring Boot 관제 API 및 WebSocket
 ├── 03_ai-server/
 │   └── visionflow-ai/             # FastAPI 기반 영상 수집·AI 추론 서버
-├── Daily_Schedule/                # 2차 프로젝트 작업 일정 및 기록
+├── 04_android/
+│   └── visionflow-dji-bridge/     # DJI MSDK Android Bridge
+├── Daily_Schedule/                # 2차 기록 및 3차 상세 작업 일정
 ├── artifacts/                     # 모델, 결과물, 배포 산출물 관리
 ├── backups/                       # 전환·복구용 백업 자료
 ├── docs/                          # 아키텍처, API, 시연 및 운영 문서
@@ -406,17 +420,18 @@ scripts\run-visionflow-backup.bat --consistent
 - [x] 스마트폰 HTTPS 실센서·후면 카메라·YOLO 통합 E2E 회귀 검증
 - [ ] AI 탐지 바운딩박스·스냅숏 표시 회귀 검증
 
-### 🚀 Phase 3 실행 계획 — 2026.08.18 ~ 2026.09.11
+### 🚀 Phase 3 실행 계획 — 2026.08.19 ~ 2026.09.11
 
 > 상세 일정 및 진행 상태: **[Phase 3 작업 일정표](Daily_Schedule/PHASE3_SCHEDULE.md)**
 
-- [ ] DJI Mini 4 Pro / RC-N2 / DJI Fly 실제 영상 입력 경로 검증
-- [ ] 무선 영상 수신 Adapter 또는 중계 경로 구현
+- [x] DJI MSDK Android Bridge camera stream listener 컴파일 및 Debug APK 빌드
+- [ ] ADB 실장비 연결 → MSDK 등록/Product 연결 → camera availability/encoded stream 검증
+- [ ] MSDK encoded stream 수신 Adapter와 Edge AI 입력 경로 구현
 - [ ] Edge GPU YOLO/OpenCV 실시간 추론 및 성능 기준선 확보
 - [ ] 실제/준실제 비행 데이터와 Flight Session·Telemetry 연결
 - [ ] AI Event·Snapshot·Telemetry·MySQL·관제 Dashboard 통합 E2E
 - [ ] Helmet/PPE 정밀도 보완 및 Human Pose Estimation 선택 확장
-- [x] 역할 기반 인증·인가, 세션, 보안 QR 페어링 및 감사 로그 강화
+- [x] 개인 계정 로그인, DB Role 기반 RBAC, 자동 초기 비밀번호·최초 변경 강제, HttpOnly 세션, 보안 QR 페어링 및 감사 로그 강화
 - [x] Caddy HTTPS 진입점 및 Docker Compose Release 배포 구성
 - [x] GitHub Actions CI + Private CD + Docker Hub immutable SHA + 자동 Rollback 검증
 - [ ] AWS Edge–Cloud Spike 최종 GO / NO-GO 판정 및 선택 확장
