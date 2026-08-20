@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "project": "visionflow",
-  "baselineCommit": "4537e9bc7d8b2e332efbe096e07a02e4c62b5343",
+  "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 79,
-    "frontend": 79,
-    "ai": 9
+    "backend": 80,
+    "frontend": 81,
+    "ai": 11
   },
   "requiredBackendAccess": [
     {
@@ -335,6 +335,14 @@
         "ROLE_ADMIN"
       ],
       "reason": "감사 로그 정리는 ADMIN 전용"
+    },
+    {
+      "method": "POST",
+      "path": "/api/security/password",
+      "allowedAccess": [
+        "ROLES_VIEWER_OPERATOR_ADMIN"
+      ],
+      "reason": "비밀번호 변경은 인증된 VIEWER·OPERATOR·ADMIN 세션만 허용"
     }
   ],
   "expectedBackendPublicWrites": [
@@ -515,6 +523,18 @@
       "path": "/api/ingest/status",
       "severity": "LOW",
       "reason": "프레임 수집 상태"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ingest/dji/status",
+      "severity": "MEDIUM",
+      "reason": "DJI Bridge sourceId·sessionId·droneId·decoder 상태를 포함하는 운영 상태 API"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ingest/dji/stream",
+      "severity": "HIGH",
+      "reason": "DJI Android Bridge의 실시간 H.264/H.265 영상 입력 진입점"
     }
   ],
   "runtimeExpectations": {

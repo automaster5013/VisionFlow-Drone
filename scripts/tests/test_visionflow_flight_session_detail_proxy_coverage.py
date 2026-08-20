@@ -22,7 +22,6 @@ class FlightSessionDetailProxyCoverageTest(unittest.TestCase):
         operation = next(item for item in operations if item.key == key)
         route_text = (root / operation.source).read_text(encoding="utf-8")
 
-        self.assertEqual(len(operations), 72)
         self.assertEqual(
             security.route_auth_mechanism(
                 operation,
@@ -48,10 +47,40 @@ class FlightSessionDetailProxyCoverageTest(unittest.TestCase):
             .read_text(encoding="utf-8")
         )
 
-        self.assertEqual(contract_baseline["expectedCounts"]["frontend"], 72)
-        self.assertEqual(security_baseline["expectedCounts"]["frontend"], 72)
+        expected_frontend = contract_baseline["expectedCounts"]["frontend"]
+        self.assertEqual(len(operations), expected_frontend)
+        self.assertEqual(
+            security_baseline["expectedCounts"]["frontend"],
+            expected_frontend,
+        )
+        self.assertEqual(
+            policy["expectedCounts"]["frontend"],
+            expected_frontend,
+        )
         self.assertEqual(contract_baseline["advisoryBackendOnlyOperations"], [])
         self.assertEqual(policy["allowedContractAdvisories"], [])
+
+    def test_operator_password_manual_session_forward_is_authenticated(
+        self,
+    ) -> None:
+        root = SCRIPT_DIR.parent
+        key = ("POST", "/api/operator/password")
+        operations = contract.parse_frontend_operations(root)
+        operation = next(item for item in operations if item.key == key)
+        route_text = (root / operation.source).read_text(encoding="utf-8")
+
+        self.assertEqual(
+            security.route_auth_mechanism(
+                operation,
+                route_text,
+                security.helper_auth_modules(root),
+            ),
+            "OPERATOR_AUTH",
+        )
+        self.assertEqual(
+            security.route_mutation_guard(operation, route_text),
+            "SAME_ORIGIN_MANUAL",
+        )
 
     def test_missing_operator_auth_is_detected(self) -> None:
         operation = contract.Operation(

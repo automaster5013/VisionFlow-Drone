@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "baselineCommit": "fc794e571c39fb3ea1cede7d5509816f483c5664",
+  "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 79,
-    "frontend": 79,
-    "ai": 9,
-    "tables": 17,
-    "entities": 16,
-    "repositories": 16,
+    "backend": 80,
+    "frontend": 81,
+    "ai": 11,
+    "tables": 18,
+    "entities": 17,
+    "repositories": 17,
     "foreignKeys": 12
   },
   "tables": [
@@ -130,6 +130,14 @@
       "entity": "MaintenanceWorkOrderHistory",
       "repository": "MaintenanceWorkOrderHistoryRepository",
       "classification": "HISTORY"
+    },
+    {
+      "name": "operator_user",
+      "createdIn": "V25__create_operator_user.sql",
+      "entity": "OperatorUser",
+      "repository": "OperatorUserRepository",
+      "classification": "SECURITY",
+      "note": "운영자 계정·비밀번호 해시·역할·활성 상태를 영속화하며 V26에서 초기 비밀번호 교체 상태를 확장"
     }
   ],
   "foreignKeys": [
@@ -290,7 +298,8 @@
       ],
       "aiPatterns": [],
       "tables": [
-        "audit_log"
+        "audit_log",
+        "operator_user"
       ],
       "runtimeStores": [
         "OperatorCredentialRegistry",
@@ -459,7 +468,7 @@
     {
       "key": "ai-runtime-stream",
       "title": "AI 영상 입력·추론 스트림",
-      "description": "브라우저 프레임 ingest, GPU 추론, MJPEG, 모델·성능 상태",
+      "description": "브라우저 JPEG 및 DJI encoded stream ingest, GPU 추론, MJPEG, 모델·성능 상태",
       "backendPatterns": [],
       "frontendPatterns": [
         "^(GET|POST) /api/ai/(?:ingest|metrics|models|stream)(?:/.*)?$"
@@ -473,7 +482,9 @@
         "AnnotatedFrameHub",
         "InferencePerformanceMonitor",
         "YOLO model state",
-        "VISIONFLOW_AI_INTERNAL_KEY"
+        "VISIONFLOW_AI_INTERNAL_KEY",
+        "DjiAndroidBridgeSource",
+        "VISIONFLOW_DJI_BRIDGE_KEY"
       ]
     },
     {
@@ -528,7 +539,8 @@
       "description": "CSP report 메모리 집계와 모바일 증적 파일 상태",
       "backendPatterns": [],
       "frontendPatterns": [
-        "^(GET|POST) /api/(?:mobile/evidence/status|security/csp-report)$"
+        "^(GET|POST) /api/(?:mobile/evidence/status|security/csp-report)$",
+        "^GET /api/mobile/runtime-network$"
       ],
       "aiPatterns": [],
       "tables": [],
