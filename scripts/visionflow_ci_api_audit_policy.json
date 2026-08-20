@@ -1,18 +1,18 @@
 {
   "schemaVersion": 2,
-  "baselineCommit": "4d4b8693cda6ecb4ba2d322ed617750525a17580",
+  "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 79,
-    "frontend": 79,
-    "ai": 9
+    "backend": 80,
+    "frontend": 81,
+    "ai": 11
   },
   "expectedTraceabilityCounts": {
-    "backend": 79,
-    "frontend": 79,
-    "ai": 9,
-    "tables": 17,
-    "entities": 16,
-    "repositories": 16,
+    "backend": 80,
+    "frontend": 81,
+    "ai": 11,
+    "tables": 18,
+    "entities": 17,
+    "repositories": 17,
     "foreignKeys": 12,
     "flows": 13,
     "softCorrelations": 4
