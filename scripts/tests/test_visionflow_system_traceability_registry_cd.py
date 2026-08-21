@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 API_WORKFLOW = ROOT / ".github" / "workflows" / "api-audit.yml"
 PUBLISH_WORKFLOW = ROOT / ".github" / "workflows" / "docker-publish.yml"
+PLANNER = ROOT / "scripts" / "visionflow_container_release_plan.py"
 AI_DOCKERIGNORE = ROOT / "03_ai-server" / "visionflow-ai" / ".dockerignore"
 MODEL_COMPOSE = ROOT / "compose.model.yaml"
 
@@ -80,6 +81,53 @@ class SystemTraceabilityRegistryCdTest(unittest.TestCase):
             "Require successful API audit for exact commit",
             source,
         )
+
+
+    def test_registry_publish_skips_non_image_changes_but_keeps_atomic_release(
+        self,
+    ) -> None:
+        source = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
+        planner = PLANNER.read_text(encoding="utf-8")
+
+        self.assertIn("Plan container release", source)
+        self.assertIn(
+            "scripts/visionflow_container_release_plan.py",
+            source,
+        )
+        self.assertIn(
+            "api-audit.yml/runs?branch=main&event=push",
+            source,
+        )
+        self.assertIn(
+            "if: needs.prepare.outputs.release_required == 'true'",
+            source,
+        )
+        self.assertIn(
+            "if: steps.release-plan.outputs.release_required == 'true'",
+            source,
+        )
+
+        for prefix in (
+            "01_frontend/visionflow-web/",
+            "02_backend/visionflow-api/",
+            "03_ai-server/visionflow-ai/",
+        ):
+            self.assertIn(prefix, planner)
+
+        self.assertIn(
+            ".github/workflows/docker-publish.yml",
+            planner,
+        )
+        self.assertIn(
+            "no-docker-build-context-change",
+            planner,
+        )
+
+        for component in ("frontend", "backend", "ai"):
+            self.assertEqual(
+                source.count(f"- component: {component}"),
+                1,
+            )
 
     def test_ai_registry_image_uses_cuda_runtime_but_not_model_weights(
         self,

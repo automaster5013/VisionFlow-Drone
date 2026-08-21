@@ -68,6 +68,22 @@ automaster5013/visionflow-drone:frontend-sha-a6f29c6
 
 MySQL은 애플리케이션 Release 이미지 교체 대상에서 제외합니다.
 
+### Image-aware publish eligibility
+
+`main`의 모든 push는 CI 검증 대상이지만, 모든 commit이 새로운 컨테이너 Release를 의미하지는 않습니다.
+
+자동 Docker Hub publish는 현재 `main` push와 직전 `main` push 사이의 변경 경로를 확인합니다.
+
+- `01_frontend/visionflow-web/**` 변경 → Container Release 생성
+- `02_backend/visionflow-api/**` 변경 → Container Release 생성
+- `03_ai-server/visionflow-ai/**` 변경 → Container Release 생성
+- `.github/workflows/docker-publish.yml` 변경 → 안전을 위해 Container Release 생성
+- README, `Daily_Schedule/**`, 일반 문서 등 Docker build context와 무관한 변경 → Docker Hub publish 생략
+
+Container Release가 필요한 경우에는 일부 컴포넌트만 별도 SHA로 발행하지 않습니다. Backend, AI, Frontend **3개 이미지 모두 동일한 source SHA tag 세트**로 발행하여 기존 Release Preflight와 Automatic Rollback 계약을 유지합니다. 변경이 없는 build context는 GitHub Actions BuildKit cache를 재사용하여 빌드 비용을 줄입니다.
+
+`workflow_dispatch` 수동 실행은 명시적인 Release 요청으로 간주하여 항상 3개 이미지 전체를 발행합니다.
+
 ## 5. Release Safety Gate
 
 실제 배포 전에 다음 조건을 검사합니다.
