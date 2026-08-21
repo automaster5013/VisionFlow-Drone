@@ -80,15 +80,26 @@ class DjiEncodedStreamUploader(
     fun offer(
         data: ByteArray,
         length: Int,
+    ): Boolean = offer(
+        data=data,
+        offset=0,
+        length=length,
+    )
+
+    fun offer(
+        data: ByteArray,
+        offset: Int,
+        length: Int,
     ): Boolean {
         if (!running || length <= 0) {
             return false
         }
-        require(length <= data.size) {
-            "length exceeds data size"
-        }
 
-        val packet = data.copyOf(length)
+        val packet = copyPacket(
+            data=data,
+            offset=offset,
+            length=length,
+        )
         val accepted =
             queue.offer(
                 packet,
@@ -245,6 +256,20 @@ class DjiEncodedStreamUploader(
             .toString()
 
     companion object {
+        internal fun copyPacket(
+            data: ByteArray,
+            offset: Int,
+            length: Int,
+        ): ByteArray {
+            require(offset >= 0) { "offset must be zero or greater" }
+            require(offset <= data.size) { "offset exceeds data size" }
+            require(length >= 0) { "length must be zero or greater" }
+            require(length <= data.size - offset) {
+                "offset + length exceeds data size"
+            }
+            return data.copyOfRange(offset, offset + length)
+        }
+
         private const val TAG = "VisionFlowDJI"
         private const val DJI_KEY_HEADER = "X-VisionFlow-DJI-Key"
         private const val INGEST_PATH = "/api/ingest/dji/stream"

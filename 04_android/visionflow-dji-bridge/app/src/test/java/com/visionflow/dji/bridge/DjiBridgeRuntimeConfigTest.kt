@@ -12,6 +12,7 @@ class DjiBridgeRuntimeConfigTest {
                 edgeAiBaseUrl=" https://192.168.46.7:3443/ ",
                 droneId=1,
                 sourceId=" dji-mini4pro-001 ",
+                sessionId="session-001",
             )
 
         assertEquals(
@@ -22,6 +23,10 @@ class DjiBridgeRuntimeConfigTest {
             "dji-mini4pro-001",
             config.normalizedSourceId,
         )
+        assertEquals(
+            "session-001",
+            config.normalizedSessionId,
+        )
     }
 
     @Test
@@ -31,6 +36,7 @@ class DjiBridgeRuntimeConfigTest {
                 edgeAiBaseUrl="http://192.168.46.7:8000",
                 droneId=1,
                 sourceId="dji-test",
+                sessionId="session-001",
             )
         }
         expectInvalid {
@@ -40,6 +46,7 @@ class DjiBridgeRuntimeConfigTest {
                 ),
                 droneId=1,
                 sourceId="dji-test",
+                sessionId="session-001",
             )
         }
     }
@@ -51,6 +58,7 @@ class DjiBridgeRuntimeConfigTest {
                 edgeAiBaseUrl="https://host:3443?key=value",
                 droneId=1,
                 sourceId="dji-test",
+                sessionId="session-001",
             )
         }
         expectInvalid {
@@ -58,6 +66,7 @@ class DjiBridgeRuntimeConfigTest {
                 edgeAiBaseUrl="https://user@host:3443",
                 droneId=1,
                 sourceId="dji-test",
+                sessionId="session-001",
             )
         }
     }
@@ -69,6 +78,7 @@ class DjiBridgeRuntimeConfigTest {
                 edgeAiBaseUrl="https://192.168.46.7:3443",
                 droneId=0,
                 sourceId="dji-test",
+                sessionId="session-001",
             )
         }
         expectInvalid {
@@ -76,6 +86,7 @@ class DjiBridgeRuntimeConfigTest {
                 edgeAiBaseUrl="https://192.168.46.7:3443",
                 droneId=1,
                 sourceId="  ",
+                sessionId="session-001",
             )
         }
         expectInvalid {

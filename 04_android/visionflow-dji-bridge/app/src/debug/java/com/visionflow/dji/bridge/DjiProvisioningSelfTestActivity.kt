@@ -65,6 +65,7 @@ class DjiProvisioningSelfTestActivity : Activity() {
                     edgeAiBaseUrl=SELF_TEST_EDGE_URL,
                     droneId=SELF_TEST_DRONE_ID,
                     sourceId=SELF_TEST_SOURCE_ID,
+                    sessionId=SELF_TEST_SESSION_ID,
                 )
 
             store.save(
@@ -82,6 +83,7 @@ class DjiProvisioningSelfTestActivity : Activity() {
             )
             check(snapshot.droneId == SELF_TEST_DRONE_ID)
             check(snapshot.sourceId == SELF_TEST_SOURCE_ID)
+            check(snapshot.sessionId == SELF_TEST_SESSION_ID)
 
             val loaded = store.loadConfig()
             check(loaded != null)
@@ -94,6 +96,10 @@ class DjiProvisioningSelfTestActivity : Activity() {
                 loaded.normalizedSourceId ==
                     SELF_TEST_SOURCE_ID
             )
+            check(
+                loaded.normalizedSessionId ==
+                    SELF_TEST_SESSION_ID
+            )
 
             val decrypted = secretStore.load()
             check(decrypted == bridgeKey) {
@@ -102,7 +108,6 @@ class DjiProvisioningSelfTestActivity : Activity() {
 
             val uploader =
                 store.createUploader(
-                    sessionId=SELF_TEST_SESSION_ID,
                     queueCapacity=1,
                 )
             uploader.close()

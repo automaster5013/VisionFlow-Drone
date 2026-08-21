@@ -16,6 +16,9 @@ object DjiSdkBootstrap {
 
             override fun onRegisterSuccess() {
                 Log.i(TAG, "MSDK_REGISTER_SUCCESS")
+                DjiCameraStreamBridgeRuntime.start(
+                    context.applicationContext,
+                )
             }
 
             override fun onRegisterFailure(error: IDJIError) {

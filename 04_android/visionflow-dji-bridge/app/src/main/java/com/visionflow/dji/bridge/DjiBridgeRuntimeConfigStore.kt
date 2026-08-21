@@ -9,6 +9,7 @@ data class DjiBridgeRuntimeSnapshot(
     val edgeAiBaseUrl: String?,
     val droneId: Long?,
     val sourceId: String?,
+    val sessionId: String?,
 )
 
 class DjiBridgeRuntimeConfigStore private constructor(
@@ -61,6 +62,10 @@ class DjiBridgeRuntimeConfigStore private constructor(
                     KEY_SOURCE_ID,
                     config.normalizedSourceId,
                 )
+                .putString(
+                    KEY_SESSION_ID,
+                    config.normalizedSessionId,
+                )
                 .commit()
 
         check(committed) {
@@ -78,7 +83,8 @@ class DjiBridgeRuntimeConfigStore private constructor(
         if (
             !preferences.contains(KEY_EDGE_AI_BASE_URL) ||
             !preferences.contains(KEY_DRONE_ID) ||
-            !preferences.contains(KEY_SOURCE_ID)
+            !preferences.contains(KEY_SOURCE_ID) ||
+            !preferences.contains(KEY_SESSION_ID)
         ) {
             return null
         }
@@ -93,6 +99,11 @@ class DjiBridgeRuntimeConfigStore private constructor(
                 KEY_SOURCE_ID,
                 null,
             ) ?: return null
+        val sessionId =
+            preferences.getString(
+                KEY_SESSION_ID,
+                null,
+            ) ?: return null
 
         return DjiBridgeRuntimeConfig(
             edgeAiBaseUrl=edgeAiBaseUrl,
@@ -101,6 +112,7 @@ class DjiBridgeRuntimeConfigStore private constructor(
                 0,
             ),
             sourceId=sourceId,
+            sessionId=sessionId,
         )
     }
 
@@ -116,12 +128,13 @@ class DjiBridgeRuntimeConfigStore private constructor(
             edgeAiBaseUrl=config?.normalizedEdgeAiBaseUrl,
             droneId=config?.droneId,
             sourceId=config?.normalizedSourceId,
+            sessionId=config?.normalizedSessionId,
         )
     }
 
     @Synchronized
     fun createUploader(
-        sessionId: String,
+        sessionId: String? = null,
         queueCapacity: Int = DEFAULT_QUEUE_CAPACITY,
     ): DjiEncodedStreamUploader {
         require(queueCapacity > 0) {
@@ -145,9 +158,9 @@ class DjiBridgeRuntimeConfigStore private constructor(
             droneId=config.droneId,
             sourceId=config.normalizedSourceId,
             sessionId=(
-                DjiBridgeRuntimeConfig.normalizeSessionId(
-                    sessionId,
-                )
+                sessionId
+                    ?.let(DjiBridgeRuntimeConfig::normalizeSessionId)
+                    ?: config.normalizedSessionId
             ),
             queueCapacity=queueCapacity,
         )
@@ -177,6 +190,7 @@ class DjiBridgeRuntimeConfigStore private constructor(
             "edge_ai_base_url"
         private const val KEY_DRONE_ID = "drone_id"
         private const val KEY_SOURCE_ID = "source_id"
+        private const val KEY_SESSION_ID = "session_id"
         private const val DEFAULT_QUEUE_CAPACITY = 256
     }
 }

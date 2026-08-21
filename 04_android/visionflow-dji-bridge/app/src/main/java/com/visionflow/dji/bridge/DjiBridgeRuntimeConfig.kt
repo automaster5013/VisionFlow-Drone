@@ -6,9 +6,11 @@ data class DjiBridgeRuntimeConfig(
     val edgeAiBaseUrl: String,
     val droneId: Long,
     val sourceId: String,
+    val sessionId: String,
 ) {
     val normalizedEdgeAiBaseUrl: String = normalizeBaseUrl(edgeAiBaseUrl)
     val normalizedSourceId: String = sourceId.trim()
+    val normalizedSessionId: String = normalizeSessionId(sessionId)
 
     init {
         require(droneId > 0) {

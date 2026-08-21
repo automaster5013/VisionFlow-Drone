@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private lateinit var edgeUrlInput: EditText
     private lateinit var droneIdInput: EditText
     private lateinit var sourceIdInput: EditText
+    private lateinit var sessionIdInput: EditText
     private lateinit var bridgeKeyInput: EditText
     private lateinit var statusView: TextView
     private lateinit var messageView: TextView
@@ -67,6 +68,12 @@ class MainActivity : Activity() {
             content,
             "Source ID",
             "dji-mini4pro-001",
+            InputType.TYPE_CLASS_TEXT,
+        )
+        sessionIdInput = addField(
+            content,
+            "Flight Session ID",
+            "Backend Flight Session UUID",
             InputType.TYPE_CLASS_TEXT,
         )
         bridgeKeyInput = addField(
@@ -169,6 +176,7 @@ class MainActivity : Activity() {
             } else {
                 droneIdInput.setText(DEFAULT_DRONE_ID.toString())
                 sourceIdInput.setText(DEFAULT_SOURCE_ID)
+                sessionIdInput.setText("")
             }
             bridgeKeyInput.setText("")
             renderStatus(snapshot)
@@ -194,6 +202,7 @@ class MainActivity : Activity() {
                 edgeAiBaseUrl=edgeUrlInput.text.toString(),
                 droneId=droneId,
                 sourceId=sourceIdInput.text.toString(),
+                sessionId=sessionIdInput.text.toString(),
             )
 
             val bridgeKey = bridgeKeyInput.text.toString()
@@ -211,6 +220,7 @@ class MainActivity : Activity() {
 
             bridgeKeyInput.setText("")
             val after = store.snapshot()
+            DjiCameraStreamBridgeRuntime.refreshProvisioning()
             loadProfile(after)
             renderStatus(after)
             showMessage(
@@ -240,7 +250,9 @@ class MainActivity : Activity() {
             edgeUrlInput.setText("")
             droneIdInput.setText(DEFAULT_DRONE_ID.toString())
             sourceIdInput.setText(DEFAULT_SOURCE_ID)
+            sessionIdInput.setText("")
             bridgeKeyInput.setText("")
+            DjiCameraStreamBridgeRuntime.refreshProvisioning()
             renderStatus(store.snapshot())
             showMessage("Provisioning cleared.", isError = false)
         } catch (error: Exception) {
@@ -255,11 +267,13 @@ class MainActivity : Activity() {
         edgeUrlInput.setText(snapshot.edgeAiBaseUrl.orEmpty())
         droneIdInput.setText(snapshot.droneId?.toString().orEmpty())
         sourceIdInput.setText(snapshot.sourceId.orEmpty())
+        sessionIdInput.setText(snapshot.sessionId.orEmpty())
     }
 
     private fun renderStatus(snapshot: DjiBridgeRuntimeSnapshot) {
         val profile = if (snapshot.profileConfigured) "READY" else "MISSING"
         val credential = if (snapshot.bridgeKeyConfigured) "READY" else "MISSING"
+        val session = if (snapshot.sessionId.isNullOrBlank()) "MISSING" else "READY"
         val transport = if (
             snapshot.edgeAiBaseUrl?.startsWith(
                 "https://",
@@ -276,6 +290,7 @@ class MainActivity : Activity() {
             appendLine("Runtime     $overall")
             appendLine("Profile     $profile")
             appendLine("Credential  $credential")
+            appendLine("Session     $session")
             appendLine("Transport   $transport")
             append("MSDK        WAIT")
         }
