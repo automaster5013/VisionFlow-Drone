@@ -60,29 +60,29 @@ export function AppHeader({
     const badge = resolveOperatorBadge(operatorSecurity, operatorAuthMode);
 
     return (
-        <header className="border-b border-slate-200 bg-white">
-            <div className="flex min-h-16 items-center justify-between gap-3 px-4 sm:px-8">
+        <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur">
+            <div className="flex min-h-[72px] items-center justify-between gap-3 px-4 sm:px-8">
                 <div className="flex min-w-0 items-center gap-3">
                     <MobileNavigation operatorSecurity={operatorSecurity} />
 
                     <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-slate-900">
-                            VisionFlow Drone Control Center
+                            VisionFlow Mission Control
                         </p>
 
                         <p className="hidden truncate text-xs text-slate-500 sm:block">
-                            지능형 드론 관제 및 Vision AI 플랫폼
+                            Drone · Vision AI · Operations
                         </p>
                     </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                     <span className="hidden text-sm text-slate-500 sm:inline">
-                        운영 환경
+                        운영 권한
                     </span>
 
                     <span
-                        className={`hidden max-w-44 truncate rounded-full border px-3 py-1 text-xs font-semibold sm:inline ${badge.className}`}
+                        className={`hidden max-w-56 truncate rounded-full border px-3 py-1.5 text-xs font-bold sm:inline ${badge.className}`}
                     >
                         {badge.label}
                     </span>
