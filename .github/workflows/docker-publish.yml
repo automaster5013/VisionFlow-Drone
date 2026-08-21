@@ -32,13 +32,17 @@ jobs:
     outputs:
       full_sha: ${{ steps.version.outputs.full_sha }}
       short_sha: ${{ steps.version.outputs.short_sha }}
+      release_required: ${{ steps.release-plan.outputs.release_required }}
+      changed_components: ${{ steps.release-plan.outputs.changed_components }}
+      release_reason: ${{ steps.release-plan.outputs.release_reason }}
+      base_sha: ${{ steps.release-plan.outputs.base_sha }}
 
     steps:
       - name: Check out exact release commit
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Validate publish source
         shell: bash
@@ -53,22 +57,6 @@ jobs:
             fi
           elif [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
             echo "::error::Manual Docker Hub publishing is allowed only from the main branch."
-            exit 1
-          fi
-
-      - name: Validate Docker Hub credentials
-        env:
-          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -z "${DOCKERHUB_USERNAME}" ]]; then
-            echo "::error::Repository variable DOCKERHUB_USERNAME is missing."
-            exit 1
-          fi
-          if [[ -z "${DOCKERHUB_TOKEN}" ]]; then
-            echo "::error::Repository secret DOCKERHUB_TOKEN is missing."
             exit 1
           fi
 
@@ -90,7 +78,98 @@ jobs:
             echo "- AI runtime: CUDA-enabled PyTorch; model weights remain external read-only artifacts"
           } >> "${GITHUB_STEP_SUMMARY}"
 
+
+      - name: Plan container release
+        id: release-plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          CURRENT_AUDIT_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_SHA: ${{ steps.version.outputs.full_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CHANGED_PATHS_FILE="${RUNNER_TEMP}/visionflow-release-changed-paths.txt"
+          : > "${CHANGED_PATHS_FILE}"
+          BASE_SHA=""
+          FORCE_RELEASE=false
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            FORCE_RELEASE=true
+          else
+            RUNS_JSON="$(
+              curl --fail --silent --show-error \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "X-GitHub-Api-Version: 2026-03-10" \
+                "${API_URL}/repos/${REPOSITORY}/actions/workflows/api-audit.yml/runs?branch=main&event=push&per_page=20"
+            )"
+
+            BASE_SHA="$(
+              printf '%s' "${RUNS_JSON}" |
+                python -c '
+import json
+import os
+import sys
+
+payload = json.load(sys.stdin)
+current_id = os.environ.get("CURRENT_AUDIT_RUN_ID", "")
+source_sha = os.environ["SOURCE_SHA"]
+
+for run in payload.get("workflow_runs", []):
+    run_id = str(run.get("id", ""))
+    head_sha = str(run.get("head_sha", ""))
+    if run_id == current_id:
+        continue
+    if not head_sha or head_sha == source_sha:
+        continue
+    print(head_sha)
+    break
+'
+            )"
+
+            if [[ -z "${BASE_SHA}" ]] || \
+               ! git merge-base --is-ancestor "${BASE_SHA}" "${SOURCE_SHA}" 2>/dev/null; then
+              BASE_SHA="$(git rev-parse "${SOURCE_SHA}^1" 2>/dev/null || true)"
+            fi
+
+            if [[ -n "${BASE_SHA}" ]]; then
+              git diff --name-only \
+                "${BASE_SHA}" \
+                "${SOURCE_SHA}" \
+                > "${CHANGED_PATHS_FILE}"
+            else
+              FORCE_RELEASE=true
+            fi
+          fi
+
+          echo "base_sha=${BASE_SHA}" >> "${GITHUB_OUTPUT}"
+
+          PLAN_ARGS=(
+            --changed-paths-file "${CHANGED_PATHS_FILE}"
+            --github-output "${GITHUB_OUTPUT}"
+            --summary "${GITHUB_STEP_SUMMARY}"
+          )
+
+          if [[ "${FORCE_RELEASE}" == "true" ]]; then
+            PLAN_ARGS+=(--force)
+          fi
+
+          python scripts/visionflow_container_release_plan.py "${PLAN_ARGS[@]}"
+
+          {
+            echo
+            echo "### Main change range"
+            echo
+            echo "- Base: \`${BASE_SHA:-none}\`"
+            echo "- Head: \`${SOURCE_SHA}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Require successful API audit for exact commit
+        if: steps.release-plan.outputs.release_required == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ steps.version.outputs.full_sha }}
@@ -116,9 +195,27 @@ jobs:
 
           echo "Verified successful API audit for ${SOURCE_SHA}."
 
+      - name: Validate Docker Hub credentials
+        if: steps.release-plan.outputs.release_required == 'true'
+        env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${DOCKERHUB_USERNAME}" ]]; then
+            echo "::error::Repository variable DOCKERHUB_USERNAME is missing."
+            exit 1
+          fi
+          if [[ -z "${DOCKERHUB_TOKEN}" ]]; then
+            echo "::error::Repository secret DOCKERHUB_TOKEN is missing."
+            exit 1
+          fi
+
   publish:
     name: Publish ${{ matrix.component }}
     needs: prepare
+    if: needs.prepare.outputs.release_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
