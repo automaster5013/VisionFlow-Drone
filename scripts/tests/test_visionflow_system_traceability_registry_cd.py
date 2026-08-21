@@ -18,7 +18,7 @@ class SystemTraceabilityRegistryCdTest(unittest.TestCase):
 
         self.assertIn("pull_request:\n    paths:", source)
         self.assertIn(
-            "push:\n    branches:\n      - main\n    paths:",
+            "push:\n    branches:\n      - main\n      - \"feature/**\"\n    paths:",
             source,
         )
         self.assertGreaterEqual(source.count('      - "**"'), 2)
@@ -73,6 +73,10 @@ class SystemTraceabilityRegistryCdTest(unittest.TestCase):
         )
         self.assertIn(
             "github.event.workflow_run.head_branch == 'main'",
+            source,
+        )
+        self.assertIn(
+            "types:\n      - completed\n    branches:\n      - main",
             source,
         )
         self.assertIn("github.event.workflow_run.head_sha", source)
@@ -150,6 +154,50 @@ class SystemTraceabilityRegistryCdTest(unittest.TestCase):
         self.assertIn("models/*.pt", dockerignore)
         self.assertIn("target: /app/models", model_compose)
         self.assertIn("read_only: true", model_compose)
+
+    def test_ai_registry_image_runtime_contract(self) -> None:
+        source = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("Verify AI image runtime contract", source)
+        self.assertIn("docker pull \"${IMAGE_REF}\"", source)
+        self.assertIn("org.opencontainers.image.revision", source)
+        self.assertIn(
+            "torch.__version__ == '2.12.1+cu130'",
+            source,
+        )
+        self.assertIn("torch.version.cuda == '13.0'", source)
+        self.assertIn("shutil.which('ffmpeg')", source)
+        self.assertIn("create_dji_live_source", source)
+        self.assertIn("DjiAndroidBridgeSource", source)
+        self.assertIn(
+            "pathlib.Path('/app/models').glob('*.pt')",
+            source,
+        )
+        self.assertIn("AI_IMAGE_RUNTIME_CONTRACT=PASS", source)
+
+    def test_registry_publish_verifies_complete_sha_release_set(self) -> None:
+        source = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("verify-release-set:", source)
+        self.assertIn("name: Verify immutable release set", source)
+        self.assertIn(
+            "needs:\n      - prepare\n      - publish",
+            source,
+        )
+        self.assertIn(
+            "Verify all component SHA tags exist",
+            source,
+        )
+        self.assertIn(
+            "for component in frontend backend ai; do",
+            source,
+        )
+        self.assertIn(
+            'REF="${IMAGE}:${component}-sha-${SHORT_SHA}"',
+            source,
+        )
+        self.assertIn("RELEASE_SET=PASS", source)
+
 
     def test_registry_images_are_immutable_sha_tags(self) -> None:
         source = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
