@@ -111,24 +111,24 @@ jobs:
             BASE_SHA="$(
               printf '%s' "${RUNS_JSON}" |
                 python -c '
-import json
-import os
-import sys
+          import json
+          import os
+          import sys
 
-payload = json.load(sys.stdin)
-current_id = os.environ.get("CURRENT_AUDIT_RUN_ID", "")
-source_sha = os.environ["SOURCE_SHA"]
+          payload = json.load(sys.stdin)
+          current_id = os.environ.get("CURRENT_AUDIT_RUN_ID", "")
+          source_sha = os.environ["SOURCE_SHA"]
 
-for run in payload.get("workflow_runs", []):
-    run_id = str(run.get("id", ""))
-    head_sha = str(run.get("head_sha", ""))
-    if run_id == current_id:
-        continue
-    if not head_sha or head_sha == source_sha:
-        continue
-    print(head_sha)
-    break
-'
+          for run in payload.get("workflow_runs", []):
+              run_id = str(run.get("id", ""))
+              head_sha = str(run.get("head_sha", ""))
+              if run_id == current_id:
+                  continue
+              if not head_sha or head_sha == source_sha:
+                  continue
+              print(head_sha)
+              break
+          '
             )"
 
             if [[ -z "${BASE_SHA}" ]] || \

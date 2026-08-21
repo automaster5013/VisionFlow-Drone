@@ -89,6 +89,11 @@ class SystemTraceabilityRegistryCdTest(unittest.TestCase):
         source = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
         planner = PLANNER.read_text(encoding="utf-8")
 
+        # Embedded Python must remain inside the YAML literal block.
+        self.assertNotIn("\nimport json\n", source)
+        self.assertNotIn("\nimport os\n", source)
+        self.assertNotIn("\nimport sys\n", source)
+
         self.assertIn("Plan container release", source)
         self.assertIn(
             "scripts/visionflow_container_release_plan.py",
