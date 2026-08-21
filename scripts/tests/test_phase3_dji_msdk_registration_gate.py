@@ -66,5 +66,23 @@ MSDK_REGISTER_APP_REQUESTED
         result = gate.evaluate_registration_log(output)
         self.assertEqual(result["status"], "FAIL")
 
+    def test_post_registration_stability_rejects_app_fatal(self) -> None:
+        output = """
+E/AndroidRuntime: FATAL EXCEPTION: main
+E/AndroidRuntime: Process: com.visionflow.dji.bridge, PID: 8193
+E/AndroidRuntime: java.lang.AbstractMethodError: missing callback
+"""
+        result = gate.evaluate_post_registration_stability(output)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertIn("FATAL EXCEPTION", result["reason"])
+
+    def test_post_registration_stability_ignores_other_app_crash(self) -> None:
+        output = """
+E/AndroidRuntime: FATAL EXCEPTION: main
+E/AndroidRuntime: Process: com.example.other, PID: 9999
+"""
+        result = gate.evaluate_post_registration_stability(output)
+        self.assertEqual(result["status"], "PASS")
+
 if __name__ == "__main__":
     unittest.main()

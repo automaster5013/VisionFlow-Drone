@@ -32,6 +32,16 @@ object DjiCameraStreamBridgeRuntime {
             ) {
                 handleAvailableCameras(availableCameraList)
             }
+
+            override fun onCameraStreamEnableUpdate(
+                cameraStreamEnableMap: MutableMap<ComponentIndexType, Boolean>,
+            ) {
+                Log.i(
+                    TAG,
+                    "MSDK_CAMERA_STREAM_ENABLE_UPDATE " +
+                        "cameras=${cameraStreamEnableMap.size}",
+                )
+            }
         }
 
     private val receiveStreamListener =

@@ -21,6 +21,10 @@ REQUIRED_MARKERS = (
     "MSDK_REGISTER_SUCCESS",
 )
 FAILURE_MARKER = "MSDK_REGISTER_FAILURE"
+POST_REGISTRATION_CRASH_MARKERS = (
+    "FATAL EXCEPTION",
+    "AbstractMethodError",
+)
 
 class GateError(RuntimeError):
     pass
@@ -90,6 +94,27 @@ def evaluate_registration_log(output: str) -> dict[str, object]:
         return {"status": "FAIL", "reason": "DJI MSDK registration markers are out of order", "missingMarkers": []}
     return {"status": "PASS", "reason": None, "missingMarkers": []}
 
+def evaluate_post_registration_stability(
+    output: str,
+    *,
+    app_id: str = APP_ID,
+) -> dict[str, object]:
+    if app_id not in output:
+        return {"status": "PASS", "reason": None}
+
+    for marker in POST_REGISTRATION_CRASH_MARKERS:
+        if marker in output:
+            return {
+                "status": "FAIL",
+                "reason": (
+                    "VisionFlow DJI Bridge crashed after MSDK registration: "
+                    + marker
+                ),
+            }
+
+    return {"status": "PASS", "reason": None}
+
+
 def wait_result(*, reason: str, require_device: bool) -> tuple[str, int]:
     if require_device:
         print(f"[FAIL] {reason}", file=sys.stderr)
@@ -110,11 +135,22 @@ def main() -> int:
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--timeout-seconds", type=float, default=20.0)
     parser.add_argument("--poll-interval", type=float, default=0.5)
+    parser.add_argument(
+        "--stability-seconds",
+        type=float,
+        default=3.0,
+        help=(
+            "Seconds to observe the Android process after "
+            "MSDK_REGISTER_SUCCESS before declaring PASS."
+        ),
+    )
     args = parser.parse_args()
     if args.timeout_seconds <= 0:
         parser.error("--timeout-seconds must be positive")
     if args.poll_interval <= 0:
         parser.error("--poll-interval must be positive")
+    if args.stability_seconds <= 0:
+        parser.error("--stability-seconds must be positive")
 
     root = Path(args.repo_root).resolve()
     android_root = root / "04_android" / "visionflow-dji-bridge"
@@ -209,15 +245,78 @@ def main() -> int:
         if evaluation["status"] != "PASS":
             missing = evaluation.get("missingMarkers") or []
             raise GateError("DJI MSDK registration timed out; missing=" + ",".join(str(item) for item in missing))
-        registration = {"status": "PASS", "requiredMarkers": list(REQUIRED_MARKERS), "timeoutSeconds": args.timeout_seconds}
         steps.append({"name": "DJI MSDK application registration", "status": "PASS", "exitCode": 0})
-        status = "PASS"
         print("[PASS] DJI MSDK application registration")
+
+        time.sleep(args.stability_seconds)
+        runtime_result = capture(
+            [
+                adb,
+                "-s",
+                selected_serial,
+                "logcat",
+                "-d",
+                "-v",
+                "time",
+                "AndroidRuntime:E",
+                "*:S",
+            ],
+            cwd=root,
+        )
+        if runtime_result.returncode != 0:
+            raise GateError(
+                "could not read AndroidRuntime logcat after registration"
+            )
+
+        stability = evaluate_post_registration_stability(
+            runtime_result.stdout,
+        )
+        if stability["status"] != "PASS":
+            raise GateError(str(stability.get("reason")))
+
+        pid_result = capture(
+            [
+                adb,
+                "-s",
+                selected_serial,
+                "shell",
+                "pidof",
+                APP_ID,
+            ],
+            cwd=root,
+        )
+        pids = pid_result.stdout.strip()
+        if pid_result.returncode != 0 or not pids:
+            raise GateError(
+                "VisionFlow DJI Bridge process is not alive after registration"
+            )
+
+        steps.append(
+            {
+                "name": "DJI MSDK post-registration stability",
+                "status": "PASS",
+                "exitCode": 0,
+            }
+        )
+        registration = {
+            "status": "PASS",
+            "requiredMarkers": list(REQUIRED_MARKERS),
+            "timeoutSeconds": args.timeout_seconds,
+            "stabilitySeconds": args.stability_seconds,
+            "postRegistrationStability": "PASS",
+            "processPids": pids.split(),
+        }
+        status = "PASS"
+        print(
+            "[PASS] DJI MSDK post-registration stability "
+            f"- {args.stability_seconds:.1f}s"
+        )
         print("")
         print("=== PHASE 3 DJI MSDK REGISTRATION GATE: PASS ===")
         print(f"device={selected_serial}")
         print(f"model={model or 'unknown'}")
         print("msdkRegistration=PASS")
+        print("postRegistrationStability=PASS")
         print("djiProductConnection=SKIPPED")
         print("physicalDJI=SKIPPED")
         print(f"evidence={summary_path}")
