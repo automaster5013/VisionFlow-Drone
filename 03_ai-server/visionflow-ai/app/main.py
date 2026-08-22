@@ -264,7 +264,7 @@ def main() -> None:
         max_frames=settings.max_frames,
         reporter=reporter,
         frame_hub=frame_hub,
-        snapshot_enabled=settings.snapshot_enabled,
+        snapshot_policy=settings.snapshot_policy,
         snapshot_jpeg_quality=settings.snapshot_jpeg_quality,
         event_min_consecutive_frames=(
             settings.event_min_consecutive_frames

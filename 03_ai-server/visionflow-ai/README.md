@@ -47,13 +47,16 @@ AI_SAVE_ANNOTATED_VIDEO=false
 
 AI_REPORT_EVENTS=true
 AI_BACKEND_EVENT_URL=http://localhost:8080/api/ai/events
-AI_SNAPSHOT_ENABLED=true
+AI_SNAPSHOT_POLICY=OFF
 
 AI_STREAM_ENABLED=true
 AI_STREAM_HOST=127.0.0.1
 AI_STREAM_PORT=8000
 AI_STREAM_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
+
+`AI_SNAPSHOT_POLICY`의 기본값은 `OFF`입니다. `MANUAL`도 자동 JPEG 저장을 하지 않고,
+`INCIDENT_ONLY`만 하드 이벤트 게이트를 통과한 탐지 이벤트에 한해 자동 저장합니다.
 
 `BROWSER_UPLOAD`에서는 실제 드론 ID, 영상 소스 ID와 세션 ID를 `/mobile-camera` 화면이 프레임마다 전달합니다. `AI_DRONE_ID`는 설정 유효성 확인을 위해 1 이상의 기존 값을 유지합니다.
 

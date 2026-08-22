@@ -19,6 +19,19 @@ class SmartphoneInputMode(StrEnum):
     BROWSER_UPLOAD = "BROWSER_UPLOAD"
 
 
+class SnapshotPolicy(StrEnum):
+    """Privacy policy for AI event snapshot persistence."""
+
+    OFF = "OFF"
+    MANUAL = "MANUAL"
+    INCIDENT_ONLY = "INCIDENT_ONLY"
+
+    @property
+    def allows_automatic_persistence(self) -> bool:
+        # Evaluated only after the pipeline hard event gate passes.
+        return self is SnapshotPolicy.INCIDENT_ONLY
+
+
 @dataclass(frozen=True, slots=True)
 class FramePacket:
     source_id: str

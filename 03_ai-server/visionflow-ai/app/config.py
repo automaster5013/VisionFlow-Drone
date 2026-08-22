@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from dotenv import load_dotenv
 
-from app.domain import SmartphoneInputMode, VideoSourceType
+from app.domain import SmartphoneInputMode, SnapshotPolicy, VideoSourceType
 
 
 def _read_bool(name: str, default: bool) -> bool:
@@ -88,7 +88,7 @@ class Settings:
     report_queue_capacity: int
     event_min_consecutive_frames: int
     event_cooldown_seconds: float
-    snapshot_enabled: bool
+    snapshot_policy: SnapshotPolicy
     snapshot_jpeg_quality: int
     stream_enabled: bool
     stream_host: str
@@ -237,7 +237,12 @@ class Settings:
                 "AI_EVENT_COOLDOWN_SECONDS",
                 10.0,
             ),
-            snapshot_enabled=_read_bool("AI_SNAPSHOT_ENABLED", True),
+            snapshot_policy=SnapshotPolicy(
+                os.getenv(
+                    "AI_SNAPSHOT_POLICY",
+                    SnapshotPolicy.OFF.value,
+                ).strip().upper()
+            ),
             snapshot_jpeg_quality=_read_int(
                 "AI_SNAPSHOT_JPEG_QUALITY",
                 85,

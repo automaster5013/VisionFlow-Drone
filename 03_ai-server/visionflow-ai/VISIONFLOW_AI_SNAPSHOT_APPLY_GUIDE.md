@@ -65,8 +65,12 @@ C:\VisionFlow-Drone\03_ai\visionflow-ai\README.md
 기존 `.env`에 추가합니다.
 
 ```dotenv
-AI_SNAPSHOT_ENABLED=true
+# 개인정보 보호 기본값
+AI_SNAPSHOT_POLICY=OFF
 AI_SNAPSHOT_JPEG_QUALITY=85
+
+# 통제된 탐지 이벤트에만 자동 스냅샷이 필요한 경우에만 사용합니다.
+# AI_SNAPSHOT_POLICY=INCIDENT_ONLY
 ```
 
 검증 및 실행:
@@ -123,12 +127,10 @@ http://localhost:3000/drones
 
 정상 조건:
 
-- 새 AI 이벤트 JSON의 `snapshotAvailable`이 `true`입니다.
-- `snapshotUrl`이 `/api/ai/events/{id}/snapshot` 형식입니다.
-- 백엔드 `data\ai-snapshots`에 `event-{id}.jpg`가 생성됩니다.
-- `/drones`의 AI 이벤트 카드에 썸네일이 보입니다.
-- 썸네일을 클릭하면 바운딩 박스가 포함된 장면이 확대됩니다.
-- 페이지를 새로고침해도 같은 과거 이미지가 다시 표시됩니다.
+- `AI_SNAPSHOT_POLICY=OFF` 또는 `MANUAL`이면 새 AI 이벤트의 `snapshotAvailable=false`가 정상이며 자동 JPEG 파일을 만들지 않습니다.
+- `AI_SNAPSHOT_POLICY=INCIDENT_ONLY`이면 하드 이벤트 게이트를 통과한 탐지 이벤트에 한해 `snapshotAvailable=true`가 될 수 있습니다.
+- 저장된 경우 `snapshotUrl`은 `/api/ai/events/{id}/snapshot` 형식이고 백엔드 `data\ai-snapshots`에 `event-{id}.jpg`가 생성됩니다.
+- 저장된 스냅샷은 `/drones`에서 확인할 수 있고, 불필요하면 즉시 `스냅샷 삭제`로 제거합니다.
 
 MySQL 확인:
 
@@ -146,7 +148,8 @@ LIMIT 10;
 
 ## 6. 문제 구분
 
-- 이벤트는 생기지만 `snapshotAvailable=false`: AI 워커를 패치한 뒤 재시작했는지와 `AI_SNAPSHOT_ENABLED=true`인지 확인합니다.
+- `OFF`/`MANUAL`에서 `snapshotAvailable=false`: 정상입니다. 자동 JPEG 저장이 비활성화된 상태입니다.
+- `INCIDENT_ONLY`인데 `snapshotAvailable=false`: AI 워커 재시작 여부, `AI_SNAPSHOT_POLICY=INCIDENT_ONLY`, 하드 이벤트 게이트 통과 여부를 확인합니다.
 - Python 로그에 스냅샷 업로드 `413`: Spring의 multipart 제한을 10MB 이상으로 조정합니다.
 - 이미지 API가 `404`: DB 메타데이터와 `data\ai-snapshots\event-{id}.jpg`가 함께 존재하는지 확인합니다.
 - 이미지 API가 `502`: Next.js의 `BACKEND_API_URL`과 Spring Boot `8080` 실행 상태를 확인합니다.

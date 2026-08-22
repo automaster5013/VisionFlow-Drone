@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from app.domain import FramePacket, InferencePacket
+from app.domain import FramePacket, InferencePacket, SnapshotPolicy
 from app.inference import YoloDetector
 from app.inference.phase3_frame import Phase3FrameAnalyzer
 from app.inference.phase3_observability import Phase3ConsoleObserver
@@ -40,7 +40,7 @@ class InferencePipeline:
         max_frames: int,
         reporter: EventReporter | None,
         frame_hub: AnnotatedFrameHub | None,
-        snapshot_enabled: bool,
+        snapshot_policy: SnapshotPolicy,
         snapshot_jpeg_quality: int,
         event_min_consecutive_frames: int,
         event_cooldown_seconds: float,
@@ -56,7 +56,7 @@ class InferencePipeline:
         self._max_frames = max_frames
         self._reporter = reporter
         self._frame_hub = frame_hub
-        self._snapshot_enabled = snapshot_enabled
+        self._snapshot_policy = snapshot_policy
         self._snapshot_jpeg_quality = snapshot_jpeg_quality
         self._event_min_consecutive_frames = event_min_consecutive_frames
         self._event_cooldown_seconds = event_cooldown_seconds
@@ -121,7 +121,7 @@ class InferencePipeline:
                         if self._reporter is not None:
                             snapshot_jpeg = (
                                 self._encode_snapshot(inference.annotated_image)
-                                if self._snapshot_enabled
+                                if self._snapshot_policy.allows_automatic_persistence
                                 else None
                             )
                             self._reporter.submit(
