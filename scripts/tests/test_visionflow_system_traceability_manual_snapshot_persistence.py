@@ -55,6 +55,15 @@ class SystemTraceabilityManualSnapshotPersistenceTest(unittest.TestCase):
         ):
             self.assertIn(token, route)
 
+        self.assertIn(
+            'Accept: "image/jpeg, application/json"',
+            route,
+        )
+        self.assertNotIn(
+            'Accept: "image/jpeg",',
+            route,
+        )
+
         self.assertIn("requireOperatorAuthentication", page)
         self.assertIn("requireOperatorPageAccess", page)
         self.assertIn('"OPERATOR"', page)

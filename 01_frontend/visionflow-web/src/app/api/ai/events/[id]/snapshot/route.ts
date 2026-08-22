@@ -34,7 +34,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       await withBackendOperatorAuth({
         method: "GET",
         headers: {
-          Accept: "image/jpeg",
+          Accept: "image/jpeg, application/json",
         },
         cache: "no-store",
       }),
