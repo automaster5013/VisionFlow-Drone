@@ -55,7 +55,22 @@ AI 내부 인증에 재사용하지 않습니다.
 - Backend의 `OperatorCredentialRegistry` 초기화 실패와 재시작 루프
 - Frontend의 AI 내부 키 누락으로 인한 반복 `502 Bad Gateway`
 - AI 서버와 Frontend 사이의 내부 키 불일치
+- AI 서버와 Backend 이벤트 수집 API 사이의 내부 키 불일치
+- 인증되지 않은 `/api/ai/events` 및 Phase 3 수집 쓰기 요청
 - 역할별 키 재사용으로 인한 권한 경계 혼동
+
+## AI 내부 서비스 인증 경계
+
+`VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED=true`이면 AI 서버가 Backend로 보내는
+다음 쓰기 요청은 `X-VisionFlow-AI-Key` 헤더가 필요합니다.
+
+- `POST /api/ai/events`
+- `PUT /api/ai/events/{id}/snapshot`
+- `POST /api/ai/phase3/events`
+- `PUT /api/ai/phase3/events/{eventKey}/depth`
+
+스냅숏 PUT은 향후 수동 개인정보 저장을 위해 인증된 OPERATOR/ADMIN 경로도
+허용하도록 설계하며, VIEWER는 저장 권한을 갖지 않습니다.
 
 ## 안전한 운영 원칙
 

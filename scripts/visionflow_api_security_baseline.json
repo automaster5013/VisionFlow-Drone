@@ -351,6 +351,38 @@
         "ROLES_VIEWER_OPERATOR_ADMIN"
       ],
       "reason": "비밀번호 변경은 인증된 VIEWER·OPERATOR·ADMIN 세션만 허용"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/events",
+      "allowedAccess": [
+        "ROLE_AI_INTERNAL"
+      ],
+      "reason": "AI 추론 이벤트 수집은 X-VisionFlow-AI-Key 내부 서비스 인증 전용"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/ai/events/{}/snapshot",
+      "allowedAccess": [
+        "ROLES_AI_INTERNAL_OPERATOR_ADMIN"
+      ],
+      "reason": "자동 스냅숏은 AI 내부 서비스, 수동 저장은 OPERATOR 또는 ADMIN만 허용"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/phase3/events",
+      "allowedAccess": [
+        "ROLE_AI_INTERNAL"
+      ],
+      "reason": "Phase 3 PPE 이벤트 수집은 AI 내부 서비스 인증 전용"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/ai/phase3/events/{}/depth",
+      "allowedAccess": [
+        "ROLE_AI_INTERNAL"
+      ],
+      "reason": "Phase 3 Depth enrichment 수집은 AI 내부 서비스 인증 전용"
     }
   ],
   "expectedBackendPublicWrites": [
@@ -378,26 +410,6 @@
       "method": "PATCH",
       "path": "/api/drones/{}/telemetry",
       "reason": "장치 텔레메트리 수집 진입점"
-    },
-    {
-      "method": "POST",
-      "path": "/api/ai/events",
-      "reason": "AI 서버 이벤트 수집 진입점"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/ai/events/{}/snapshot",
-      "reason": "AI 서버 스냅숏 업로드 진입점"
-    },
-    {
-      "method": "POST",
-      "path": "/api/ai/phase3/events",
-      "reason": "AI 서버 Phase 3 PPE 이벤트 수집 진입점"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/ai/phase3/events/{}/depth",
-      "reason": "AI 서버 Phase 3 Depth enrichment 수집 진입점"
     }
   ],
   "sensitiveBackendPublicReads": [

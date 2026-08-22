@@ -8,10 +8,13 @@ from app.reporting import SpringEventReporter
 
 
 def test_event_reporter_posts_payload() -> None:
+    internal_key = "stage2-test-ai-internal-key-0123456789abcdef"
     received_payloads: list[dict[str, object]] = []
     uploaded_snapshots: list[bytes] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["X-VisionFlow-AI-Key"] == internal_key
+
         if request.method == "POST":
             received_payloads.append(json.loads(request.content))
             return httpx.Response(201, json={"id": 1})
@@ -27,6 +30,7 @@ def test_event_reporter_posts_payload() -> None:
         timeout_seconds=1.0,
         max_retries=0,
         queue_capacity=10,
+        internal_api_key=internal_key,
         transport=httpx.MockTransport(handler),
     )
 

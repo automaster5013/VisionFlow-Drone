@@ -73,6 +73,7 @@ def create_optional_phase3_reporter(
         timeout_seconds=settings.report_timeout_seconds,
         max_retries=settings.report_max_retries,
         queue_capacity=settings.report_queue_capacity,
+        internal_api_key=settings.ai_internal_key,
     )
 
 
@@ -212,6 +213,7 @@ def main() -> None:
             timeout_seconds=settings.report_timeout_seconds,
             max_retries=settings.report_max_retries,
             queue_capacity=settings.report_queue_capacity,
+            internal_api_key=settings.ai_internal_key,
         )
         if settings.report_events
         else None

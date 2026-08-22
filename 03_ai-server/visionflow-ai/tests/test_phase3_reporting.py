@@ -8,9 +8,11 @@ from app.phase3_reporting import Phase3EventReporter
 
 
 def test_phase3_reporter_posts_event_and_updates_depth() -> None:
+    internal_key = "stage2-test-ai-internal-key-0123456789abcdef"
     requests: list[tuple[str, str, dict[str, object]]] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["X-VisionFlow-AI-Key"] == internal_key
         payload = json.loads(request.content)
         requests.append(
             (
@@ -26,6 +28,7 @@ def test_phase3_reporter_posts_event_and_updates_depth() -> None:
         timeout_seconds=1.0,
         max_retries=0,
         queue_capacity=10,
+        internal_api_key=internal_key,
         transport=httpx.MockTransport(handler),
     )
 
