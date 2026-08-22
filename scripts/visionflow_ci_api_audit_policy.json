@@ -2,13 +2,13 @@
   "schemaVersion": 2,
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 80,
-    "frontend": 81,
+    "backend": 81,
+    "frontend": 82,
     "ai": 11
   },
   "expectedTraceabilityCounts": {
-    "backend": 80,
-    "frontend": 81,
+    "backend": 81,
+    "frontend": 82,
     "ai": 11,
     "tables": 18,
     "entities": 17,
