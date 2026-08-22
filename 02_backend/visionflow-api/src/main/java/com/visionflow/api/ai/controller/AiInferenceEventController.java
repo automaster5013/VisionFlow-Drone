@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -60,9 +61,53 @@ public class AiInferenceEventController {
     )
     public AiInferenceEventResponse uploadSnapshot(
             @PathVariable Long eventId,
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication
     ) {
-        return eventService.attachSnapshot(eventId, file);
+        AiInferenceEventResponse stored =
+                eventService.attachSnapshot(eventId, file);
+        boolean manualOperator =
+                hasManualSnapshotAuthority(authentication);
+
+        auditLogService.record(
+                AuditAction.PRIVACY_SNAPSHOT_STORED,
+                AuditEntityType.AI_INFERENCE_EVENT,
+                eventId,
+                "AI 이벤트 개인정보 스냅샷 저장",
+                Map.of(
+                        "droneId", stored.droneId(),
+                        "frameIndex", stored.frameIndex(),
+                        "sourceId", stored.sourceId(),
+                        "sourceType", stored.sourceType().name(),
+                        "snapshotSizeBytes",
+                        stored.snapshotSizeBytes(),
+                        "storageMode",
+                        manualOperator
+                                ? "MANUAL_OPERATOR"
+                                : "AI_INTERNAL"
+                )
+        );
+
+        return stored;
+    }
+
+    private boolean hasManualSnapshotAuthority(
+            Authentication authentication
+    ) {
+        if (
+                authentication == null
+                        || !authentication.isAuthenticated()
+        ) {
+            return false;
+        }
+
+        return authentication.getAuthorities()
+                .stream()
+                .map(authority -> authority.getAuthority())
+                .anyMatch(authority ->
+                        "ROLE_OPERATOR".equals(authority)
+                                || "ROLE_ADMIN".equals(authority)
+                );
     }
 
     @GetMapping("/{eventId}/snapshot")

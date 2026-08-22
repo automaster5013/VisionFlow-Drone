@@ -178,7 +178,13 @@ function matchesSearch(event: EventOperationsItem, query: string): boolean {
   ].some((value) => value.toLocaleLowerCase("ko-KR").includes(normalized));
 }
 
-export function EventOperationsCenter() {
+interface EventOperationsCenterProps {
+  canManageSnapshots?: boolean;
+}
+
+export function EventOperationsCenter({
+  canManageSnapshots = false,
+}: EventOperationsCenterProps) {
   const [consolePreferences] = useState(() => readOperatorConsolePreferences());
   const [sources, setSources] = useState<EventOperationsSources>(EMPTY_SOURCES);
   const [sourceErrors, setSourceErrors] = useState<Partial<Record<SourceHealthKey, string>>>({});
@@ -641,8 +647,11 @@ export function EventOperationsCenter() {
 
       {selectedEvent && (
         <EventDetailDrawer
+          key={selectedEvent.key}
           event={selectedEvent}
           returnFocusElement={returnFocusElement}
+          canManageSnapshots={canManageSnapshots}
+          onSnapshotStored={() => void refresh(true)}
           onClose={closeDetail}
         />
       )}

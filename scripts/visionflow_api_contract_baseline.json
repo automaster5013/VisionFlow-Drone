@@ -4,7 +4,7 @@
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
     "backend": 81,
-    "frontend": 82,
+    "frontend": 83,
     "ai": 11
   },
   "frontendLocalOperations": [
@@ -292,11 +292,6 @@
       "method": "POST",
       "path": "/api/ai/events",
       "reason": "AI 서버의 내부 이벤트 저장 입력"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/ai/events/{}/snapshot",
-      "reason": "AI 서버의 내부 스냅숏 업로드"
     },
     {
       "method": "POST",

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { ManualSnapshotControl } from "@/components/events/manual-snapshot-control";
 import { formatKoreanDateTime } from "@/lib/date";
 import type {
   EventOperationsItem,
@@ -13,6 +14,8 @@ import type {
 interface EventDetailDrawerProps {
   event: EventOperationsItem;
   returnFocusElement: HTMLButtonElement | null;
+  canManageSnapshots: boolean;
+  onSnapshotStored: () => void;
   onClose: () => void;
 }
 
@@ -85,10 +88,16 @@ function buildReplayHref(event: EventOperationsItem): string | null {
 export function EventDetailDrawer({
   event,
   returnFocusElement,
+  canManageSnapshots,
+  onSnapshotStored,
   onClose,
 }: EventDetailDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [snapshotAvailable, setSnapshotAvailable] = useState(
+    event.snapshotAvailable,
+  );
+  const [snapshotVersion, setSnapshotVersion] = useState(0);
   const source = SOURCE_PRESENTATION[event.source];
   const severity = SEVERITY_PRESENTATION[event.severity];
   const replayHref = buildReplayHref(event);
@@ -200,7 +209,20 @@ export function EventDetailDrawer({
             </dl>
           </section>
 
-          {event.snapshotAvailable && event.snapshotEventId !== null && (
+          {canManageSnapshots &&
+            event.snapshotEventId !== null && (
+              <ManualSnapshotControl
+                eventId={event.snapshotEventId}
+                hasSnapshot={snapshotAvailable}
+                onStored={() => {
+                  setSnapshotAvailable(true);
+                  setSnapshotVersion(Date.now());
+                  onSnapshotStored();
+                }}
+              />
+            )}
+
+          {snapshotAvailable && event.snapshotEventId !== null && (
             <section className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/70">
               <div className="px-5 pt-5">
                 <h3 className="text-sm font-black text-white">탐지 증적</h3>
@@ -210,6 +232,7 @@ export function EventDetailDrawer({
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
+                key={snapshotVersion}
                 src={`/api/ai/events/${event.snapshotEventId}/snapshot`}
                 alt={`${event.title} 탐지 증적`}
                 className="mt-4 aspect-video w-full bg-black object-contain"

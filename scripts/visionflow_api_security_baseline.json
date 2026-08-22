@@ -4,7 +4,7 @@
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
     "backend": 81,
-    "frontend": 82,
+    "frontend": 83,
     "ai": 11
   },
   "requiredBackendAccess": [
