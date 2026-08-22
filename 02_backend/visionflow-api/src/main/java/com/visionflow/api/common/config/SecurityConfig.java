@@ -164,6 +164,11 @@ public class SecurityConfig {
                            .permitAll()
                            .requestMatchers(
                                     HttpMethod.DELETE,
+                                    "/api/ai/events/*/snapshot"
+                            )
+                            .hasAnyRole("OPERATOR", "ADMIN")
+                           .requestMatchers(
+                                    HttpMethod.DELETE,
                                     "/api/drones/*"
                             )
                             .hasRole("ADMIN")

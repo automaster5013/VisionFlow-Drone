@@ -92,6 +92,20 @@ public class AiSnapshotStorageService {
         return resource;
     }
 
+    public boolean delete(String fileName) {
+        Path path = resolveSafely(fileName);
+
+        try {
+            return Files.deleteIfExists(path);
+        } catch (IOException error) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "AI 이벤트 스냅샷 삭제에 실패했습니다.",
+                    error
+            );
+        }
+    }
+
     private byte[] validateAndRead(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw badRequest("비어 있는 스냅샷 파일은 저장할 수 없습니다.");

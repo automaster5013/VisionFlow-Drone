@@ -3,8 +3,8 @@
   "project": "visionflow",
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 80,
-    "frontend": 81,
+    "backend": 81,
+    "frontend": 82,
     "ai": 11
   },
   "requiredBackendAccess": [
@@ -127,6 +127,14 @@
         "ROLES_VIEWER_OPERATOR_ADMIN"
       ],
       "reason": "AI 이벤트 스냅숏은 인증된 역할만 조회"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/ai/events/{}/snapshot",
+      "allowedAccess": [
+        "ROLES_OPERATOR_ADMIN"
+      ],
+      "reason": "개인영상 스냅숏 삭제는 OPERATOR 또는 ADMIN만 허용"
     },
     {
       "method": "GET",

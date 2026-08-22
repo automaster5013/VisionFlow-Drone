@@ -2,6 +2,7 @@ package com.visionflow.api.ai.service;
 
 import com.visionflow.api.ai.domain.AiDetection;
 import com.visionflow.api.ai.domain.AiInferenceEvent;
+import com.visionflow.api.ai.domain.VideoSourceType;
 import com.visionflow.api.ai.dto.AiDetectionRequest;
 import com.visionflow.api.ai.dto.AiInferenceEventCreateRequest;
 import com.visionflow.api.ai.dto.AiInferenceEventResponse;
@@ -134,6 +135,45 @@ public class AiInferenceEventService {
         );
     }
 
+    @Transactional
+    public SnapshotDeletionResult deleteSnapshot(Long eventId) {
+        AiInferenceEvent event = findEventForUpdate(eventId);
+        String fileName = event.getSnapshotFileName();
+
+        if (fileName == null) {
+            return new SnapshotDeletionResult(
+                    event.getId(),
+                    event.getDroneId(),
+                    event.getFrameIndex(),
+                    event.getSourceType(),
+                    false,
+                    false,
+                    0L
+            );
+        }
+
+        long snapshotSizeBytes = event.getSnapshotSizeBytes() == null
+                ? 0L
+                : event.getSnapshotSizeBytes();
+        boolean physicalFileDeleted = snapshotStorageService.delete(fileName);
+
+        event.clearSnapshot();
+        event = eventRepository.saveAndFlush(event);
+
+        AiInferenceEventResponse response = toResponse(event);
+        realtimePublisher.publish(response);
+
+        return new SnapshotDeletionResult(
+                event.getId(),
+                event.getDroneId(),
+                event.getFrameIndex(),
+                event.getSourceType(),
+                true,
+                physicalFileDeleted,
+                snapshotSizeBytes
+        );
+    }
+
     private AiInferenceEvent findEvent(Long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -225,6 +265,17 @@ public class AiInferenceEventService {
             String contentType,
             long sizeBytes,
             Resource resource
+    ) {
+    }
+
+    public record SnapshotDeletionResult(
+            Long eventId,
+            Long droneId,
+            Long frameIndex,
+            VideoSourceType sourceType,
+            boolean snapshotExisted,
+            boolean physicalFileDeleted,
+            long snapshotSizeBytes
     ) {
     }
 }

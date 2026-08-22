@@ -372,6 +372,9 @@ def ai_snapshot_concurrency_policy_drift(root: Path) -> list[str]:
             "findEventForUpdate(eventId)",
             "snapshotStorageService.store(eventId, file)",
             "event.attachSnapshot(",
+            "public SnapshotDeletionResult deleteSnapshot(",
+            "snapshotStorageService.delete(fileName)",
+            "event.clearSnapshot()",
             "eventRepository.saveAndFlush(event)",
             "findEvent(eventId)",
         ],
@@ -410,6 +413,10 @@ def ai_snapshot_concurrency_policy_drift(root: Path) -> list[str]:
             else ""
         )
         lock_at = attach_source.find("findEventForUpdate(eventId)")
+        if lock_at < 0:
+            drift.append(
+                "usage:service:attachSnapshot-uses-event-lock"
+            )
         store_at = attach_source.find(
             "snapshotStorageService.store(eventId, file)"
         )
@@ -424,13 +431,17 @@ def ai_snapshot_concurrency_policy_drift(root: Path) -> list[str]:
                 "ordering:service:attachSnapshot-lock-before-storage-and-write"
             )
 
-        helper_at = service.find(
-            "private AiInferenceEvent findEvent(",
+        delete_at = service.find(
+            "public SnapshotDeletionResult deleteSnapshot(",
             read_at + 1,
         )
+        helper_at = service.find(
+            "private AiInferenceEvent findEvent(",
+            delete_at + 1,
+        )
         read_source = (
-            service[read_at:helper_at]
-            if 0 <= read_at < helper_at
+            service[read_at:delete_at]
+            if 0 <= read_at < delete_at
             else ""
         )
         if (
@@ -438,6 +449,34 @@ def ai_snapshot_concurrency_policy_drift(root: Path) -> list[str]:
             or "findEventForUpdate(eventId)" in read_source
         ):
             drift.append("usage:service:snapshot-read-remains-non-locking")
+
+        delete_source = (
+            service[delete_at:helper_at]
+            if 0 <= delete_at < helper_at
+            else ""
+        )
+        delete_lock_at = delete_source.find("findEventForUpdate(eventId)")
+        if delete_lock_at < 0:
+            drift.append(
+                "usage:service:deleteSnapshot-uses-event-lock"
+            )
+        physical_delete_at = delete_source.find(
+            "snapshotStorageService.delete(fileName)"
+        )
+        clear_at = delete_source.find("event.clearSnapshot()")
+        delete_persistence_at = delete_source.find(
+            "eventRepository.saveAndFlush(event)"
+        )
+        if not (
+            0 <= delete_lock_at
+            < physical_delete_at
+            < clear_at
+            < delete_persistence_at
+        ):
+            drift.append(
+                "ordering:service:"
+                "deleteSnapshot-lock-before-storage-delete-and-write"
+            )
 
         locked_helper_at = service.find(
             "private AiInferenceEvent findEventForUpdate("

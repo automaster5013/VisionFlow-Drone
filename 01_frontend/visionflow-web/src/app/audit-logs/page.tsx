@@ -85,6 +85,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
     OPERATOR_LOGOUT: "운영자 로그아웃",
     OPERATOR_SESSION_REVOKED: "운영자 세션 강제 종료",
     OPERATOR_SESSIONS_BULK_REVOKED: "운영자 다른 세션 일괄 종료",
+    PRIVACY_SNAPSHOT_DELETED: "개인영상 스냅샷 삭제",
     AUDIT_LOG_EXPORTED: "감사 로그 CSV 내보내기",
     AUDIT_LOG_RETENTION_EXECUTED: "감사 로그 보존 정리",
 };
@@ -97,6 +98,7 @@ const ENTITY_LABELS: Record<AuditEntityType, string> = {
     GEOFENCE: "지오펜스",
     INCIDENT: "Incident",
     DEMO_SCENARIO: "시연 시나리오",
+    AI_INFERENCE_EVENT: "AI 추론 이벤트",
     OPERATOR_SESSION: "운영자 세션",
     AUDIT_LOG: "감사 로그",
 };

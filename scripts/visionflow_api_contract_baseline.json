@@ -3,8 +3,8 @@
   "project": "visionflow",
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 80,
-    "frontend": 81,
+    "backend": 81,
+    "frontend": 82,
     "ai": 11
   },
   "frontendLocalOperations": [

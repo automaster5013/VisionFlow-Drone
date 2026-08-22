@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 80,
-    "frontend": 81,
+    "backend": 81,
+    "frontend": 82,
     "ai": 11,
     "tables": 18,
     "entities": 17,
@@ -442,13 +442,13 @@
     {
       "key": "ai-event-alert",
       "title": "AI 이벤트·경보 영속화",
-      "description": "AI 추론 결과·탐지·스냅숏 메타데이터·경보와 Incident 연계 및 Phase 3 PPE·Depth 이벤트 영속화",
+      "description": "AI 추론 결과·탐지·스냅숏 메타데이터·개인영상 삭제 감사·경보와 Incident 연계 및 Phase 3 PPE·Depth 이벤트 영속화",
       "backendPatterns": [
-        "^(GET|POST|PUT|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$",
+        "^(GET|POST|PUT|PATCH|DELETE) /api/ai/(?:alerts|events)(?:/.*)?$",
         "^(GET|POST|PUT) /api/ai/phase3/events(?:/.*)?$"
       ],
       "frontendPatterns": [
-        "^(GET|PATCH) /api/ai/(?:alerts|events)(?:/.*)?$",
+        "^(GET|PATCH|DELETE) /api/ai/(?:alerts|events)(?:/.*)?$",
         "^GET /api/ai/phase3/events(?:/.*)?$"
       ],
       "aiPatterns": [],
@@ -459,7 +459,8 @@
         "ai_alert",
         "drone",
         "incident",
-        "incident_action_history"
+        "incident_action_history",
+        "audit_log"
       ],
       "runtimeStores": [
         "AI snapshot filesystem"

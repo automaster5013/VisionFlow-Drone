@@ -51,6 +51,8 @@ export function AiInferenceEventPanel({
   const [refreshing, setRefreshing] = useState(false);
   const [previewEvent, setPreviewEvent] =
     useState<AiInferenceEvent | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const droneNameById = useMemo(
     () => new Map(drones.map((drone) => [drone.id, drone.name])),
@@ -87,6 +89,63 @@ export function AiInferenceEventPanel({
     }
   }
 
+  async function handleDeleteSnapshot(event: AiInferenceEvent) {
+    if (deletingEventId !== null || !event.snapshotAvailable) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "이 저장 스냅샷을 영구 삭제합니다. 탐지 이벤트와 bbox 메타데이터는 유지됩니다. 계속하시겠습니까?",
+      )
+    ) {
+      return;
+    }
+
+    setDeletingEventId(event.id);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch(`/api/ai/events/${event.id}/snapshot`, {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        let message = `스냅샷 삭제 실패: HTTP ${response.status}`;
+
+        try {
+          const payload: unknown = await response.json();
+          if (
+            typeof payload === "object" &&
+            payload !== null &&
+            "message" in payload &&
+            typeof payload.message === "string"
+          ) {
+            message = payload.message;
+          }
+        } catch {
+          // JSON 오류 본문이 아니면 HTTP 상태 메시지를 유지합니다.
+        }
+
+        throw new Error(message);
+      }
+
+      if (previewEvent?.id === event.id) {
+        setPreviewEvent(null);
+      }
+      await onRefresh();
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "스냅샷을 삭제하지 못했습니다.",
+      );
+    } finally {
+      setDeletingEventId(null);
+    }
+  }
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -107,6 +166,9 @@ export function AiInferenceEventPanel({
 
           <p className="mt-1 text-sm text-slate-500">
             저장된 최근 분석 결과와 STOMP 실시간 이벤트를 함께 표시합니다.
+          </p>
+          <p className="mt-1 text-xs font-medium text-rose-700">
+            저장 스냅샷은 개인영상정보를 포함할 수 있습니다. 불필요한 이미지는 즉시 삭제하세요.
           </p>
         </div>
 
@@ -153,6 +215,12 @@ export function AiInferenceEventPanel({
         </div>
       )}
 
+      {deleteError && (
+        <div className="mt-4 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+          {deleteError}
+        </div>
+      )}
+
       {displayedEvents.length === 0 ? (
         <div className="mt-4 rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">
           {selectedOnly && selectedDroneId !== null
@@ -187,13 +255,26 @@ export function AiInferenceEventPanel({
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-sm font-bold text-violet-700">
-                    {event.detectionCount}개 탐지
+                <div className="flex flex-col items-end gap-2 text-right">
+                  <div>
+                    <div className="text-sm font-bold text-violet-700">
+                      {event.detectionCount}개 탐지
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      추론 {formatNumber(event.inferenceMs, 2)}ms
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-500">
-                    추론 {formatNumber(event.inferenceMs, 2)}ms
-                  </div>
+
+                  {event.snapshotAvailable && (
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteSnapshot(event)}
+                      disabled={deletingEventId !== null}
+                      className="rounded-lg border border-rose-300 bg-white px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-wait disabled:opacity-50"
+                    >
+                      {deletingEventId === event.id ? "삭제 중" : "스냅샷 삭제"}
+                    </button>
+                  )}
                 </div>
               </div>
 
