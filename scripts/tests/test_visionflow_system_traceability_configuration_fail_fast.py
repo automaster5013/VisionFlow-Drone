@@ -127,7 +127,7 @@ class SystemTraceabilityConfigurationFailFastTest(unittest.TestCase):
             "${VISIONFLOW_AI_INTERNAL_KEY:?"
             "VISIONFLOW_AI_INTERNAL_KEY is required}"
         )
-        self.assertEqual(2, compose.count(ai_contract))
+        self.assertEqual(3, compose.count(ai_contract))
 
     def test_example_documents_required_security_variables(self) -> None:
         example = (ROOT / ".env.example").read_text(encoding="utf-8")
