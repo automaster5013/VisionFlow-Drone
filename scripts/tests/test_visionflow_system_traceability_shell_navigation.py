@@ -79,6 +79,11 @@ class SystemTraceabilityShellNavigationTest(unittest.TestCase):
             "closeButtonRef.current?.focus()",
             'aria-current={active ? "page" : undefined}',
             'className="lg:hidden"',
+            'import { createPortal } from "react-dom";',
+            "createPortal(",
+            "document.body",
+            "vf-mobile-navigation-overlay",
+            "z-[1000]",
         ):
             self.assertIn(contract, source)
 

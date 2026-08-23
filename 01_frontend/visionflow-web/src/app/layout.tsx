@@ -9,7 +9,6 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { OperatorAccessProvider } from "@/components/security/operator-access-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
-import { buildThemeBootstrapScript } from "@/lib/theme";
 import { getOperatorAuthMode } from "@/lib/server/operator-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
 
@@ -39,10 +38,8 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       <body className="vf-app-body min-h-screen antialiased">
         <Script
           id="visionflow-theme-bootstrap"
+          src="/visionflow-theme-bootstrap.js"
           strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: buildThemeBootstrapScript(),
-          }}
         />
 
         <ThemeProvider>

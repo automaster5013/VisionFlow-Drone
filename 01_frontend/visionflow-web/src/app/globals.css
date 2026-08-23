@@ -497,6 +497,26 @@ textarea {
 .vf-command-record--warning { box-shadow: inset 3px 0 var(--vf-warning); }
 .vf-command-empty { border: 1px dashed var(--vf-border-strong); background: var(--vf-bg-elevated) !important; }
 
+/* Phase 1C: live fleet map and mission-control surfaces. */
+.vf-fleet-control { isolation: isolate; }
+.vf-fleet-map-title { border-left: 3px solid var(--vf-accent); padding-left: 12px; }
+.vf-fleet-map-shell { border-color: var(--vf-border) !important; background: var(--vf-surface-2) !important; box-shadow: var(--vf-shadow); }
+.vf-fleet-map-shell::after { position: absolute; inset: 0 0 auto; z-index: 490; height: 2px; background: linear-gradient(90deg, transparent, var(--vf-accent), transparent); content: ""; pointer-events: none; }
+.vf-fleet-roster { border-color: var(--vf-border) !important; background: color-mix(in srgb, var(--vf-surface-1) 94%, transparent) !important; box-shadow: 0 16px 36px color-mix(in srgb, var(--vf-bg) 55%, transparent); }
+.vf-fleet-card { box-shadow: inset 3px 0 color-mix(in srgb, var(--vf-accent) 48%, var(--vf-border)); }
+.vf-fleet-card:focus-visible { outline-offset: -3px; }
+html[data-resolved-theme="dark"] .vf-fleet-card.bg-blue-50 {
+  border-color: var(--vf-accent) !important;
+  background: color-mix(in srgb, var(--vf-surface-2) 88%, var(--vf-accent)) !important;
+}
+.vf-fleet-command-header { border-color: var(--vf-border) !important; background: linear-gradient(120deg, color-mix(in srgb, var(--vf-accent) 8%, transparent), transparent 42%), var(--vf-surface-1) !important; box-shadow: var(--vf-shadow); }
+.vf-fleet-metric { border-color: var(--vf-border) !important; background: var(--vf-surface-1) !important; font-variant-numeric: tabular-nums; }
+.vf-fleet-connection-strip {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-2) !important;
+  color: var(--vf-text-secondary) !important;
+}
+
 /* Phase 1A bridge: existing light utility surfaces remain usable in night mode
    while individual pages are progressively migrated to command components. */
 html[data-resolved-theme="dark"] :is(.bg-white, .bg-slate-50, .bg-slate-100) {

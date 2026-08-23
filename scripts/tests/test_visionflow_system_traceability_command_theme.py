@@ -19,8 +19,8 @@ class SystemTraceabilityCommandThemeTest(unittest.TestCase):
 
         for contract in (
             'import Script from "next/script";',
-            "buildThemeBootstrapScript",
             'id="visionflow-theme-bootstrap"',
+            'src="/visionflow-theme-bootstrap.js"',
             'strategy="beforeInteractive"',
             "suppressHydrationWarning",
             'data-theme="system"',
@@ -29,6 +29,22 @@ class SystemTraceabilityCommandThemeTest(unittest.TestCase):
             'className="vf-app-body min-h-screen antialiased"',
         ):
             self.assertIn(contract, source)
+
+        bootstrap = read_text(
+            "01_frontend/visionflow-web/public/visionflow-theme-bootstrap.js"
+        )
+        for contract in (
+            "visionflow.theme-preference.v1",
+            'new Set(["system", "light", "dark"])',
+            "window.localStorage.getItem(storageKey)",
+            'window.matchMedia("(prefers-color-scheme: dark)")',
+            "root.dataset.theme",
+            "root.dataset.resolvedTheme",
+            "root.style.colorScheme",
+        ):
+            self.assertIn(contract, bootstrap)
+
+        self.assertNotIn("dangerouslySetInnerHTML", source)
 
     def test_theme_store_is_hydration_safe_and_browser_local(self) -> None:
         source = read_text(

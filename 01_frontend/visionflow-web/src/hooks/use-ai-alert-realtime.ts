@@ -78,7 +78,7 @@ export function useAiAlertRealtime(
                     return;
                 }
 
-                console.error("AI 경보 WebSocket 오류:", event);
+                console.warn("AI 경보 WebSocket 연결 대기:", event);
                 setConnectionStatus("ERROR");
             },
 

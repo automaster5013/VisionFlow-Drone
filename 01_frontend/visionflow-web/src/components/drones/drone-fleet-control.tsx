@@ -389,8 +389,8 @@ export function DroneFleetControl({
   );
 
   return (
-    <section className="space-y-6">
-      <div className="mb-2 flex flex-wrap items-end justify-between gap-3 px-1">
+    <section className="vf-fleet-control space-y-6">
+      <div className="vf-fleet-map-title mb-2 flex flex-wrap items-end justify-between gap-3 px-1">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">
             Live Operations Map
@@ -404,7 +404,7 @@ export function DroneFleetControl({
         </p>
       </div>
 
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
+      <section className="vf-fleet-map-shell relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
         <div className="pointer-events-none absolute right-4 top-4 z-[500] hidden items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-2.5 py-1.5 text-[11px] font-black text-slate-700 shadow-lg backdrop-blur xl:flex">
           <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
           Live fleet map
@@ -422,7 +422,7 @@ export function DroneFleetControl({
           </button>
         )}
         {!fleetPanelCollapsed && (
-          <aside className="max-h-[620px] space-y-3 overflow-y-auto border-b border-slate-200 bg-white p-3 shadow-sm xl:absolute xl:left-16 xl:top-4 xl:z-[500] xl:w-[300px] xl:rounded-2xl xl:border xl:bg-white/95 xl:backdrop-blur">
+          <aside className="vf-fleet-roster max-h-[620px] space-y-3 overflow-y-auto border-b border-slate-200 bg-white p-3 shadow-sm xl:absolute xl:left-16 xl:top-4 xl:z-[500] xl:w-[300px] xl:rounded-2xl xl:border xl:bg-white/95 xl:backdrop-blur">
             <div className="flex items-start justify-between gap-3 px-1 pb-1">
               <div>
                 <h2 className="text-sm font-black text-slate-950">함대 기체</h2>
@@ -460,7 +460,7 @@ export function DroneFleetControl({
                 <button
                   type="button"
                   onClick={() => handleSelectDrone(drone.id)}
-                  className={`w-full rounded-xl border p-4 text-left transition ${
+                  className={`vf-fleet-card w-full rounded-xl border p-4 text-left transition ${
                     clearance?.workOrderId !== null &&
                     clearance?.workOrderId !== undefined
                       ? "pb-14"
@@ -571,7 +571,7 @@ export function DroneFleetControl({
         </div>
       </section>
 
-      <header className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <header className="vf-fleet-command-header overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-5 p-5 sm:p-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">
@@ -651,7 +651,7 @@ export function DroneFleetControl({
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 text-xs font-medium text-slate-600 sm:px-6">
+        <div className="vf-fleet-connection-strip flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 text-xs font-medium text-slate-600 sm:px-6">
           <span>
             WebSocket · <strong className="text-slate-900">{connectionStatus}</strong>
           </span>
@@ -1046,7 +1046,7 @@ function FleetOverviewMetric({
   }[tone];
 
   return (
-    <div className={`min-w-0 border-slate-200 px-5 py-4 lg:border-r lg:last:border-r-0 ${toneClassName}`}>
+    <div className={`vf-fleet-metric min-w-0 border-slate-200 px-5 py-4 lg:border-r lg:last:border-r-0 ${toneClassName}`}>
       <div className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
         {label}
       </div>

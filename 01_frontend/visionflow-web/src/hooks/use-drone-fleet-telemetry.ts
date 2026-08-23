@@ -768,7 +768,7 @@ export function useDroneFleetTelemetry(
           return;
         }
 
-        console.error("WebSocket 오류:", event);
+        console.warn("WebSocket 연결 대기:", event);
         setConnectionStatus("ERROR");
       },
 
