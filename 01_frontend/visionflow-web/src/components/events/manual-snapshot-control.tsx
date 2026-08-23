@@ -112,7 +112,7 @@ export function ManualSnapshotControl({
   return (
     <section
       data-manual-snapshot-control
-      className="rounded-2xl border border-cyan-700/60 bg-cyan-950/20 p-5"
+      className="vf-event-snapshot rounded-2xl border border-cyan-700/60 bg-cyan-950/20 p-5"
     >
       <h3 className="text-sm font-black text-cyan-100">
         개인정보 스냅샷 수동 저장
@@ -130,7 +130,7 @@ export function ManualSnapshotControl({
         </p>
       )}
 
-      <form onSubmit={submit} className="mt-4 space-y-3">
+      <form onSubmit={submit} className="vf-event-snapshot__form mt-4 space-y-3">
         <label className="block">
           <span className="text-xs font-black text-slate-300">
             JPEG 파일 선택
@@ -146,11 +146,11 @@ export function ManualSnapshotControl({
               setState("idle");
               setMessage("");
             }}
-            className="mt-2 block w-full rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 text-xs text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-3 file:py-2 file:text-xs file:font-black file:text-slate-950"
+            className="vf-event-snapshot__input mt-2 block w-full rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 text-xs text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-3 file:py-2 file:text-xs file:font-black file:text-slate-950"
           />
         </label>
 
-        <label className="flex items-start gap-2 rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-3 text-xs leading-5 text-slate-300">
+        <label className="vf-event-snapshot__confirm flex items-start gap-2 rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-3 text-xs leading-5 text-slate-300">
           <input
             type="checkbox"
             checked={confirmed}
@@ -169,7 +169,7 @@ export function ManualSnapshotControl({
           disabled={
             state === "uploading" || selectedFile === null || !confirmed
           }
-          className="w-full rounded-xl bg-cyan-400 px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="vf-event-snapshot__submit w-full rounded-xl bg-cyan-400 px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {state === "uploading"
             ? "수동 저장 중..."
