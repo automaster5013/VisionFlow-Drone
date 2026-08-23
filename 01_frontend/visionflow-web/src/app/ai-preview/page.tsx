@@ -25,7 +25,7 @@ export default async function AiPreviewPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 text-slate-900">
+    <main className="vf-camera-preview-page min-h-screen p-4 text-slate-900 sm:p-6">
       <div className="mx-auto max-w-6xl">
         <MobileAiInferencePreview allowPopout={false} />
       </div>

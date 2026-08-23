@@ -503,6 +503,14 @@ textarea {
 .vf-fleet-map-shell { border-color: var(--vf-border) !important; background: var(--vf-surface-2) !important; box-shadow: var(--vf-shadow); }
 .vf-fleet-map-shell::after { position: absolute; inset: 0 0 auto; z-index: 490; height: 2px; background: linear-gradient(90deg, transparent, var(--vf-accent), transparent); content: ""; pointer-events: none; }
 .vf-fleet-roster { border-color: var(--vf-border) !important; background: color-mix(in srgb, var(--vf-surface-1) 94%, transparent) !important; box-shadow: 0 16px 36px color-mix(in srgb, var(--vf-bg) 55%, transparent); }
+.vf-fleet-map-shell > button[aria-expanded="false"] {
+  border-color: var(--vf-border) !important;
+  background: color-mix(in srgb, var(--vf-surface-1) 94%, transparent) !important;
+  color: var(--vf-text-primary) !important;
+}
+.vf-fleet-map-shell > button[aria-expanded="false"]:hover {
+  background: var(--vf-surface-1) !important;
+}
 .vf-fleet-card { box-shadow: inset 3px 0 color-mix(in srgb, var(--vf-accent) 48%, var(--vf-border)); }
 .vf-fleet-card:focus-visible { outline-offset: -3px; }
 html[data-resolved-theme="dark"] .vf-fleet-card.bg-blue-50 {
@@ -515,6 +523,188 @@ html[data-resolved-theme="dark"] .vf-fleet-card.bg-blue-50 {
   border-color: var(--vf-border) !important;
   background: var(--vf-surface-2) !important;
   color: var(--vf-text-secondary) !important;
+}
+
+/* Phase 1D: camera input and AI inference command surfaces. */
+.vf-camera-command {
+  isolation: isolate;
+  background: transparent;
+  color: var(--vf-text-primary);
+}
+
+.vf-camera-command__hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--vf-border);
+  background:
+    linear-gradient(115deg, color-mix(in srgb, var(--vf-accent) 12%, transparent), transparent 48%),
+    var(--vf-surface-1);
+  color: var(--vf-text-primary);
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-camera-command__hero::after {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--vf-accent), #8b7cf6, transparent 72%);
+  content: "";
+}
+
+.vf-camera-command__link,
+.vf-ai-preview__reconnect {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-bg-elevated);
+  color: var(--vf-text-secondary) !important;
+}
+
+.vf-camera-command__link:hover,
+.vf-ai-preview__reconnect:hover {
+  border-color: var(--vf-accent) !important;
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-camera-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--vf-border);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.vf-camera-state--live {
+  border-color: color-mix(in srgb, var(--vf-success) 52%, var(--vf-border));
+  background: color-mix(in srgb, var(--vf-success) 13%, var(--vf-surface-1));
+  color: var(--vf-success);
+}
+
+.vf-camera-state--idle {
+  background: var(--vf-surface-2);
+  color: var(--vf-text-muted);
+}
+
+.vf-camera-command__config,
+.vf-camera-command__preview,
+.vf-camera-command__status,
+.vf-ai-preview {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-1) !important;
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-camera-field {
+  min-width: 0;
+  color: var(--vf-text-secondary) !important;
+}
+
+.vf-camera-input {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-bg-elevated) !important;
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-camera-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.vf-camera-range {
+  accent-color: var(--vf-accent);
+}
+
+.vf-camera-command__inline-action {
+  color: var(--vf-accent-strong);
+}
+
+.vf-camera-command__preview > header,
+.vf-ai-preview__header {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-bg-elevated);
+}
+
+.vf-camera-command__preview-grid {
+  align-items: stretch;
+}
+
+.vf-camera-command__metric,
+.vf-ai-preview__metric {
+  border: 1px solid var(--vf-border);
+  background: var(--vf-bg-elevated) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.vf-ai-preview__metric {
+  min-width: 0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.vf-camera-command__notice {
+  background: var(--vf-surface-2) !important;
+}
+
+.vf-camera-command__notice--danger {
+  border-color: color-mix(in srgb, var(--vf-danger) 52%, var(--vf-border)) !important;
+  color: var(--vf-danger) !important;
+}
+
+.vf-camera-command__notice--info {
+  border-color: color-mix(in srgb, var(--vf-accent) 48%, var(--vf-border)) !important;
+  color: var(--vf-accent-strong) !important;
+}
+
+.vf-camera-command__notice--warning,
+.vf-ai-preview__mismatch {
+  border-color: color-mix(in srgb, var(--vf-warning) 52%, var(--vf-border)) !important;
+  background: color-mix(in srgb, var(--vf-warning) 10%, var(--vf-surface-1)) !important;
+  color: var(--vf-warning) !important;
+}
+
+.vf-camera-command__start,
+.vf-ai-preview__popout {
+  background: #0878d1;
+  color: #fff;
+}
+
+.vf-camera-command__stop {
+  border: 1px solid var(--vf-border-strong);
+  background: var(--vf-sidebar-bg);
+  color: var(--vf-sidebar-text);
+}
+
+.vf-ai-preview__state {
+  border: 1px solid var(--vf-border);
+}
+
+.vf-ai-preview__state--live {
+  border-color: color-mix(in srgb, var(--vf-danger) 52%, var(--vf-border));
+  background: color-mix(in srgb, var(--vf-danger) 12%, var(--vf-surface-1));
+  color: var(--vf-danger);
+}
+
+.vf-ai-preview__state--offline {
+  background: var(--vf-surface-2);
+  color: var(--vf-text-muted);
+}
+
+.vf-ai-preview__viewport {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vf-accent) 22%, transparent);
+}
+
+.vf-ai-preview__metrics {
+  border-top: 1px solid var(--vf-border);
+  background: var(--vf-surface-2) !important;
+}
+
+.vf-camera-preview-page {
+  background:
+    radial-gradient(circle at 80% 0%, var(--vf-main-glow), transparent 28rem),
+    var(--vf-bg);
+  color: var(--vf-text-primary);
 }
 
 /* Phase 1A bridge: existing light utility surfaces remain usable in night mode

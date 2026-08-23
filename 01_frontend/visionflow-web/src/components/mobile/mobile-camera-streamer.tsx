@@ -160,6 +160,7 @@ export function MobileCameraStreamer() {
   const [maxWidth, setMaxWidth] = useState(960);
   const [jpegQuality, setJpegQuality] = useState(0.75);
   const [running, setRunning] = useState(false);
+  const [sessionId, setSessionId] = useState("");
   const [uploadedFrames, setUploadedFrames] = useState(0);
   const [uploadedBytes, setUploadedBytes] = useState(0);
   const [lastUploadedAt, setLastUploadedAt] = useState<Date | null>(null);
@@ -505,7 +506,9 @@ export function MobileCameraStreamer() {
         { once: true },
       );
 
-      sessionIdRef.current = createSessionId();
+      const nextSessionId = createSessionId();
+      sessionIdRef.current = nextSessionId;
+      setSessionId(nextSessionId);
       setUploadedFrames(0);
       setUploadedBytes(0);
       setLastUploadedAt(null);
@@ -532,32 +535,43 @@ export function MobileCameraStreamer() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-900">
-      <div className="mx-auto max-w-7xl space-y-4">
-        <header className="rounded-2xl bg-slate-950 p-5 text-white shadow-lg">
+    <main className="vf-camera-command min-h-screen px-4 py-6 text-slate-900">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <header className="vf-camera-command__hero rounded-2xl p-5 shadow-lg sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <div className="text-xs font-bold tracking-[0.2em] text-violet-400">
-                VISIONFLOW AI CAMERA
+              <div className="vf-command-eyebrow">
+                Vision Input Command
               </div>
-              <h1 className="mt-2 text-2xl font-bold">
-                브라우저 가상 드론 카메라
+              <h1 className="mt-2 text-2xl font-black sm:text-3xl">
+                AI 카메라 입력 관제
               </h1>
-              <p className="mt-2 text-sm text-slate-300">
-                카메라 프레임을 JPEG로 변환해 YOLO AI 서버로 전송합니다.
+              <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                브라우저 카메라 프레임을 JPEG로 변환해 YOLO AI 서버로
+                전송하고, 원본과 추론 영상을 동시에 확인합니다.
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span
+                className={`vf-camera-state ${
+                  running
+                    ? "vf-camera-state--live"
+                    : "vf-camera-state--idle"
+                }`}
+              >
+                <span aria-hidden="true">●</span>
+                {running ? "FRAME UPLINK" : "INPUT STANDBY"}
+              </span>
               <Link
                 href="/mobile-control"
-                className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-semibold"
+                className="vf-camera-command__link rounded-lg border px-3 py-2 text-sm font-semibold"
               >
                 텔레메트리
               </Link>
               <Link
                 href="/drones"
-                className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-semibold"
+                className="vf-camera-command__link rounded-lg border px-3 py-2 text-sm font-semibold"
               >
                 관제 화면
               </Link>
@@ -565,8 +579,23 @@ export function MobileCameraStreamer() {
           </div>
         </header>
 
-        <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
-          <label className="text-sm font-semibold text-slate-700">
+        <section className="vf-camera-command__config grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-4 sm:col-span-2">
+            <div>
+              <div className="vf-command-eyebrow">Capture Configuration</div>
+              <h2 className="mt-1 text-lg font-black text-slate-900">
+                영상 입력 설정
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                전송 중에는 입력 계약을 고정해 프레임 일관성을 유지합니다.
+              </p>
+            </div>
+            <span className="text-xs font-bold text-slate-500">
+              JPEG · POST /api/ai/ingest/frame
+            </span>
+          </div>
+
+          <label className="vf-camera-field text-sm font-semibold text-slate-700">
             연결할 드론
             <select
               value={selectedDroneId ?? ""}
@@ -574,7 +603,7 @@ export function MobileCameraStreamer() {
                 setSelectedDroneId(Number(event.target.value))
               }
               disabled={loadingDrones || running}
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
+              className="vf-camera-input mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
             >
               <option value="" disabled>
                 {loadingDrones ? "드론 조회 중" : "드론 선택"}
@@ -587,7 +616,7 @@ export function MobileCameraStreamer() {
             </select>
           </label>
 
-          <label className="text-sm font-semibold text-slate-700">
+          <label className="vf-camera-field text-sm font-semibold text-slate-700">
             영상 소스 ID
             <input
               type="text"
@@ -595,17 +624,17 @@ export function MobileCameraStreamer() {
               maxLength={100}
               disabled={running}
               onChange={(event) => setSourceId(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-3"
+              className="vf-camera-input mt-2 w-full rounded-lg border border-slate-300 px-3 py-3"
             />
           </label>
 
-          <label className="text-sm font-semibold text-slate-700">
+          <label className="vf-camera-field text-sm font-semibold text-slate-700">
             카메라 장치
             <select
               value={selectedCameraId}
               disabled={running}
               onChange={(event) => setSelectedCameraId(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
+              className="vf-camera-input mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
             >
               <option value="">브라우저 기본 카메라</option>
               {cameraDevices.map((device) => (
@@ -618,13 +647,13 @@ export function MobileCameraStreamer() {
               type="button"
               disabled={running}
               onClick={() => void refreshCameraDevices()}
-              className="mt-2 text-xs font-semibold text-violet-700 disabled:opacity-40"
+              className="vf-camera-command__inline-action mt-2 text-xs font-bold disabled:opacity-40"
             >
               카메라 목록 다시 검색
             </button>
           </label>
 
-          <label className="text-sm font-semibold text-slate-700">
+          <label className="vf-camera-field text-sm font-semibold text-slate-700">
             기본 카메라 방향
             <select
               value={facingMode}
@@ -632,14 +661,14 @@ export function MobileCameraStreamer() {
               onChange={(event) =>
                 setFacingMode(event.target.value as FacingMode)
               }
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
+              className="vf-camera-input mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
             >
               <option value="user">전면 카메라 · 노트북 권장</option>
               <option value="environment">후면 카메라 · 스마트폰 권장</option>
             </select>
           </label>
 
-          <label className="text-sm font-semibold text-slate-700">
+          <label className="vf-camera-field text-sm font-semibold text-slate-700">
             전송 속도
             <select
               value={framesPerSecond}
@@ -647,7 +676,7 @@ export function MobileCameraStreamer() {
               onChange={(event) =>
                 setFramesPerSecond(Number(event.target.value))
               }
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
+              className="vf-camera-input mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
             >
               <option value={2}>2 FPS · 저부하</option>
               <option value={5}>5 FPS · 권장</option>
@@ -655,13 +684,13 @@ export function MobileCameraStreamer() {
             </select>
           </label>
 
-          <label className="text-sm font-semibold text-slate-700">
+          <label className="vf-camera-field text-sm font-semibold text-slate-700">
             최대 영상 폭
             <select
               value={maxWidth}
               disabled={running}
               onChange={(event) => setMaxWidth(Number(event.target.value))}
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
+              className="vf-camera-input mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3"
             >
               <option value={640}>640px</option>
               <option value={960}>960px · 권장</option>
@@ -669,7 +698,7 @@ export function MobileCameraStreamer() {
             </select>
           </label>
 
-          <label className="text-sm font-semibold text-slate-700">
+          <label className="vf-camera-field text-sm font-semibold text-slate-700">
             JPEG 품질 {Math.round(jpegQuality * 100)}%
             <input
               type="range"
@@ -679,13 +708,13 @@ export function MobileCameraStreamer() {
               value={jpegQuality}
               disabled={running}
               onChange={(event) => setJpegQuality(Number(event.target.value))}
-              className="mt-4 w-full"
+              className="vf-camera-range mt-4 w-full"
             />
           </label>
         </section>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="vf-camera-command__preview-grid grid gap-4 xl:grid-cols-2">
+          <section className="vf-camera-command__preview overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <header className="border-b border-slate-200 p-4">
               <h2 className="font-bold text-slate-900">원본 카메라 영상</h2>
               <p className="mt-1 text-xs text-slate-500">
@@ -711,7 +740,18 @@ export function MobileCameraStreamer() {
           <MobileAiInferencePreview expectedDroneId={selectedDroneId} />
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <section className="vf-camera-command__status rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="vf-command-eyebrow">Transmission Telemetry</div>
+              <h2 className="mt-1 text-lg font-black text-slate-900">
+                프레임 전송 상태
+              </h2>
+            </div>
+            <span className="text-xs font-bold text-slate-500">
+              세션 {sessionId || "대기"}
+            </span>
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatusValue label="화면 전송" value={`${uploadedFrames} 프레임`} />
             <StatusValue label="전송량" value={`${uploadedMegabytes} MB`} />
@@ -731,34 +771,34 @@ export function MobileCameraStreamer() {
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+            <div className="vf-camera-command__notice vf-camera-command__notice--danger mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">
               {error}
             </div>
           )}
 
           {activeCameraLabel && (
-            <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+            <div className="vf-camera-command__notice vf-camera-command__notice--info mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
               현재 카메라: <strong>{activeCameraLabel}</strong>
               {activeCameraResolution && ` · ${activeCameraResolution}`}
             </div>
           )}
 
           {cameraWarning && (
-            <div className="mt-4 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+            <div className="vf-camera-command__notice vf-camera-command__notice--warning mt-4 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
               {cameraWarning}
             </div>
           )}
 
-          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          <div className="vf-camera-command__notice vf-camera-command__notice--warning mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
             스마트폰 카메라는 신뢰된 HTTPS가 필요합니다. 현재는 PC의 localhost에서 먼저 검증하세요.
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="vf-camera-command__actions mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => void startCamera()}
               disabled={running || selectedDroneId === null}
-              className="rounded-xl bg-violet-600 px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="vf-camera-command__start rounded-xl px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               카메라 전송 시작
             </button>
@@ -766,7 +806,7 @@ export function MobileCameraStreamer() {
               type="button"
               onClick={stopCamera}
               disabled={!running}
-              className="rounded-xl bg-slate-900 px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="vf-camera-command__stop rounded-xl px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               전송 중지
             </button>
@@ -779,7 +819,7 @@ export function MobileCameraStreamer() {
 
 function StatusValue({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-50 p-3 text-center">
+    <div className="vf-camera-command__metric rounded-xl bg-slate-50 p-3 text-center">
       <div className="text-xs font-semibold text-slate-500">{label}</div>
       <div className="mt-1 font-bold text-slate-900">{value}</div>
     </div>
