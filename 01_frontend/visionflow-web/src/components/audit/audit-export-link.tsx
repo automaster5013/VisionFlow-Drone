@@ -16,14 +16,14 @@ export function AuditExportLink({ href }: AuditExportLinkProps) {
       : "감사 로그를 내보내려면 인증된 운영자 키가 필요합니다."
     : "운영자 권한 상태를 확인할 수 없습니다.";
   const className =
-    "rounded-lg border border-emerald-300 bg-emerald-50 px-5 py-2 font-semibold text-emerald-800";
+    "vf-audit-command__export rounded-lg border border-emerald-300 bg-emerald-50 px-5 py-2 font-semibold text-emerald-800";
 
   if (!canExportAudit) {
     return (
       <span
         aria-disabled="true"
         title={deniedReason}
-        className={`${className} cursor-not-allowed opacity-50`}
+        className={`${className} vf-audit-command__export--disabled cursor-not-allowed opacity-50`}
       >
         CSV 내보내기
       </span>
@@ -31,7 +31,11 @@ export function AuditExportLink({ href }: AuditExportLinkProps) {
   }
 
   return (
-    <a href={href} download className={`${className} hover:bg-emerald-100`}>
+    <a
+      href={href}
+      download
+      className={`${className} vf-audit-command__export--enabled hover:bg-emerald-100`}
+    >
       CSV 내보내기
     </a>
   );
