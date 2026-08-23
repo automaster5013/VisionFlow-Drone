@@ -474,6 +474,29 @@ textarea {
   line-height: 1.5;
 }
 
+/* Phase 1B: stable mission-control hierarchy for the operator dashboard. */
+.vf-operations-dashboard { isolation: isolate; }
+.vf-operations-dashboard__hero {
+  position: relative; overflow: hidden; border: 1px solid var(--vf-border);
+  border-radius: 10px;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--vf-accent) 12%, transparent), transparent 48%), var(--vf-surface-1);
+  padding: 20px; box-shadow: var(--vf-shadow);
+}
+.vf-operations-dashboard__hero::after {
+  position: absolute; top: 0; right: 0; width: 34%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--vf-accent)); content: "";
+}
+.vf-command-panel { border-color: var(--vf-border) !important; background: var(--vf-surface-1) !important; box-shadow: var(--vf-shadow); }
+.vf-command-panel--accent { background: linear-gradient(135deg, color-mix(in srgb, var(--vf-accent) 7%, transparent), transparent 38%), var(--vf-surface-1) !important; }
+.vf-command-panel :is(input, select) { border-color: var(--vf-border); background: var(--vf-bg-elevated); color: var(--vf-text-primary); }
+.vf-command-metric { position: relative; overflow: hidden; border-color: var(--vf-border) !important; background: var(--vf-surface-1) !important; box-shadow: 0 10px 28px color-mix(in srgb, var(--vf-bg) 62%, transparent); }
+.vf-command-metric::before { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--vf-accent); content: ""; }
+.vf-command-counter { border: 1px solid var(--vf-border); background: var(--vf-surface-2) !important; font-variant-numeric: tabular-nums; }
+.vf-command-record { border-color: var(--vf-border) !important; background: var(--vf-bg-elevated) !important; box-shadow: inset 3px 0 var(--vf-accent); }
+.vf-command-record--ai { box-shadow: inset 3px 0 #8b7cf6; }
+.vf-command-record--warning { box-shadow: inset 3px 0 var(--vf-warning); }
+.vf-command-empty { border: 1px dashed var(--vf-border-strong); background: var(--vf-bg-elevated) !important; }
+
 /* Phase 1A bridge: existing light utility surfaces remain usable in night mode
    while individual pages are progressively migrated to command components. */
 html[data-resolved-theme="dark"] :is(.bg-white, .bg-slate-50, .bg-slate-100) {
@@ -511,6 +534,17 @@ html[data-resolved-theme="dark"] :is(
   .text-slate-400
 ) {
   color: var(--vf-text-secondary) !important;
+}
+
+html[data-resolved-theme="dark"] :is(
+  .text-red-900,
+  .text-red-800,
+  .text-red-700,
+  .text-rose-900,
+  .text-rose-800,
+  .text-rose-700
+) {
+  color: var(--vf-danger) !important;
 }
 
 html[data-resolved-theme="dark"] :is(
