@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -7,6 +8,32 @@ import pytest
 import app.config as config_module
 from app.config import Settings
 from app.domain import SnapshotPolicy
+
+
+def _repository_root() -> Path:
+    configured = os.environ.get("VISIONFLOW_REPOSITORY_ROOT", "").strip()
+    candidates = (
+        [Path(configured).resolve()]
+        if configured
+        else list(Path(__file__).resolve().parents)
+    )
+    for candidate in candidates:
+        if (
+            (candidate / "compose.yaml").is_file()
+            and (
+                candidate
+                / "03_ai-server"
+                / "visionflow-ai"
+                / "app"
+                / "pipeline.py"
+            ).is_file()
+        ):
+            return candidate
+
+    pytest.fail(
+        "VisionFlow repository root is unavailable; set "
+        "VISIONFLOW_REPOSITORY_ROOT or mount the repository root."
+    )
 
 
 def _prepare_settings_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -66,7 +93,7 @@ def test_only_incident_policy_allows_automatic_persistence() -> None:
 
 
 def test_runtime_and_active_docs_are_fail_closed() -> None:
-    repository_root = Path(__file__).resolve().parents[3]
+    repository_root = _repository_root()
     pipeline_source = (repository_root / "03_ai-server/visionflow-ai/app/pipeline.py").read_text(
         encoding="utf-8"
     )

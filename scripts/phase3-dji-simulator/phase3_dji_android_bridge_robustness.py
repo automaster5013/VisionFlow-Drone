@@ -112,6 +112,7 @@ def main() -> int:
         )
 
         mount = f"{ai_root}:/workspace:ro"
+        repository_mount = f"{root}:/repo:ro"
         steps.append(
             run_step(
                 label="H265 / reconnect / backpressure robustness",
@@ -123,6 +124,10 @@ def main() -> int:
                     "PYTHONPATH=/workspace",
                     "-e",
                     "VISIONFLOW_REQUIRE_FFMPEG_TEST=1",
+                    "-e",
+                    "VISIONFLOW_REPOSITORY_ROOT=/repo",
+                    "-v",
+                    repository_mount,
                     "-v",
                     mount,
                     "-w",
@@ -151,6 +156,10 @@ def main() -> int:
                     "PYTHONPATH=/workspace",
                     "-e",
                     "VISIONFLOW_REQUIRE_FFMPEG_TEST=1",
+                    "-e",
+                    "VISIONFLOW_REPOSITORY_ROOT=/repo",
+                    "-v",
+                    repository_mount,
                     "-v",
                     mount,
                     "-w",

@@ -15,6 +15,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 OPERATOR_KEY_HEADER = "X-VisionFlow-Operator-Key"
+AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
 SOURCE_DEVICE_ID = "phase3-dji-simulator"
 PHASE3_SOURCE_ID = "phase3-dji-simulator"
 
@@ -62,6 +63,7 @@ def json_request(
     url: str,
     *,
     operator_key: str | None = None,
+    ai_internal_key: str | None = None,
     body: dict[str, Any] | None = None,
     expected: tuple[int, ...] = (200,),
     timeout: float = 8.0,
@@ -71,6 +73,8 @@ def json_request(
 
     if operator_key:
         headers[OPERATOR_KEY_HEADER] = operator_key
+    if ai_internal_key:
+        headers[AI_INTERNAL_KEY_HEADER] = ai_internal_key
     if body is not None:
         headers["Content-Type"] = "application/json"
         data = json.dumps(body, separators=(",", ":")).encode("utf-8")
@@ -142,6 +146,20 @@ def require_operator_key(root: Path, env_file: Path) -> str:
             f"환경변수 또는 {env_file}를 확인하세요."
         )
     return operator_key
+
+
+def require_ai_internal_key(root: Path, env_file: Path) -> str:
+    file_values = load_env_file(env_file)
+    ai_internal_key = (
+        os.environ.get("VISIONFLOW_AI_INTERNAL_KEY", "").strip()
+        or file_values.get("VISIONFLOW_AI_INTERNAL_KEY", "").strip()
+    )
+    if len(ai_internal_key) < 32:
+        raise SimulatorError(
+            "VISIONFLOW_AI_INTERNAL_KEY를 찾을 수 없거나 길이가 너무 짧습니다. "
+            f"환경변수 또는 {env_file}를 확인하세요."
+        )
+    return ai_internal_key
 
 
 def print_step(name: str, detail: str = "") -> None:
@@ -243,11 +261,13 @@ def create_phase3_event(
     session_id: str,
     run_id: str,
     frame_index: int,
+    ai_internal_key: str,
 ) -> dict[str, Any]:
     event_key = f"phase3-dji-sim-{run_id}"
     payload = json_request(
         "POST",
         f"{backend_url}/api/ai/phase3/events",
+        ai_internal_key=ai_internal_key,
         body={
             "eventKey": event_key,
             "sourceId": PHASE3_SOURCE_ID,
@@ -273,10 +293,12 @@ def create_phase3_event(
 def enrich_phase3_event(
     backend_url: str,
     event_key: str,
+    ai_internal_key: str,
 ) -> dict[str, Any]:
     payload = json_request(
         "PUT",
         f"{backend_url}/api/ai/phase3/events/{event_key}/depth",
+        ai_internal_key=ai_internal_key,
         body={
             "estimatedDepthM": 8.5,
             "sceneQ33M": 5.0,
@@ -453,6 +475,7 @@ def main() -> int:
 
     try:
         operator_key = require_operator_key(root, env_file)
+        ai_internal_key = require_ai_internal_key(root, env_file)
 
         print_step("Backend health")
         health = json_request("GET", f"{backend_url}/actuator/health")
@@ -536,6 +559,7 @@ def main() -> int:
             session_id,
             run_id,
             frame_index=max(args.samples - 1, 0),
+            ai_internal_key=ai_internal_key,
         )
         event_key = str(find_value(event, "eventKey"))
         print_pass(
@@ -544,7 +568,11 @@ def main() -> int:
         )
 
         print_step("Phase 3 depth enrichment")
-        enriched = enrich_phase3_event(backend_url, event_key)
+        enriched = enrich_phase3_event(
+            backend_url,
+            event_key,
+            ai_internal_key,
+        )
         print_pass(
             "Phase 3 depth enrichment",
             f"depthBucket={find_value(enriched, 'depthBucket')}",
@@ -614,6 +642,7 @@ def main() -> int:
             "phase3EventId": verified_event.get("id"),
             "depthBucket": find_value(enriched, "depthBucket"),
             "estimatedDepthM": find_value(enriched, "estimatedDepthM"),
+            "aiInternalAuthentication": True,
             "completedAt": utc_instant(),
         }
         evidence_path = write_evidence(

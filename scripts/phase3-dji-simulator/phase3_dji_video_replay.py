@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -198,6 +199,19 @@ def parse_summary(log_text: str) -> dict[str, int] | None:
     }
 
 
+def missing_event_diagnosis(summary: dict[str, int]) -> str:
+    if summary["triggers"] > 0:
+        return (
+            "PPE trigger가 발생했지만 Backend Phase3 Event가 생성되지 "
+            "않았습니다. Replay 컨테이너의 Backend 보고/인증 경로와 "
+            "로그를 확인하세요."
+        )
+    return (
+        "PPE trigger가 없어 Backend Phase3 Event가 생성되지 않았습니다. "
+        "사람/PPE trigger가 있는 다른 MP4로 재검증하세요."
+    )
+
+
 def docker_replay_command(
     *,
     root: Path,
@@ -301,6 +315,8 @@ def docker_replay_command(
         f"AI_MAX_FRAMES={max_frames}",
         "-e",
         "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED=false",
+        "-e",
+        "VISIONFLOW_AI_INTERNAL_KEY",
         image,
         "python",
         "-m",
@@ -312,6 +328,7 @@ def run_replay(
     command: list[str],
     *,
     timeout: float,
+    environment: dict[str, str] | None = None,
 ) -> tuple[int, str]:
     try:
         result = subprocess.run(
@@ -321,6 +338,7 @@ def run_replay(
             encoding="utf-8",
             errors="replace",
             timeout=timeout,
+            env=environment,
         )
     except subprocess.TimeoutExpired as error:
         output = (
@@ -433,6 +451,7 @@ def main() -> int:
 
     try:
         operator_key = sim.require_operator_key(root, env_file)
+        ai_internal_key = sim.require_ai_internal_key(root, env_file)
 
         print("[STEP] Replay preflight")
         inspect_runtime(
@@ -497,6 +516,10 @@ def main() -> int:
         return_code, log_text = run_replay(
             command,
             timeout=args.timeout,
+            environment={
+                **os.environ,
+                "VISIONFLOW_AI_INTERNAL_KEY": ai_internal_key,
+            },
         )
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text(
@@ -551,15 +574,14 @@ def main() -> int:
                 "sessionId": session_id,
                 "sessionCreatedByReplay": created_session,
                 "phase3Summary": summary,
+                "aiInternalAuthentication": True,
                 "log": str(log_path),
                 "completedAt": utc_now(),
             }
             write_json(evidence_path, evidence)
             raise ReplayError(
-                "Replay 영상에서는 Backend Phase3 Event가 생성되지 않았습니다. "
-                "파이프라인 frame/PPE 처리는 PASS이며, 사람/PPE trigger가 있는 "
-                "다른 MP4로 재검증이 필요합니다. "
-                f"evidence={evidence_path}"
+                f"{missing_event_diagnosis(summary)} "
+                f"evidence={evidence_path}; log={log_path}"
             )
 
         invalid_source_types = [
@@ -599,6 +621,7 @@ def main() -> int:
             "backendEventIds": event_ids,
             "backendEventKeys": event_keys,
             "depthEnrichedEventCount": len(depth_enriched),
+            "aiInternalAuthentication": True,
             "log": str(log_path),
             "completedAt": utc_now(),
         }

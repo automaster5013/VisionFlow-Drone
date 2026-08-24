@@ -36,6 +36,7 @@ def raw_request(
     url: str,
     *,
     operator_key: str | None = None,
+    ai_internal_key: str | None = None,
     body: dict[str, Any] | None = None,
     timeout: float = 8.0,
 ) -> tuple[int, Any]:
@@ -44,6 +45,8 @@ def raw_request(
 
     if operator_key:
         headers[sim.OPERATOR_KEY_HEADER] = operator_key
+    if ai_internal_key:
+        headers[sim.AI_INTERNAL_KEY_HEADER] = ai_internal_key
     if body is not None:
         headers["Content-Type"] = "application/json"
         data = json.dumps(body, separators=(",", ":")).encode("utf-8")
@@ -169,12 +172,14 @@ def test_invalid_coordinate_pair(
 
 def test_missing_depth_event(
     backend_url: str,
+    ai_internal_key: str,
     results: list[dict[str, Any]],
 ) -> None:
     missing_key = f"phase3-regression-missing-{uuid.uuid4().hex}"
     status, _ = raw_request(
         "PUT",
         f"{backend_url}/api/ai/phase3/events/{missing_key}/depth",
+        ai_internal_key=ai_internal_key,
         body={
             "estimatedDepthM": 8.5,
             "sceneQ33M": 5.0,
@@ -196,6 +201,7 @@ def test_duplicate_event_idempotency(
     drone_id: int,
     session_id: str,
     run_id: str,
+    ai_internal_key: str,
     results: list[dict[str, Any]],
 ) -> tuple[str, Any]:
     duplicate_run_id = f"reg-{run_id}"
@@ -205,6 +211,7 @@ def test_duplicate_event_idempotency(
         session_id,
         duplicate_run_id,
         frame_index=100,
+        ai_internal_key=ai_internal_key,
     )
     second = sim.create_phase3_event(
         backend_url,
@@ -212,6 +219,7 @@ def test_duplicate_event_idempotency(
         session_id,
         duplicate_run_id,
         frame_index=101,
+        ai_internal_key=ai_internal_key,
     )
 
     first_id = sim.find_value(first, "id")
@@ -326,6 +334,7 @@ def main() -> int:
 
     try:
         operator_key = sim.require_operator_key(root, env_file)
+        ai_internal_key = sim.require_ai_internal_key(root, env_file)
 
         print("[STEP] Regression preflight")
         health = sim.json_request(
@@ -380,6 +389,7 @@ def main() -> int:
         )
         test_missing_depth_event(
             backend_url,
+            ai_internal_key,
             results,
         )
 
@@ -389,6 +399,7 @@ def main() -> int:
             args.drone_id,
             session_id,
             run_id,
+            ai_internal_key,
             results,
         )
         test_duplicate_readback(
@@ -439,6 +450,7 @@ def main() -> int:
             "tests": results,
             "passed": sum(1 for item in results if item["status"] == "PASS"),
             "failed": sum(1 for item in results if item["status"] != "PASS"),
+            "aiInternalAuthentication": True,
             "completedAt": utc_instant(),
         }
         evidence_path = write_evidence(
