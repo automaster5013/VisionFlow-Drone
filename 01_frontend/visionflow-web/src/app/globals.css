@@ -1426,6 +1426,246 @@ html[data-resolved-theme="dark"] .vf-audit-command__error {
   }
 }
 
+
+/* Phase 1H: AI model command surfaces. */
+.vf-model-command {
+  --vf-model-accent: color-mix(in srgb, var(--vf-accent) 68%, #8b7cf6);
+  padding-bottom: 32px;
+}
+
+.vf-model-command__hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 168px;
+  border: 1px solid var(--vf-border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  background:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--vf-model-accent) 16%, transparent), transparent 19rem),
+    var(--vf-surface-1);
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-model-command__hero::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--vf-accent), #23c8e8, #8b7cf6, transparent 86%);
+  content: "";
+}
+
+.vf-model-command__eyebrow {
+  color: var(--vf-accent-strong) !important;
+}
+
+.vf-model-command__title {
+  color: var(--vf-text-primary) !important;
+  letter-spacing: -0.035em;
+}
+
+.vf-model-command__lede {
+  color: var(--vf-text-secondary) !important;
+  line-height: 1.7;
+}
+
+.vf-model-command__hero-actions {
+  justify-content: flex-end;
+}
+
+.vf-model-command__auto-refresh,
+.vf-model-command__refresh {
+  min-height: 42px;
+}
+
+.vf-model-command__auto-refresh {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-2) !important;
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-model-command__auto-refresh input {
+  accent-color: var(--vf-accent);
+}
+
+.vf-model-command__refresh {
+  background: var(--vf-accent) !important;
+  color: #ffffff !important;
+}
+
+.vf-model-command__refresh:hover {
+  background: var(--vf-accent-strong) !important;
+}
+
+.vf-model-command__summary {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--vf-model-accent) 44%, #1f3556);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(92, 124, 250, 0.24), transparent 27rem),
+    linear-gradient(135deg, #071d32, #09172b 54%, #171638) !important;
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-model-command__summary::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, #40c9ff, #8b7cf6, transparent 84%);
+  content: "";
+}
+
+.vf-model-command__metric {
+  min-height: 154px;
+  border-color: rgba(157, 205, 226, 0.22) !important;
+  background: rgba(14, 46, 65, 0.68) !important;
+  color: #f3fbff;
+  backdrop-filter: blur(10px);
+}
+
+.vf-model-command__health,
+.vf-model-command__source-chip {
+  backdrop-filter: blur(8px);
+}
+
+.vf-model-command__health--normal,
+.vf-model-command__source-chip--healthy {
+  border-color: rgba(111, 230, 187, 0.5) !important;
+  background: rgba(40, 164, 125, 0.18) !important;
+  color: #b8f5dc !important;
+}
+
+.vf-model-command__health--warning,
+.vf-model-command__source-chip--degraded {
+  border-color: rgba(242, 196, 82, 0.56) !important;
+  background: rgba(165, 104, 12, 0.2) !important;
+  color: #ffe39a !important;
+}
+
+.vf-model-command__health--critical {
+  border-color: rgba(251, 113, 133, 0.56) !important;
+  background: rgba(190, 24, 93, 0.2) !important;
+  color: #fecdd3 !important;
+}
+
+.vf-model-command__timestamp,
+.vf-model-command__summary-message {
+  color: #b9ced9 !important;
+}
+
+.vf-model-command__panel,
+.vf-model-command__loading {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-1) !important;
+  color: var(--vf-text-primary) !important;
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-model-command__panel-title {
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-model-command__panel-description,
+.vf-model-command__loading {
+  color: var(--vf-text-secondary) !important;
+}
+
+.vf-model-command__detail,
+.vf-model-command__runtime-note {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-2) !important;
+}
+
+.vf-model-command__detail-label {
+  color: var(--vf-text-secondary) !important;
+}
+
+.vf-model-command__detail-value,
+.vf-model-command__runtime-note {
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-model-command__runtime-note .text-slate-500 {
+  color: var(--vf-text-secondary) !important;
+}
+
+.vf-model-command__class-chip {
+  background: var(--vf-surface-3) !important;
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-model-command__link {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-2) !important;
+  color: var(--vf-text-primary) !important;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.vf-model-command__link:hover {
+  border-color: color-mix(in srgb, var(--vf-accent) 56%, var(--vf-border)) !important;
+  background: var(--vf-surface-3) !important;
+  transform: translateY(-1px);
+}
+
+.vf-model-command__link--primary {
+  border-color: var(--vf-accent) !important;
+  background: var(--vf-accent) !important;
+  color: #ffffff !important;
+}
+
+.vf-model-command__link--primary:hover {
+  background: var(--vf-accent-strong) !important;
+}
+
+@media (max-width: 767px) {
+  .vf-model-command {
+    padding-bottom: 20px;
+  }
+
+  .vf-model-command__hero {
+    min-height: 0;
+    align-items: flex-start;
+    padding: 20px 18px;
+  }
+
+  .vf-model-command__title {
+    font-size: 28px !important;
+  }
+
+  .vf-model-command__hero-actions,
+  .vf-model-command__auto-refresh,
+  .vf-model-command__refresh {
+    width: 100%;
+  }
+
+  .vf-model-command__hero-actions {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .vf-model-command__auto-refresh,
+  .vf-model-command__refresh {
+    justify-content: center;
+  }
+
+  .vf-model-command__summary,
+  .vf-model-command__panel {
+    border-radius: 18px !important;
+    padding: 20px 18px !important;
+  }
+
+  .vf-model-command__metric {
+    min-height: 0;
+  }
+
+  .vf-model-command__timestamp {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+}
+
 /* Phase 1A bridge: existing light utility surfaces remain usable in night mode
    while individual pages are progressively migrated to command components. */
 html[data-resolved-theme="dark"] :is(.bg-white, .bg-slate-50, .bg-slate-100) {
