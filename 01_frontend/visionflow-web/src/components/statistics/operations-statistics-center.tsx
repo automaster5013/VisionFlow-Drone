@@ -120,7 +120,7 @@ function KpiCard({
   accent: string;
 }) {
   return (
-    <article className={`rounded-2xl border p-5 ${accent}`}>
+    <article className={`vf-statistics-command__kpi rounded-2xl border p-5 ${accent}`}>
       <p className="text-xs font-bold uppercase tracking-[0.16em] opacity-70">
         {eyebrow}
       </p>
@@ -143,14 +143,14 @@ function DistributionBar({
 }) {
   const ratio = total > 0 ? Math.min(100, (value / total) * 100) : 0;
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+    <div className="vf-statistics-command__distribution">
+      <div className="vf-statistics-command__distribution-label mb-2 flex items-center justify-between gap-4 text-sm">
         <span className="font-semibold text-slate-700">{label}</span>
         <span className="font-bold tabular-nums text-slate-950">
           {value.toLocaleString("ko-KR")}건
         </span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+      <div className="vf-statistics-command__distribution-track h-2.5 overflow-hidden rounded-full bg-slate-100">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${ratio}%` }} />
       </div>
     </div>
@@ -169,15 +169,15 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <section className="vf-statistics-command__panel rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="vf-statistics-command__panel-header flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-950">{title}</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+          <h2 className="vf-statistics-command__panel-title text-xl font-black text-slate-950">{title}</h2>
+          <p className="vf-statistics-command__panel-description mt-1 text-sm leading-6 text-slate-500">{description}</p>
         </div>
         {action}
       </div>
-      <div className="mt-6">{children}</div>
+      <div className="vf-statistics-command__panel-body mt-6">{children}</div>
     </section>
   );
 }
@@ -315,21 +315,21 @@ export function OperationsStatisticsCenter() {
   }[aiMetrics?.health.status ?? "STOPPED"];
 
   return (
-    <div data-operations-statistics-center className="mx-auto max-w-[1500px] space-y-7">
-      <header className="flex flex-wrap items-end justify-between gap-5">
+    <div data-operations-statistics-center data-statistics-command-center className="vf-statistics-command mx-auto max-w-[1500px] space-y-7">
+      <header className="vf-statistics-command__hero flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-700">
+          <p className="vf-command-eyebrow text-xs font-black uppercase tracking-[0.24em] text-cyan-700">
             Operations intelligence
           </p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+          <h1 className="vf-statistics-command__title mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
             운영 통계 센터
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className="vf-statistics-command__lede mt-3 max-w-3xl text-sm leading-6 text-slate-600">
             비행 세션, AI 처리, 기체 신뢰도와 정비 성과를 기존 인증된 읽기 데이터로 통합합니다.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+        <div className="vf-statistics-command__hero-actions flex flex-wrap items-center gap-2">
+          <label className="vf-statistics-command__auto-refresh flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -342,32 +342,32 @@ export function OperationsStatisticsCenter() {
             type="button"
             onClick={() => void refresh()}
             disabled={refreshing}
-            className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
+            className="vf-statistics-command__refresh rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
           >
             {refreshing ? "갱신 중" : "지금 갱신"}
           </button>
         </div>
       </header>
 
-      <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-xl sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+      <section className="vf-statistics-command__summary overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-xl sm:p-8">
+        <div className="vf-statistics-command__summary-header flex flex-wrap items-start justify-between gap-5">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
               Fleet performance summary
             </p>
             <h2 className="mt-2 text-2xl font-black">핵심 운영 성과</h2>
           </div>
-          <div className="flex flex-wrap gap-2" aria-label="조회 기간">
+          <div className="vf-statistics-command__range flex flex-wrap gap-2" aria-label="조회 기간">
             {RANGE_OPTIONS.map((days) => (
               <button
                 key={days}
                 type="button"
                 aria-pressed={rangeDays === days}
                 onClick={() => setRangeDays(days)}
-                className={`rounded-full border px-4 py-2 text-sm font-bold transition ${
+                className={`vf-statistics-command__range-button rounded-full border px-4 py-2 text-sm font-bold transition ${
                   rangeDays === days
-                    ? "border-cyan-300 bg-cyan-300 text-slate-950"
-                    : "border-white/20 bg-white/5 text-slate-200 hover:bg-white/10"
+                    ? "vf-statistics-command__range-button--active border-cyan-300 bg-cyan-300 text-slate-950"
+                    : "vf-statistics-command__range-button--idle border-white/20 bg-white/5 text-slate-200 hover:bg-white/10"
                 }`}
               >
                 최근 {days}일
@@ -376,7 +376,7 @@ export function OperationsStatisticsCenter() {
           </div>
         </div>
 
-        <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="vf-statistics-command__kpi-grid mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
             eyebrow="Flight completion"
             value={formatPercent(completionRate)}
@@ -407,16 +407,16 @@ export function OperationsStatisticsCenter() {
           />
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-3">
+        <div className="vf-statistics-command__health-dock mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-3">
           <div className="flex flex-wrap gap-2">
             {sourceHealth.map((source) => (
               <span
                 key={source.key}
                 title={source.error ?? `${source.label} 데이터 정상`}
-                className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+                className={`vf-statistics-command__health-chip rounded-full border px-3 py-1.5 text-xs font-bold ${
                   source.error
-                    ? "border-amber-300/40 bg-amber-300/10 text-amber-100"
-                    : "border-emerald-300/30 bg-emerald-300/10 text-emerald-100"
+                    ? "vf-statistics-command__health-chip--degraded border-amber-300/40 bg-amber-300/10 text-amber-100"
+                    : "vf-statistics-command__health-chip--healthy border-emerald-300/30 bg-emerald-300/10 text-emerald-100"
                 }`}
               >
                 {source.label} · {source.error ? "이전 정상값" : "정상"}
@@ -427,7 +427,7 @@ export function OperationsStatisticsCenter() {
             {formatDateTime(lastUpdatedAt)} 갱신
           </span>
         </div>
-        <p aria-live="polite" className="mt-3 text-xs leading-5 text-slate-300">
+        <p aria-live="polite" className="vf-statistics-command__health-message mt-3 text-xs leading-5 text-slate-300">
           {loading
             ? "네 개 운영 소스를 불러오는 중입니다."
             : failedSourceCount > 0
@@ -436,11 +436,11 @@ export function OperationsStatisticsCenter() {
         </p>
       </section>
 
-      <div className="grid gap-7 xl:grid-cols-2">
+      <div className="vf-statistics-command__grid grid gap-7 xl:grid-cols-2">
         <Panel
           title="비행 세션 흐름"
           description={`선택한 최근 ${rangeDays}일 동안 생성된 세션 상태 분포입니다.`}
-          action={<Link href="/dashboard" className="text-sm font-bold text-cyan-700 hover:underline">운영 대시보드 보기</Link>}
+          action={<Link href="/dashboard" className="vf-statistics-command__panel-link text-sm font-bold text-cyan-700 hover:underline">운영 대시보드 보기</Link>}
         >
           {operations ? (
             <div className="space-y-5">
@@ -448,23 +448,23 @@ export function OperationsStatisticsCenter() {
               <DistributionBar label="진행 중" value={operations.flightSessions.active} total={operations.flightSessions.total} color="bg-cyan-500" />
               <DistributionBar label="준비" value={operations.flightSessions.ready} total={operations.flightSessions.total} color="bg-violet-500" />
               <DistributionBar label="중단" value={operations.flightSessions.aborted} total={operations.flightSessions.total} color="bg-rose-500" />
-              <div className="grid grid-cols-3 gap-3 border-t border-slate-100 pt-5 text-center">
+              <div className="vf-statistics-command__mini-metrics grid grid-cols-3 gap-3 border-t border-slate-100 pt-5 text-center">
                 <div><p className="text-xs text-slate-500">AI 이벤트</p><p className="mt-1 font-black tabular-nums">{operations.aiInference.totalEvents.toLocaleString("ko-KR")}</p></div>
                 <div><p className="text-xs text-slate-500">탐지 이벤트</p><p className="mt-1 font-black tabular-nums">{operations.aiInference.detectedEvents.toLocaleString("ko-KR")}</p></div>
                 <div><p className="text-xs text-slate-500">총 탐지</p><p className="mt-1 font-black tabular-nums">{operations.aiInference.totalDetections.toLocaleString("ko-KR")}</p></div>
               </div>
             </div>
-          ) : <p className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">비행 세션 통계를 기다리고 있습니다.</p>}
+          ) : <p className="vf-statistics-command__placeholder rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">비행 세션 통계를 기다리고 있습니다.</p>}
         </Panel>
 
         <Panel
           title="AI 처리 성능"
           description="현재 AI 서버의 누적 처리량과 짧은 롤링 성능 창입니다. 선택 기간과 무관한 실시간 스냅샷입니다."
-          action={<Link href="/ai-preview" className="text-sm font-bold text-cyan-700 hover:underline">AI 미리보기</Link>}
+          action={<Link href="/ai-preview" className="vf-statistics-command__panel-link text-sm font-bold text-cyan-700 hover:underline">AI 미리보기</Link>}
         >
           {aiMetrics ? (
             <div>
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-950 p-4 text-white">
+              <div className="vf-statistics-command__runtime flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-950 p-4 text-white">
                 <div><p className="text-xs text-slate-400">모델 · 장치</p><p className="mt-1 font-bold">{aiMetrics.modelName} · {aiMetrics.device}</p></div>
                 <span className={`rounded-full px-3 py-1.5 text-xs font-black ${aiHealthClass}`}>{aiMetrics.health.status}</span>
               </div>
@@ -475,7 +475,7 @@ export function OperationsStatisticsCenter() {
                   ["P95 추론", `${formatNumber(aiMetrics.p95InferenceMs, 1)}ms`],
                   ["입력 드롭", aiMetrics.ingest ? formatPercent(aiMetrics.ingest.dropRatePct) : "—"],
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div key={label} className="vf-statistics-command__metric rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-semibold text-slate-500">{label}</p>
                     <p className="mt-2 text-lg font-black tabular-nums text-slate-950">{value}</p>
                   </div>
@@ -485,19 +485,19 @@ export function OperationsStatisticsCenter() {
                 롤링 표본 {aiMetrics.rollingSampleCount.toLocaleString("ko-KR")}개 · {aiMetrics.rollingWindowSeconds.toLocaleString("ko-KR")}초 창 · 마지막 처리 {formatDateTime(aiMetrics.lastProcessedAt)}
               </p>
             </div>
-          ) : <p className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">AI 처리 통계를 기다리고 있습니다.</p>}
+          ) : <p className="vf-statistics-command__placeholder rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">AI 처리 통계를 기다리고 있습니다.</p>}
         </Panel>
       </div>
 
       <Panel
         title="기체별 운영 신뢰도"
         description="각 기체의 최신 최대 20개 품질 평가를 비교합니다. 기간 버튼은 이 섹션의 표본 범위를 바꾸지 않습니다."
-        action={<Link href="/fleet-reliability" className="text-sm font-bold text-cyan-700 hover:underline">신뢰도 상세 보기</Link>}
+        action={<Link href="/fleet-reliability" className="vf-statistics-command__panel-link text-sm font-bold text-cyan-700 hover:underline">신뢰도 상세 보기</Link>}
       >
         {reliability?.drones.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {reliability.drones.map((drone) => (
-              <article key={drone.droneId} className="rounded-2xl border border-slate-200 p-5">
+              <article key={drone.droneId} className="vf-statistics-command__drone rounded-2xl border border-slate-200 p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div><p className="font-black text-slate-950">{drone.droneName ?? `Drone #${drone.droneId}`}</p><p className="mt-1 text-xs text-slate-500">{drone.droneCode ?? `ID ${drone.droneId}`}</p></div>
                   <span className={`rounded-full px-3 py-1 text-xs font-black ${drone.status === "STABLE" ? "bg-emerald-100 text-emerald-800" : drone.status === "WATCH" ? "bg-amber-100 text-amber-900" : "bg-rose-100 text-rose-900"}`}>{drone.status}</span>
@@ -514,14 +514,14 @@ export function OperationsStatisticsCenter() {
               </article>
             ))}
           </div>
-        ) : <p className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">기체 신뢰도 평가를 기다리고 있습니다.</p>}
+        ) : <p className="vf-statistics-command__placeholder rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">기체 신뢰도 평가를 기다리고 있습니다.</p>}
       </Panel>
 
-      <div className="grid gap-7 xl:grid-cols-2">
+      <div className="vf-statistics-command__grid grid gap-7 xl:grid-cols-2">
         <Panel
           title="정비 작업지시 성과"
           description={`최근 ${rangeDays}일 생성된 작업지시 상태와 해결 성과입니다.`}
-          action={<Link href="/maintenance" className="text-sm font-bold text-cyan-700 hover:underline">정비 관제 보기</Link>}
+          action={<Link href="/maintenance" className="vf-statistics-command__panel-link text-sm font-bold text-cyan-700 hover:underline">정비 관제 보기</Link>}
         >
           {maintenance ? (
             <div className="space-y-5">
@@ -529,29 +529,29 @@ export function OperationsStatisticsCenter() {
               <DistributionBar label="진행 중" value={maintenance.inProgressWorkOrders} total={maintenance.totalWorkOrders} color="bg-cyan-500" />
               <DistributionBar label="접수" value={maintenance.openWorkOrders} total={maintenance.totalWorkOrders} color="bg-violet-500" />
               <DistributionBar label="운항 중지" value={maintenance.groundedWorkOrders} total={maintenance.totalWorkOrders} color="bg-rose-500" />
-              <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-5">
-                <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">평균 시작 지연</p><p className="mt-1 font-black">{maintenance.averageStartDelayMinutes === null ? "—" : `${maintenance.averageStartDelayMinutes}분`}</p></div>
-                <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">평균 해결 시간</p><p className="mt-1 font-black">{maintenance.averageResolutionMinutes === null ? "—" : `${maintenance.averageResolutionMinutes}분`}</p></div>
+              <div className="vf-statistics-command__mini-metrics grid grid-cols-2 gap-3 border-t border-slate-100 pt-5">
+                <div className="vf-statistics-command__metric rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">평균 시작 지연</p><p className="mt-1 font-black">{maintenance.averageStartDelayMinutes === null ? "—" : `${maintenance.averageStartDelayMinutes}분`}</p></div>
+                <div className="vf-statistics-command__metric rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">평균 해결 시간</p><p className="mt-1 font-black">{maintenance.averageResolutionMinutes === null ? "—" : `${maintenance.averageResolutionMinutes}분`}</p></div>
               </div>
             </div>
-          ) : <p className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">정비 성과 통계를 기다리고 있습니다.</p>}
+          ) : <p className="vf-statistics-command__placeholder rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">정비 성과 통계를 기다리고 있습니다.</p>}
         </Panel>
 
         <Panel title="함대 비행 허가" description="정비 비행 게이트의 현재 함대 판정입니다. 기간과 무관한 최신 상태입니다.">
           {maintenance ? (
             <div>
-              <div className="flex items-center justify-between rounded-2xl bg-slate-950 p-5 text-white">
+              <div className="vf-statistics-command__gate-header flex items-center justify-between rounded-2xl bg-slate-950 p-5 text-white">
                 <div><p className="text-xs text-slate-400">게이트 모드</p><p className="mt-1 text-2xl font-black">{maintenance.gateMode}</p></div>
                 <span className="rounded-full bg-cyan-300 px-3 py-1.5 text-xs font-black text-slate-950">전체 {maintenance.totalDrones}대</span>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-xs font-bold text-emerald-700">비행 가능</p><p className="mt-2 text-2xl font-black text-emerald-900">{maintenance.allowedDrones}대</p></div>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-bold text-amber-700">점검 주의</p><p className="mt-2 text-2xl font-black text-amber-900">{maintenance.attentionDrones}대</p></div>
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4"><p className="text-xs font-bold text-rose-700">비행 차단</p><p className="mt-2 text-2xl font-black text-rose-900">{maintenance.blockedDrones}대</p></div>
+              <div className="vf-statistics-command__gate-grid mt-4 grid grid-cols-3 gap-3 text-center">
+                <div className="vf-statistics-command__gate vf-statistics-command__gate--allowed rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-xs font-bold text-emerald-700">비행 가능</p><p className="mt-2 text-2xl font-black text-emerald-900">{maintenance.allowedDrones}대</p></div>
+                <div className="vf-statistics-command__gate vf-statistics-command__gate--attention rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-bold text-amber-700">점검 주의</p><p className="mt-2 text-2xl font-black text-amber-900">{maintenance.attentionDrones}대</p></div>
+                <div className="vf-statistics-command__gate vf-statistics-command__gate--blocked rounded-2xl border border-rose-200 bg-rose-50 p-4"><p className="text-xs font-bold text-rose-700">비행 차단</p><p className="mt-2 text-2xl font-black text-rose-900">{maintenance.blockedDrones}대</p></div>
               </div>
               <p className="mt-4 text-xs leading-5 text-slate-500">최신 정비 판정 {formatDateTime(maintenance.generatedAt)} · 이 화면에서는 판정을 변경하지 않습니다.</p>
             </div>
-          ) : <p className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">함대 비행 허가 통계를 기다리고 있습니다.</p>}
+          ) : <p className="vf-statistics-command__placeholder rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">함대 비행 허가 통계를 기다리고 있습니다.</p>}
         </Panel>
       </div>
     </div>

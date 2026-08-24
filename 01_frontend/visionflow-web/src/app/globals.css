@@ -1133,6 +1133,299 @@ html[data-resolved-theme="dark"] .vf-audit-command__error {
   }
 }
 
+/* Phase 1G: operations statistics command surfaces. */
+.vf-statistics-command {
+  --vf-statistics-accent: color-mix(in srgb, var(--vf-accent) 78%, #23c8e8);
+  padding-bottom: 32px;
+}
+
+.vf-statistics-command__hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 168px;
+  border: 1px solid var(--vf-border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  background:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--vf-statistics-accent) 14%, transparent), transparent 18rem),
+    var(--vf-surface-1);
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-statistics-command__hero::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--vf-accent), #23c8e8, #8b7cf6, transparent 86%);
+  content: "";
+}
+
+.vf-statistics-command__title {
+  color: var(--vf-text-primary) !important;
+  letter-spacing: -0.035em;
+}
+
+.vf-statistics-command__lede {
+  color: var(--vf-text-secondary) !important;
+  line-height: 1.7;
+}
+
+.vf-statistics-command__hero-actions {
+  justify-content: flex-end;
+}
+
+.vf-statistics-command__auto-refresh,
+.vf-statistics-command__refresh {
+  min-height: 42px;
+  border-color: var(--vf-border) !important;
+}
+
+.vf-statistics-command__auto-refresh {
+  background: var(--vf-surface-2) !important;
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-statistics-command__auto-refresh input {
+  accent-color: var(--vf-accent);
+}
+
+.vf-statistics-command__refresh {
+  background: var(--vf-accent) !important;
+  color: #ffffff !important;
+}
+
+.vf-statistics-command__refresh:hover {
+  background: var(--vf-accent-strong) !important;
+}
+
+.vf-statistics-command__summary {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--vf-statistics-accent) 42%, #1c4057);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(78, 103, 225, 0.22), transparent 25rem),
+    linear-gradient(135deg, #09273a, #071b2a 58%, #0d1730) !important;
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-statistics-command__summary::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, #40c9ff, #8b7cf6, transparent 84%);
+  content: "";
+}
+
+.vf-statistics-command__summary-header {
+  position: relative;
+  z-index: 1;
+}
+
+.vf-statistics-command__range-button {
+  min-height: 38px;
+}
+
+.vf-statistics-command__range-button--active {
+  border-color: #8ee6ff !important;
+  background: #86e3fa !important;
+  color: #082030 !important;
+}
+
+.vf-statistics-command__range-button--idle {
+  border-color: rgba(183, 218, 235, 0.28) !important;
+  background: rgba(190, 226, 243, 0.06) !important;
+  color: #d5e7ef !important;
+}
+
+.vf-statistics-command__range-button--idle:hover {
+  background: rgba(190, 226, 243, 0.14) !important;
+}
+
+.vf-statistics-command__kpi {
+  min-height: 154px;
+  border-color: rgba(157, 205, 226, 0.22) !important;
+  background: rgba(14, 46, 65, 0.72) !important;
+  color: #f3fbff;
+  backdrop-filter: blur(10px);
+}
+
+.vf-statistics-command__health-dock {
+  border-color: rgba(151, 205, 229, 0.2) !important;
+  background: rgba(0, 9, 16, 0.24) !important;
+}
+
+.vf-statistics-command__health-chip--healthy {
+  border-color: rgba(111, 230, 187, 0.5) !important;
+  background: rgba(40, 164, 125, 0.18) !important;
+  color: #b8f5dc !important;
+}
+
+.vf-statistics-command__health-chip--degraded {
+  border-color: rgba(242, 196, 82, 0.56) !important;
+  background: rgba(165, 104, 12, 0.2) !important;
+  color: #ffe39a !important;
+}
+
+.vf-statistics-command__health-message {
+  color: #b9ced9 !important;
+}
+
+.vf-statistics-command__panel {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-1) !important;
+  color: var(--vf-text-primary);
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-statistics-command__panel-title {
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-statistics-command__panel-description,
+.vf-statistics-command__panel-body :is(.text-slate-500, .text-slate-600, .text-slate-700) {
+  color: var(--vf-text-secondary) !important;
+}
+
+.vf-statistics-command__panel-body .text-slate-950 {
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-statistics-command__panel-link {
+  color: var(--vf-accent-strong) !important;
+}
+
+.vf-statistics-command__distribution-label {
+  color: var(--vf-text-primary);
+}
+
+.vf-statistics-command__distribution-track {
+  background: var(--vf-surface-3) !important;
+}
+
+.vf-statistics-command__mini-metrics {
+  border-color: var(--vf-border) !important;
+}
+
+.vf-statistics-command__metric,
+.vf-statistics-command__drone,
+.vf-statistics-command__placeholder {
+  border-color: var(--vf-border) !important;
+  background: var(--vf-surface-2) !important;
+  color: var(--vf-text-primary) !important;
+}
+
+.vf-statistics-command__drone {
+  box-shadow: inset 3px 0 color-mix(in srgb, var(--vf-statistics-accent) 66%, var(--vf-border));
+}
+
+.vf-statistics-command__runtime,
+.vf-statistics-command__gate-header {
+  border: 1px solid color-mix(in srgb, var(--vf-statistics-accent) 36%, #1d4055);
+  background: #071b2a !important;
+  color: #effaff !important;
+}
+
+.vf-statistics-command__runtime .text-slate-400,
+.vf-statistics-command__gate-header .text-slate-400 {
+  color: #9db5c2 !important;
+}
+
+.vf-statistics-command__gate {
+  min-height: 112px;
+}
+
+.vf-statistics-command__gate--allowed {
+  border-color: color-mix(in srgb, var(--vf-success) 50%, var(--vf-border)) !important;
+  background: color-mix(in srgb, var(--vf-success) 12%, var(--vf-surface-1)) !important;
+}
+
+.vf-statistics-command__gate--attention {
+  border-color: color-mix(in srgb, var(--vf-warning) 56%, var(--vf-border)) !important;
+  background: color-mix(in srgb, var(--vf-warning) 12%, var(--vf-surface-1)) !important;
+}
+
+.vf-statistics-command__gate--blocked {
+  border-color: color-mix(in srgb, var(--vf-danger) 54%, var(--vf-border)) !important;
+  background: color-mix(in srgb, var(--vf-danger) 10%, var(--vf-surface-1)) !important;
+}
+
+.vf-statistics-command__gate--allowed :is(.text-emerald-700, .text-emerald-900) {
+  color: var(--vf-success) !important;
+}
+
+.vf-statistics-command__gate--attention :is(.text-amber-700, .text-amber-900) {
+  color: var(--vf-warning) !important;
+}
+
+.vf-statistics-command__gate--blocked :is(.text-rose-700, .text-rose-900) {
+  color: var(--vf-danger) !important;
+}
+
+@media (max-width: 767px) {
+  .vf-statistics-command {
+    padding-bottom: 20px;
+  }
+
+  .vf-statistics-command__hero {
+    min-height: 0;
+    align-items: flex-start;
+    padding: 20px 18px;
+  }
+
+  .vf-statistics-command__title {
+    font-size: 28px !important;
+  }
+
+  .vf-statistics-command__hero-actions,
+  .vf-statistics-command__auto-refresh,
+  .vf-statistics-command__refresh {
+    width: 100%;
+  }
+
+  .vf-statistics-command__hero-actions {
+    justify-content: stretch;
+  }
+
+  .vf-statistics-command__auto-refresh,
+  .vf-statistics-command__refresh {
+    justify-content: center;
+  }
+
+  .vf-statistics-command__summary,
+  .vf-statistics-command__panel {
+    border-radius: 18px !important;
+    padding: 20px 18px !important;
+  }
+
+  .vf-statistics-command__range {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vf-statistics-command__range-button {
+    padding-inline: 8px !important;
+  }
+
+  .vf-statistics-command__panel-header {
+    align-items: flex-start;
+  }
+
+  .vf-statistics-command__panel-link {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+  }
+
+  .vf-statistics-command__mini-metrics,
+  .vf-statistics-command__gate-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vf-statistics-command__gate {
+    min-height: 0;
+  }
+}
+
 /* Phase 1A bridge: existing light utility surfaces remain usable in night mode
    while individual pages are progressively migrated to command components. */
 html[data-resolved-theme="dark"] :is(.bg-white, .bg-slate-50, .bg-slate-100) {
@@ -1237,6 +1530,11 @@ html[data-resolved-theme="dark"] :is(input, select, textarea) {
   .vf-theme-selector__label {
     display: inline;
   }
+}
+
+/* Phase 1G repair: preserve dark text on the luminous selected range pill. */
+html[data-resolved-theme="dark"] .vf-statistics-command .vf-statistics-command__range-button--active {
+  color: #082030 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
