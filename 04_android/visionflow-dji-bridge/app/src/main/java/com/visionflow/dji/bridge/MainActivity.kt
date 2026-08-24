@@ -6,6 +6,7 @@ import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.text.method.PasswordTransformationMethod
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -82,6 +83,7 @@ class MainActivity : Activity() {
             "32+ characters; blank keeps existing key",
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD,
         ).apply {
+            transformationMethod = PasswordTransformationMethod.getInstance()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 importantForAutofill =
                     View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
