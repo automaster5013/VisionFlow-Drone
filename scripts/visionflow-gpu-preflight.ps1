@@ -2,6 +2,8 @@
 param(
     [string]$EnvironmentFile = ".env.docker",
     [string]$ModelFile = "",
+    [string]$ModelProfile = "",
+    [string]$ManifestFile = "",
     [string]$OutputDirectory = "artifacts/gpu-readiness",
     [switch]$SkipBuild,
     [switch]$StartStack
@@ -61,6 +63,25 @@ function Write-Step {
     Write-Host "[GPU CHECK] $Message" -ForegroundColor Cyan
 }
 
+function Resolve-ModelProfile {
+    param(
+        [string]$SelectedModelFile,
+        [string]$RequestedProfile
+    )
+
+    if ($RequestedProfile.Trim()) {
+        return $RequestedProfile.Trim()
+    }
+
+    switch ($SelectedModelFile.ToLowerInvariant()) {
+        "yolo26m.pt" { return "GENERAL_LIVE" }
+        "yolo26m-visdrone-s1-best.pt" { return "AERIAL_SMALL_OBJECT_LIVE" }
+        "yolo26m-visdrone-s2-best.pt" { return "AERIAL_SMALL_OBJECT_LIVE" }
+        "best.pt" { return "best-gpu" }
+        default { return "yolo26n-gpu" }
+    }
+}
+
 if (-not (Test-Path -LiteralPath $ResolvedEnvironmentFile -PathType Leaf)) {
     throw "Docker 환경 파일을 찾을 수 없습니다: $ResolvedEnvironmentFile"
 }
@@ -86,7 +107,41 @@ if (-not $ModelFile.Trim()) {
 }
 
 if ([IO.Path]::GetFileName($ModelFile) -ne $ModelFile) {
-    throw "ModelFile에는 파일명만 입력하세요. 예: yolo26n.pt 또는 best.pt"
+    throw "ModelFile에는 파일명만 입력하세요. 예: yolo26m-visdrone-s2-best.pt"
+}
+
+$ResolvedModelProfile = Resolve-ModelProfile `
+    -SelectedModelFile $ModelFile `
+    -RequestedProfile $ModelProfile
+$AllowedProfiles = @(
+    "GENERAL_LIVE",
+    "AERIAL_SMALL_OBJECT_LIVE",
+    "best-gpu",
+    "yolo26n-gpu"
+)
+if ($ResolvedModelProfile -notin $AllowedProfiles) {
+    throw "지원하지 않는 ModelProfile입니다: $ResolvedModelProfile"
+}
+
+if (
+    $ModelFile -ieq "yolo26m-visdrone-s1-best.pt" -and
+    $ResolvedModelProfile -eq "AERIAL_SMALL_OBJECT_LIVE"
+) {
+    throw "S1 가중치는 계약·평가 전용이며 LIVE GPU 활성화가 금지됩니다."
+}
+
+if (
+    $ResolvedModelProfile -eq "GENERAL_LIVE" -and
+    $ModelFile -ine "yolo26m.pt"
+) {
+    throw "GENERAL_LIVE 프로필은 yolo26m.pt만 허용합니다."
+}
+
+if (
+    $ResolvedModelProfile -eq "AERIAL_SMALL_OBJECT_LIVE" -and
+    $ModelFile -ine "yolo26m-visdrone-s2-best.pt"
+) {
+    throw "AERIAL_SMALL_OBJECT_LIVE 프로필은 S2 가중치만 활성화할 수 있습니다."
 }
 
 $ModelPath = Join-Path $RootDirectory "03_ai-server/visionflow-ai/models/$ModelFile"
@@ -118,6 +173,27 @@ if (-not (Test-Path -LiteralPath $EvidenceModule -PathType Leaf)) {
     throw "GPU 사전점검 증적 모듈을 찾을 수 없습니다: $EvidenceModule"
 }
 
+$ResolvedManifestPath = ""
+$ContainerManifestPath = ""
+if ($ResolvedModelProfile -eq "AERIAL_SMALL_OBJECT_LIVE") {
+    if (-not $ManifestFile.Trim()) {
+        $ManifestFile = [IO.Path]::GetFileNameWithoutExtension($ModelFile) + ".manifest.json"
+    }
+    if ([IO.Path]::GetFileName($ManifestFile) -ne $ManifestFile) {
+        throw "ManifestFile에는 manifests 폴더 안의 파일명만 입력하세요."
+    }
+    $ResolvedManifestPath = Join-Path $RootDirectory (
+        "03_ai-server/visionflow-ai/models/manifests/$ManifestFile"
+    )
+    if (-not (Test-Path -LiteralPath $ResolvedManifestPath -PathType Leaf)) {
+        throw "실가중치 매니페스트를 찾을 수 없습니다: $ResolvedManifestPath"
+    }
+    $ContainerManifestPath = "/app/models/manifests/$ManifestFile"
+}
+elseif ($ManifestFile.Trim()) {
+    throw "ManifestFile은 AERIAL_SMALL_OBJECT_LIVE 프로필에서만 사용합니다."
+}
+
 $PythonCommand = Get-Command "py.exe" -ErrorAction SilentlyContinue
 $PythonFilePath = ""
 $PythonPrefixArguments = @()
@@ -137,12 +213,16 @@ $ModelHash = Get-FileHash -LiteralPath $ModelPath -Algorithm SHA256
 $ModelInfo = Get-Item -LiteralPath $ModelPath
 
 $env:AI_MODEL_FILE = $ModelFile
-$env:AI_MODEL_PROFILE = if ($ModelFile -ieq "best.pt") { "best-gpu" } else { "yolo26n-gpu" }
+$env:AI_MODEL_PROFILE = $ResolvedModelProfile
 $env:AI_EXPECTED_MODEL_SHA256 = $ModelHash.Hash.ToLowerInvariant()
 
 Write-Host "VisionFlow GPU and model preflight"
-Write-Host "Root : $RootDirectory"
-Write-Host "Model: $ModelFile"
+Write-Host "Root    : $RootDirectory"
+Write-Host "Model   : $ModelFile"
+Write-Host "Profile : $ResolvedModelProfile"
+if ($ResolvedManifestPath) {
+    Write-Host "Manifest: $ManifestFile"
+}
 
 Write-Step "Windows NVIDIA driver"
 $NativeCall = @{
@@ -189,11 +269,22 @@ if (-not $SkipBuild) {
     $null = Invoke-NativeCommand @NativeCall
 }
 
-Write-Step "PyTorch CUDA and YOLO model load"
+Write-Step "PyTorch CUDA, YOLO model and weight contract"
+$ContainerRunArguments = @(
+    "run",
+    "--rm",
+    "--no-deps",
+    "-e", "AI_MODEL_MANIFEST_PATH=$ContainerManifestPath",
+    "-e", "AI_MODEL_PROFILES_PATH=/app/config/model-profiles-v1.json",
+    "ai-server",
+    "python",
+    "-m",
+    "app.gpu_preflight"
+)
 $NativeCall = @{
     FilePath = "docker"
-    ArgumentList = @($ComposeArguments) + @("run", "--rm", "--no-deps", "ai-server", "python", "-m", "app.gpu_preflight")
-    FailureMessage = "컨테이너에서 CUDA 또는 YOLO 모델을 사용할 수 없습니다."
+    ArgumentList = @($ComposeArguments) + $ContainerRunArguments
+    FailureMessage = "컨테이너에서 CUDA, YOLO 모델 또는 가중치 계약을 검증하지 못했습니다."
     CaptureOutput = $true
 }
 $ContainerPreflight = Invoke-NativeCommand @NativeCall

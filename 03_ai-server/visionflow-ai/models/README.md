@@ -1,34 +1,62 @@
-# 모델 파일 위치
+# VisionFlow 모델 계약
 
-기본 CPU 설정은 Ultralytics 공식 `yolo26n.pt` 모델명을 사용합니다. 최초 실행 시 네트워크를 통해 자동으로 내려받을 수 있지만, Docker GPU 모드와 오프라인 발표에서는 반드시 이 폴더에 모델 파일을 미리 준비합니다.
+오프라인 발표와 Docker GPU 모드에서 사용하는 가중치는 이 폴더에 두며, 모델 역할별 파일명을 고정합니다. `best.pt`처럼 출처와 역할을 알 수 없는 이름으로 보관하지 않습니다.
 
-커스텀 모델은 다음처럼 배치할 수 있습니다.
+| 역할 | 프로필 | 고정 파일명 | 활성화 정책 |
+|---|---|---|---|
+| 일반 객체 Detection | `GENERAL_LIVE` | `yolo26m.pt` | 일반 실시간 기준선 |
+| VisDrone 1차 전이학습 | `AERIAL_SMALL_OBJECT_LIVE` | `yolo26m-visdrone-s1-best.pt` | 계약·평가 전용, LIVE 금지 |
+| VisDrone + 발표환경 2차 전이학습 | `AERIAL_SMALL_OBJECT_LIVE` | `yolo26m-visdrone-s2-best.pt` | 매니페스트 통과 후 LIVE 허용 |
+| PPE 전문 판정 | 별도 PPE 파이프라인 | `ppe-yolo26m-best.pt` | VisDrone 가중치로 대체 금지 |
+
+`DETERMINISTIC_COMPARE`는 단일 가중치 역할이 아닙니다. 동일 프레임에서 `GENERAL_LIVE`와 `AERIAL_SMALL_OBJECT_LIVE` 결과를 비교하는 Small Object Showdown 오케스트레이션 프로필입니다.
+
+## 매니페스트
+
+실가중치 옆에는 같은 stem의 매니페스트를 둡니다.
 
 ```text
-models/best.pt
+models/
+├─ yolo26m-visdrone-s1-best.pt
+├─ yolo26m-visdrone-s2-best.pt
+└─ manifests/
+   ├─ yolo26m-visdrone-s1-best.manifest.json
+   └─ yolo26m-visdrone-s2-best.manifest.json
 ```
 
-그리고 `.env`를 수정합니다.
+`manifests/*.manifest.template.json`을 복사한 뒤 모든 `REPLACE_WITH_*` 값과 0인 학습·평가 값을 실제 측정값으로 채우고 `template`을 `false`로 바꿉니다. 다음 항목은 반드시 실제 값이어야 합니다.
 
-```dotenv
-AI_MODEL_PATH=models/best.pt
-```
+- 가중치 크기와 SHA-256, 부모 가중치 SHA-256
+- 데이터셋 버전·fingerprint와 영상 단위 split manifest SHA-256
+- `imgsz`, epoch, batch, seed와 Python/Ultralytics/PyTorch/CUDA 버전
+- Precision, Recall, mAP50, mAP50-95, 작은 객체 Recall·미탐률, 클래스별 지표
 
-Docker GPU 모드에서는 루트 `.env.docker`에 파일명과 프로필만 지정합니다.
+작은 객체는 원본 해상도에서 COCO 기준 `area < 32² px`로 고정합니다. 발표용 최종 검증영상은 학습에서 제외합니다.
 
-```dotenv
-AI_MODEL_FILE=best.pt
-AI_MODEL_PROFILE=best-gpu
-```
+## CPU 계약 사전점검
 
-모델 파일은 이미지에 포함되지 않고 읽기 전용 `/app/models` 볼륨으로 연결됩니다. 따라서 `best.pt`를 교체할 때 AI 이미지를 다시 만들 필요는 없지만, AI 컨테이너는 재시작해야 합니다.
+이 명령은 추론이나 GPU 실행 없이 가중치를 로드해 파일 identity, task, 클래스와 매니페스트를 검사합니다.
 
 ```bat
-scripts\run-visionflow-gpu.bat -ModelFile best.pt
+cd 03_ai-server\visionflow-ai
+python -m app.model_preflight ^
+  --root . ^
+  --manifest models\manifests\yolo26m-visdrone-s2-best.manifest.json ^
+  --weight models\yolo26m-visdrone-s2-best.pt ^
+  --activation
 ```
 
-시작 전 점검은 파일 존재 여부, 크기, SHA-256, 클래스 목록, PyTorch CUDA 인식 및 GPU 모델 로딩까지 확인합니다. 실행 후에는 다음 API에서도 같은 정보를 볼 수 있습니다.
+S1은 `--activation` 없이 계약·평가 용도로만 검사합니다. S2 LIVE 활성화는 `--activation`을 포함해야 합니다.
 
-```text
-http://localhost:8000/api/models/status
+## Docker GPU 사전점검
+
+물리 GPU 및 Docker 실행 승인을 받은 뒤 저장소 루트에서 실행합니다.
+
+```powershell
+scripts\visionflow-gpu-preflight.ps1 `
+  -ModelFile yolo26m-visdrone-s2-best.pt `
+  -ModelProfile AERIAL_SMALL_OBJECT_LIVE `
+  -ManifestFile yolo26m-visdrone-s2-best.manifest.json
 ```
+
+GPU 점검은 호스트/컨테이너 SHA-256 일치뿐 아니라 S2 lineage, 10개 VisDrone 클래스, 데이터 분리 정책과 평가 지표까지 확인합니다. 모델은 이미지에 포함하지 않고 읽기 전용 `/app/models` 볼륨으로 연결합니다.
