@@ -48,6 +48,8 @@ class Phase3Runtime:
     depth_estimator: DepthEstimator | None = None
     pose_stride_frames: int | None = None
     effective_pose_fps: float = 0.0
+    segmentation_stride_frames: int | None = None
+    effective_segmentation_fps: float = 0.0
     _started: bool = False
 
     @property
@@ -68,6 +70,26 @@ class Phase3Runtime:
             return False
 
         return source_frame_index % self.pose_stride_frames == 0
+
+    @property
+    def segmentation_enabled(self) -> bool:
+        return self.segmentation_stride_frames is not None
+
+    def should_sample_segmentation(
+        self,
+        source_frame_index: int,
+    ) -> bool:
+        if source_frame_index < 0:
+            raise ValueError(
+                "source_frame_index must be zero or positive."
+            )
+
+        if self.segmentation_stride_frames is None:
+            return False
+
+        return (
+            source_frame_index % self.segmentation_stride_frames == 0
+        )
 
     @property
     def started(self) -> bool:
@@ -185,6 +207,18 @@ def create_phase3_runtime(
         )
         effective_pose_fps = source_fps / pose_stride_frames
 
+    segmentation_stride_frames: int | None = None
+    effective_segmentation_fps = 0.0
+
+    if getattr(settings, "phase3_segmentation_enabled", False):
+        segmentation_stride_frames = compute_sample_stride(
+            source_fps=source_fps,
+            target_fps=settings.phase3_segmentation_target_fps,
+        )
+        effective_segmentation_fps = (
+            source_fps / segmentation_stride_frames
+        )
+
     if not settings.phase3_depth_enabled:
         return Phase3Runtime(
             processor=processor,
@@ -192,6 +226,12 @@ def create_phase3_runtime(
             effective_ppe_fps=effective_ppe_fps,
             pose_stride_frames=pose_stride_frames,
             effective_pose_fps=effective_pose_fps,
+            segmentation_stride_frames=(
+                segmentation_stride_frames
+            ),
+            effective_segmentation_fps=(
+                effective_segmentation_fps
+            ),
         )
 
     estimator_factory = (
@@ -232,4 +272,6 @@ def create_phase3_runtime(
         depth_estimator=depth_estimator,
         pose_stride_frames=pose_stride_frames,
         effective_pose_fps=effective_pose_fps,
+        segmentation_stride_frames=segmentation_stride_frames,
+        effective_segmentation_fps=effective_segmentation_fps,
     )
