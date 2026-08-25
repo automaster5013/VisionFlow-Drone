@@ -71,6 +71,9 @@ class Settings:
     phase3_pose_enabled: bool
     phase3_pose_model_path: str
     phase3_pose_target_fps: float
+    phase3_segmentation_enabled: bool
+    phase3_segmentation_model_path: str
+    phase3_segmentation_target_fps: float
     phase3_depth_enabled: bool
     phase3_depth_model_path: str
     phase3_depth_image_size: int
@@ -185,6 +188,18 @@ class Settings:
             ),
             phase3_pose_target_fps=_read_float(
                 "AI_PHASE3_POSE_TARGET_FPS",
+                5.0,
+            ),
+            phase3_segmentation_enabled=_read_bool(
+                "AI_PHASE3_SEGMENTATION_ENABLED",
+                False,
+            ),
+            phase3_segmentation_model_path=os.getenv(
+                "AI_PHASE3_SEGMENTATION_MODEL_PATH",
+                "/app/models/yolo26m-seg.pt",
+            ),
+            phase3_segmentation_target_fps=_read_float(
+                "AI_PHASE3_SEGMENTATION_TARGET_FPS",
                 5.0,
             ),
             phase3_depth_enabled=_read_bool(
@@ -354,6 +369,18 @@ class Settings:
                     raise ValueError(
                         "AI_PHASE3_POSE_TARGET_FPS must be positive."
                     )
+
+            if self.phase3_segmentation_enabled:
+                if not self.phase3_segmentation_model_path.strip():
+                    raise ValueError(
+                        "AI_PHASE3_SEGMENTATION_MODEL_PATH must not be blank."
+                    )
+
+                if self.phase3_segmentation_target_fps <= 0:
+                    raise ValueError(
+                        "AI_PHASE3_SEGMENTATION_TARGET_FPS must be positive."
+                    )
+
             if self.phase3_depth_enabled:
                 if not self.phase3_depth_model_path.strip():
                     raise ValueError(
