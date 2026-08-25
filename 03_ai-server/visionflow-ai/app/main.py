@@ -13,6 +13,8 @@ from app.inference.phase3_runtime import (
     create_phase3_runtime,
 )
 from app.metrics import InferencePerformanceMonitor, PerformanceThresholds
+from app.model_runtime import RuntimeModelSelection, create_runtime_model_selection
+from app.phase3_reporting import Phase3EventReporter, Phase3EventReporterLike
 from app.pipeline import InferencePipeline
 from app.reporting import SpringEventReporter
 from app.sources import (
@@ -23,7 +25,6 @@ from app.sources import (
     create_dji_live_source,
 )
 from app.streaming import AnalysisStreamServer, AnnotatedFrameHub
-from app.phase3_reporting import Phase3EventReporter, Phase3EventReporterLike
 
 
 def create_source(settings: Settings) -> VideoSource:
@@ -112,11 +113,15 @@ def create_optional_phase3_frame_analyzer(
     settings: Settings,
     source: VideoSource,
     phase3_runtime: Phase3Runtime | None,
+    detector: YoloDetector,
+    model_selection: RuntimeModelSelection,
 ) -> Phase3FrameAnalyzer | None:
     return create_phase3_frame_analyzer(
         settings=settings,
         runtime=phase3_runtime,
         source_fps=source.fps,
+        track_model=detector,
+        class_resolver=model_selection.resolve_class,
     )
 
 
@@ -157,6 +162,12 @@ def run_pipeline_with_optional_phase3(
 
 def main() -> None:
     settings = Settings.from_env()
+    model_selection = create_runtime_model_selection(
+        model_profile=settings.model_profile,
+        model_path=settings.model_path,
+        manifest_path=settings.model_manifest_path,
+        profiles_path=settings.model_profiles_path,
+    )
     source = create_source(settings)
     browser_upload_source = (
         source if isinstance(source, BrowserUploadSource) else None
@@ -206,7 +217,9 @@ def main() -> None:
         iou=settings.iou,
         image_size=settings.image_size,
         device=settings.device,
+        class_resolver=model_selection.resolve_class,
     )
+    model_contract = model_selection.validate_loaded_status(detector.status())
     reporter = (
         SpringEventReporter(
             event_url=settings.backend_event_url,
@@ -233,7 +246,10 @@ def main() -> None:
             ingest_source=browser_upload_source,
             ingest_max_payload_bytes=settings.browser_upload_max_payload_bytes,
             performance_monitor=performance_monitor,
-            model_status_provider=detector.status,
+            model_status_provider=lambda: model_selection.enrich_status(
+                detector.status(),
+                model_contract,
+            ),
             internal_security_enabled=settings.ai_internal_security_enabled,
             internal_api_key=settings.ai_internal_key,
             dji_bridge_api_key=settings.dji_bridge_key,
@@ -254,6 +270,8 @@ def main() -> None:
         settings=settings,
         source=source,
         phase3_runtime=phase3_runtime,
+        detector=detector,
+        model_selection=model_selection,
     )
     pipeline = InferencePipeline(
         source=source,

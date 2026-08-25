@@ -22,6 +22,8 @@ from app.inference.phase3_segmentation import (
     build_segmentation_frame_result,
     render_segmentation_overlay,
 )
+from app.model_contract import TrackKind
+from app.model_runtime import ClassResolver, resolve_identity_class
 
 ModelFactory = Callable[[str], Any]
 
@@ -52,11 +54,13 @@ class Phase3FrameAnalyzer:
         device: str,
         pose_model_path: str | None = None,
         segmentation_model_path: str | None = None,
+        track_model: Any | None = None,
+        class_resolver: ClassResolver | None = None,
         model_factory: ModelFactory = YOLO,
     ) -> None:
         if source_fps <= 0:
             raise ValueError("source_fps must be positive.")
-        if not track_model_path.strip():
+        if track_model is None and not track_model_path.strip():
             raise ValueError("track_model_path must not be blank.")
         if not ppe_model_path.strip():
             raise ValueError("ppe_model_path must not be blank.")
@@ -89,7 +93,12 @@ class Phase3FrameAnalyzer:
         self._iou = iou
         self._image_size = image_size
         self._device = device
-        self._track_model = model_factory(track_model_path)
+        self._class_resolver = class_resolver or resolve_identity_class
+        self._track_model = (
+            track_model
+            if track_model is not None
+            else model_factory(track_model_path)
+        )
         self._ppe_model = model_factory(ppe_model_path)
         self._pose_model = (
             model_factory(pose_model_path)
@@ -130,8 +139,14 @@ class Phase3FrameAnalyzer:
             tracked_people = ()
             annotated_image = frame.image.copy()
         else:
-            detections = _to_detections(track_result)
-            tracked_people = _to_tracked_people(track_result)
+            detections = _to_detections(
+                track_result,
+                class_resolver=self._class_resolver,
+            )
+            tracked_people = _to_tracked_people(
+                track_result,
+                class_resolver=self._class_resolver,
+            )
             annotated_image = np.asarray(track_result.plot())
 
         inference = InferencePacket(
@@ -316,6 +331,8 @@ def create_phase3_frame_analyzer(
     settings: Settings,
     runtime: Phase3Runtime | None,
     source_fps: float,
+    track_model: Any | None = None,
+    class_resolver: ClassResolver | None = None,
     model_factory: ModelFactory = YOLO,
 ) -> Phase3FrameAnalyzer | None:
     if runtime is None:
@@ -340,11 +357,17 @@ def create_phase3_frame_analyzer(
             if getattr(runtime, "segmentation_enabled", False)
             else None
         ),
+        track_model=track_model,
+        class_resolver=class_resolver,
         model_factory=model_factory,
     )
 
 
-def _to_detections(result: Any) -> tuple[Detection, ...]:
+def _to_detections(
+    result: Any,
+    *,
+    class_resolver: ClassResolver = resolve_identity_class,
+) -> tuple[Detection, ...]:
     boxes = getattr(result, "boxes", None)
     if boxes is None:
         return ()
@@ -354,26 +377,35 @@ def _to_detections(result: Any) -> tuple[Detection, ...]:
     class_ids = boxes.cls.detach().cpu().tolist()
     names: Mapping[int, str] = result.names
 
-    return tuple(
-        Detection(
-            class_id=int(class_id_value),
-            class_name=str(names.get(int(class_id_value), int(class_id_value))),
-            confidence=float(confidence),
-            x1=float(xyxy[0]),
-            y1=float(xyxy[1]),
-            x2=float(xyxy[2]),
-            y2=float(xyxy[3]),
+    detections: list[Detection] = []
+    for xyxy, confidence, class_id_value in zip(
+        coordinates,
+        confidences,
+        class_ids,
+        strict=True,
+    ):
+        class_id = int(class_id_value)
+        source_name = str(names.get(class_id, class_id))
+        resolved_class = class_resolver(class_id, source_name)
+        detections.append(
+            Detection(
+                class_id=class_id,
+                class_name=resolved_class.canonical_name,
+                confidence=float(confidence),
+                x1=float(xyxy[0]),
+                y1=float(xyxy[1]),
+                x2=float(xyxy[2]),
+                y2=float(xyxy[3]),
+            )
         )
-        for xyxy, confidence, class_id_value in zip(
-            coordinates,
-            confidences,
-            class_ids,
-            strict=True,
-        )
-    )
+    return tuple(detections)
 
 
-def _to_tracked_people(result: Any) -> tuple[TrackedPersonBox, ...]:
+def _to_tracked_people(
+    result: Any,
+    *,
+    class_resolver: ClassResolver = resolve_identity_class,
+) -> tuple[TrackedPersonBox, ...]:
     boxes = getattr(result, "boxes", None)
     if boxes is None or boxes.id is None:
         return ()
@@ -392,9 +424,10 @@ def _to_tracked_people(result: Any) -> tuple[TrackedPersonBox, ...]:
         strict=True,
     ):
         class_id = int(class_id_value)
-        class_name = str(names.get(class_id, class_id)).strip().lower()
+        source_name = str(names.get(class_id, class_id))
+        resolved_class = class_resolver(class_id, source_name)
 
-        if class_name != "person":
+        if resolved_class.track_kind is not TrackKind.HUMAN:
             continue
 
         tracked_people.append(

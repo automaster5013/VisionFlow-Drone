@@ -59,6 +59,8 @@ class Settings:
     browser_upload_max_payload_bytes: int
     model_profile: str
     model_path: str
+    model_manifest_path: str
+    model_profiles_path: str
     require_cuda: bool
     require_local_model: bool
     confidence: float
@@ -163,6 +165,11 @@ class Settings:
             ),
             model_profile=os.getenv("AI_MODEL_PROFILE", "yolo26n-cpu"),
             model_path=os.getenv("AI_MODEL_PATH", "yolo26n.pt"),
+            model_manifest_path=os.getenv("AI_MODEL_MANIFEST_PATH", ""),
+            model_profiles_path=os.getenv(
+                "AI_MODEL_PROFILES_PATH",
+                "config/model-profiles-v1.json",
+            ),
             require_cuda=_read_bool("AI_REQUIRE_CUDA", False),
             require_local_model=_read_bool("AI_REQUIRE_LOCAL_MODEL", False),
             confidence=_read_float("AI_CONFIDENCE", 0.35),
@@ -341,6 +348,25 @@ class Settings:
 
         if not self.model_path.strip():
             raise ValueError("AI_MODEL_PATH는 비어 있을 수 없습니다.")
+
+        standard_profiles = {
+            "GENERAL_LIVE",
+            "AERIAL_SMALL_OBJECT_LIVE",
+            "DETERMINISTIC_COMPARE",
+        }
+        if (
+            self.model_profile.strip() in standard_profiles
+            and not self.model_profiles_path.strip()
+        ):
+            raise ValueError("AI_MODEL_PROFILES_PATH는 비어 있을 수 없습니다.")
+
+        if (
+            self.model_profile.strip() == "AERIAL_SMALL_OBJECT_LIVE"
+            and not self.model_manifest_path.strip()
+        ):
+            raise ValueError(
+                "AERIAL_SMALL_OBJECT_LIVE에는 AI_MODEL_MANIFEST_PATH가 필요합니다."
+            )
 
         if self.require_cuda and self.device.strip().lower() in {"", "cpu", "mps"}:
             raise ValueError(

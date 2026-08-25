@@ -5,18 +5,49 @@ import sys
 import tempfile
 import types
 import unittest
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 
+from app.domain import FramePacket, VideoSourceType
+from app.model_contract import TrackKind
+from app.model_runtime import ResolvedModelClass
+
 
 class FakeTensor:
+    def __init__(self, value=None) -> None:
+        self.value = value
+
     def sum(self) -> FakeTensor:
         return self
 
     def item(self) -> float:
         return 1.0
+
+    def detach(self) -> FakeTensor:
+        return self
+
+    def cpu(self) -> FakeTensor:
+        return self
+
+    def tolist(self):
+        return np.asarray(self.value).tolist()
+
+
+class FakeBoxes:
+    xyxy = FakeTensor([[1.0, 2.0, 10.0, 12.0]])
+    conf = FakeTensor([0.91])
+    cls = FakeTensor([1])
+
+
+class FakeResult:
+    boxes = FakeBoxes()
+    names = {0: "helmet", 1: "no-helmet"}
+
+    def plot(self):
+        return np.zeros((16, 16, 3), dtype=np.uint8)
 
 
 class FakeCuda:
@@ -56,6 +87,14 @@ class FakeYolo:
     def to(self, device: str) -> FakeYolo:
         self.calls.append(("model.to", device))
         return self
+
+    def predict(self, **kwargs):
+        self.calls.append(("model.predict", kwargs["device"]))
+        return [FakeResult()]
+
+    def track(self, **kwargs):
+        self.calls.append(("model.track", kwargs["device"]))
+        return ("shared-track-result",)
 
 
 def load_detector_module(
@@ -157,6 +196,51 @@ class YoloDetectorGpuRuntimeTest(unittest.TestCase):
                 )
 
         self.assertEqual([], calls)
+
+    def test_inference_uses_canonical_class_and_track_reuses_loaded_model(self) -> None:
+        calls: list[tuple[str, object]] = []
+        module = load_detector_module(calls)
+
+        def resolver(class_id: int, source_name: str) -> ResolvedModelClass:
+            self.assertEqual(1, class_id)
+            self.assertEqual("no-helmet", source_name)
+            return ResolvedModelClass(
+                class_id=class_id,
+                source_name=source_name,
+                canonical_name="person",
+                track_kind=TrackKind.HUMAN,
+            )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            model = Path(temporary) / "best.pt"
+            model.write_bytes(b"visionflow-best")
+            detector = module.YoloDetector(
+                model_profile="best-gpu",
+                model_path=str(model),
+                require_cuda=True,
+                require_local_model=True,
+                confidence=0.35,
+                iou=0.70,
+                image_size=640,
+                device="0",
+                class_resolver=resolver,
+            )
+            frame = FramePacket(
+                source_id="camera-1",
+                session_id="session-1",
+                source_type=VideoSourceType.DUMMY_VIDEO,
+                drone_id=1,
+                frame_index=0,
+                captured_at=datetime(2026, 8, 26, tzinfo=UTC),
+                image=np.zeros((16, 16, 3), dtype=np.uint8),
+            )
+            inference = detector.infer(frame)
+            track_results = detector.track(device="0")
+
+        self.assertEqual("person", inference.detections[0].class_name)
+        self.assertEqual(("shared-track-result",), track_results)
+        self.assertIn(("model.predict", "0"), calls)
+        self.assertIn(("model.track", "0"), calls)
 
 
 if __name__ == "__main__":

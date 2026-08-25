@@ -11,6 +11,27 @@
 
 `DETERMINISTIC_COMPARE`는 단일 가중치 역할이 아닙니다. 동일 프레임에서 `GENERAL_LIVE`와 `AERIAL_SMALL_OBJECT_LIVE` 결과를 비교하는 Small Object Showdown 오케스트레이션 프로필입니다.
 
+## LIVE 런타임 선택
+
+일반 객체 기준선은 다음 세 값을 사용합니다.
+
+```dotenv
+AI_MODEL_PROFILE=GENERAL_LIVE
+AI_MODEL_PATH=models/yolo26m.pt
+AI_MODEL_PROFILES_PATH=config/model-profiles-v1.json
+```
+
+VisDrone S2 LIVE는 실가중치 매니페스트까지 함께 지정해야 합니다.
+
+```dotenv
+AI_MODEL_PROFILE=AERIAL_SMALL_OBJECT_LIVE
+AI_MODEL_PATH=models/yolo26m-visdrone-s2-best.pt
+AI_MODEL_MANIFEST_PATH=models/manifests/yolo26m-visdrone-s2-best.manifest.json
+AI_MODEL_PROFILES_PATH=config/model-profiles-v1.json
+```
+
+서버 시작 시 레지스트리, S2 활성화 자격, 가중치 파일명·SHA-256·크기와 원본 10개 클래스가 모두 일치해야 합니다. `pedestrian`과 `people`은 Track ID 연계용 `person/HUMAN`으로, `motor`는 이벤트용 `motorcycle/CYCLE`로 정규화합니다. PPE 모델 결과에는 이 매핑을 적용하지 않습니다. 기존 `yolo26n-cpu`와 `best-gpu`는 마이그레이션을 위한 호환 모드로 유지됩니다.
+
 ## 매니페스트
 
 실가중치 옆에는 같은 stem의 매니페스트를 둡니다.
