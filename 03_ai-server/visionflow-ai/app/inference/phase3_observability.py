@@ -34,6 +34,8 @@ class Phase3ObservabilitySnapshot:
     pose_unassigned: int
     segmentation_samples: int
     segmentation_instances: int
+    segmentation_assigned: int
+    segmentation_unassigned: int
     segmentation_mask_area_pixels: float
     depth_trigger_attempts: int
     depth_triggers_accepted: int
@@ -59,6 +61,8 @@ class Phase3ConsoleObserver:
         self._pose_unassigned = 0
         self._segmentation_samples = 0
         self._segmentation_instances = 0
+        self._segmentation_assigned = 0
+        self._segmentation_unassigned = 0
         self._segmentation_mask_area_pixels = 0.0
         self._depth_trigger_attempts = 0
         self._depth_triggers_accepted = 0
@@ -94,6 +98,12 @@ class Phase3ConsoleObserver:
                 if segmentation is not None:
                     self._segmentation_instances += (
                         segmentation.instance_count
+                    )
+                    self._segmentation_assigned += (
+                        segmentation.assigned_count
+                    )
+                    self._segmentation_unassigned += (
+                        segmentation.unassigned_count
                     )
                     self._segmentation_mask_area_pixels += (
                         segmentation.total_mask_area_pixels
@@ -186,6 +196,10 @@ class Phase3ConsoleObserver:
                 pose_unassigned=self._pose_unassigned,
                 segmentation_samples=self._segmentation_samples,
                 segmentation_instances=self._segmentation_instances,
+                segmentation_assigned=self._segmentation_assigned,
+                segmentation_unassigned=(
+                    self._segmentation_unassigned
+                ),
                 segmentation_mask_area_pixels=(
                     self._segmentation_mask_area_pixels
                 ),
@@ -207,6 +221,9 @@ class Phase3ConsoleObserver:
                 f"POSE_UNASSIGNED={snapshot.pose_unassigned} "
                 f"SEGMENTATION_SAMPLES={snapshot.segmentation_samples} "
                 f"SEGMENTATION_INSTANCES={snapshot.segmentation_instances} "
+                f"SEGMENTATION_ASSIGNED={snapshot.segmentation_assigned} "
+                "SEGMENTATION_UNASSIGNED="
+                f"{snapshot.segmentation_unassigned} "
                 "SEGMENTATION_MASK_AREA_PX="
                 f"{snapshot.segmentation_mask_area_pixels:.3f} "
                 f"DEPTH_TRIGGER_ATTEMPTS={snapshot.depth_trigger_attempts} "

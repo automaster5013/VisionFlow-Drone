@@ -312,6 +312,9 @@ def test_segmentation_runs_only_on_its_independent_stride() -> None:
     assert first.segmentation is not None
     assert first.segmentation.frame_index == 1
     assert first.segmentation.instance_count == 1
+    assert first.segmentation.instances[0].track_id == 11
+    assert first.segmentation.assigned_count == 1
+    assert first.segmentation.unassigned_count == 0
     assert (
         first.segmentation.instances[0].mask_area_pixels
         == pytest.approx(16.0)

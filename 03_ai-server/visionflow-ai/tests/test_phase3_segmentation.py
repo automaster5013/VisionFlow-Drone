@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from app.inference.phase3_association import TrackedPersonBox
 from app.inference.phase3_segmentation import (
     build_segmentation_frame_result,
 )
@@ -64,6 +65,75 @@ def test_fake_segmentation_result_is_converted() -> None:
     assert person.confidence == pytest.approx(0.91)
     assert person.mask_area_pixels == pytest.approx(2_400.0)
     assert result.total_mask_area_pixels == pytest.approx(7_200.0)
+
+
+def test_person_instances_are_assigned_to_tracks_by_iou() -> None:
+    result = build_segmentation_frame_result(
+        result=_result(
+            boxes=[
+                [0, 0, 20, 40],
+                [30, 0, 50, 40],
+            ],
+            confidence=[0.95, 0.90],
+            class_ids=[0, 0],
+            polygons=[
+                [[0, 0], [20, 0], [20, 40], [0, 40]],
+                [[30, 0], [50, 0], [50, 40], [30, 40]],
+            ],
+            names={0: "person"},
+        ),
+        frame_index=8,
+        tracks=(
+            TrackedPersonBox(11, 0, 0, 20, 40),
+            TrackedPersonBox(22, 30, 0, 50, 40),
+        ),
+    )
+
+    assert [item.track_id for item in result.instances] == [11, 22]
+    assert result.person_instance_count == 2
+    assert result.assigned_count == 2
+    assert result.unassigned_count == 0
+
+
+def test_assignment_is_one_to_one_and_deterministic_on_equal_iou() -> None:
+    result = build_segmentation_frame_result(
+        result=_result(
+            boxes=[[0, 0, 10, 10]],
+            confidence=[0.9],
+            class_ids=[0],
+            polygons=[[[0, 0], [10, 0], [10, 10], [0, 10]]],
+            names={0: "person"},
+        ),
+        frame_index=9,
+        tracks=(
+            TrackedPersonBox(22, 0, 0, 10, 10),
+            TrackedPersonBox(11, 0, 0, 10, 10),
+        ),
+    )
+
+    assert result.instances[0].track_id == 11
+
+
+def test_non_person_and_low_iou_person_remain_unassigned() -> None:
+    result = build_segmentation_frame_result(
+        result=_result(
+            boxes=[[0, 0, 10, 10], [20, 20, 30, 30]],
+            confidence=[0.8, 0.7],
+            class_ids=[0, 1],
+            polygons=[
+                [[0, 0], [10, 0], [10, 10], [0, 10]],
+                [[20, 20], [30, 20], [30, 30], [20, 30]],
+            ],
+            names={0: "person", 1: "vehicle"},
+        ),
+        frame_index=10,
+        tracks=(TrackedPersonBox(31, 100, 100, 120, 140),),
+    )
+
+    assert [item.track_id for item in result.instances] == [None, None]
+    assert result.person_instance_count == 1
+    assert result.assigned_count == 0
+    assert result.unassigned_count == 1
 
 
 def test_sequence_class_names_and_fallback_are_supported() -> None:

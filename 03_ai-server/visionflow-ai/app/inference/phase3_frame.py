@@ -177,7 +177,10 @@ class Phase3FrameAnalyzer:
             tracked_people=tracked_people,
         )
         segmentation_result, segmentation_sampled = (
-            self._analyze_segmentation(frame=frame)
+            self._analyze_segmentation(
+                frame=frame,
+                tracked_people=tracked_people,
+            )
         )
 
         return Phase3FrameAnalysis(
@@ -250,6 +253,7 @@ class Phase3FrameAnalyzer:
         self,
         *,
         frame: FramePacket,
+        tracked_people: tuple[TrackedPersonBox, ...],
     ) -> tuple[Phase3SegmentationFrameResult | None, bool]:
         if not getattr(
             self._runtime,
@@ -293,6 +297,7 @@ class Phase3FrameAnalyzer:
             build_segmentation_frame_result(
                 result=segmentation_results[0],
                 frame_index=policy_frame_index,
+                tracks=tracked_people,
             ),
             True,
         )

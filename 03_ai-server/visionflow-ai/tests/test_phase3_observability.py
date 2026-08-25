@@ -210,6 +210,7 @@ def test_segmentation_sample_is_counted_without_ppe_result() -> None:
                     SegmentationPoint(x=4.0, y=4.0),
                     SegmentationPoint(x=0.0, y=4.0),
                 ),
+                track_id=17,
             ),
         ),
     )
@@ -231,9 +232,13 @@ def test_segmentation_sample_is_counted_without_ppe_result() -> None:
     assert snapshot.frames_analyzed == 1
     assert snapshot.segmentation_samples == 1
     assert snapshot.segmentation_instances == 1
+    assert snapshot.segmentation_assigned == 1
+    assert snapshot.segmentation_unassigned == 0
     assert snapshot.segmentation_mask_area_pixels == 16.0
     assert "SEGMENTATION_SAMPLES=1" in output
     assert "SEGMENTATION_INSTANCES=1" in output
+    assert "SEGMENTATION_ASSIGNED=1" in output
+    assert "SEGMENTATION_UNASSIGNED=0" in output
     assert "SEGMENTATION_MASK_AREA_PX=16.000" in output
     assert snapshot.depth_trigger_attempts == 0
 
@@ -291,6 +296,8 @@ def test_emit_summary_reports_all_counters() -> None:
     assert "PPE_SAMPLES=1" in output
     assert "SEGMENTATION_SAMPLES=0" in output
     assert "SEGMENTATION_INSTANCES=0" in output
+    assert "SEGMENTATION_ASSIGNED=0" in output
+    assert "SEGMENTATION_UNASSIGNED=0" in output
     assert "SEGMENTATION_MASK_AREA_PX=0.000" in output
     assert "DEPTH_TRIGGER_ATTEMPTS=1" in output
     assert "DEPTH_TRIGGERS_ACCEPTED=1" in output
