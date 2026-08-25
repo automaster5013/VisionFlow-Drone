@@ -30,17 +30,23 @@ function StatusCard({
   tone = "neutral",
 }: StatusCardProps) {
   const toneClass = {
-    good: "border-emerald-200 bg-emerald-50/70",
-    warning: "border-amber-200 bg-amber-50/70",
-    neutral: "border-slate-200 bg-white",
+    good: "vf-security-command__status--good",
+    warning: "vf-security-command__status--warning",
+    neutral: "vf-security-command__status--neutral",
   }[tone];
   return (
-    <article className={`rounded-2xl border p-5 shadow-sm ${toneClass}`}>
-      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+    <article
+      className={`vf-security-command__status rounded-2xl border p-5 shadow-sm ${toneClass}`}
+    >
+      <p className="vf-security-command__label text-xs font-bold uppercase tracking-wide">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
+      <p className="vf-security-command__value mt-2 text-2xl font-black">
+        {value}
+      </p>
+      <p className="vf-security-command__detail mt-2 text-sm leading-6">
+        {detail}
+      </p>
     </article>
   );
 }
@@ -128,21 +134,24 @@ export default async function SecurityStatusPage() {
       : "ADMIN 전용";
 
   return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-sm font-semibold text-sky-700">
+    <div
+      data-security-command-center
+      className="vf-security-command space-y-6"
+    >
+      <header className="vf-security-command__hero">
+        <p className="vf-security-command__eyebrow text-sm font-semibold">
           SECURITY POSTURE
         </p>
-        <h1 className="mt-1 text-3xl font-black text-slate-950">
+        <h1 className="vf-security-command__title mt-1 text-3xl font-black">
           VisionFlow 운영 보안 상태
         </h1>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+        <p className="vf-security-command__lede mt-2 max-w-4xl text-sm leading-6">
           RBAC, 브라우저 세션, 만료 정책과 실제 응답 헤더를 한 화면에서
           확인합니다. 운영자 인증 키와 세션 토큰은 수집하거나 표시하지 않습니다.
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="vf-security-command__status-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatusCard
           label="RBAC"
           value={rbacValue}
@@ -200,12 +209,14 @@ export default async function SecurityStatusPage() {
         <>
           <CspReportMonitor />
 
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-            <p className="text-sm font-semibold text-amber-800">DEFERRED CHECKS</p>
-            <h2 className="mt-1 text-xl font-black text-slate-950">
+          <section className="vf-security-command__deferred rounded-2xl border p-6">
+            <p className="vf-security-command__deferred-eyebrow text-sm font-semibold">
+              DEFERRED CHECKS
+            </p>
+            <h2 className="vf-security-command__section-title mt-1 text-xl font-black">
               장비 이동 후 이어서 검증할 항목
             </h2>
-            <ul className="mt-4 space-y-2 text-sm leading-6 text-amber-950">
+            <ul className="vf-security-command__deferred-list mt-4 space-y-2 text-sm leading-6">
               <li>스마트폰 실센서 HTTPS 인증서 검증은 단말 수리 후 재개합니다.</li>
               <li>HP OMEN RTX 5060과 파인튜닝한 best.pt 성능 검증은 장비 이동 후 진행합니다.</li>
               <li>강제 CSP와 HSTS는 HTTPS·AI 배치 주소가 확정된 뒤 적용합니다.</li>
@@ -214,13 +225,13 @@ export default async function SecurityStatusPage() {
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
                 href="/operator-sessions"
-                className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white"
+                className="vf-security-command__action vf-security-command__action--primary rounded-lg px-4 py-2 text-sm font-bold"
               >
                 활성 세션 관리
               </Link>
               <Link
                 href="/audit-logs"
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700"
+                className="vf-security-command__action rounded-lg border px-4 py-2 text-sm font-bold"
               >
                 감사 로그 확인
               </Link>
@@ -230,15 +241,15 @@ export default async function SecurityStatusPage() {
       ) : (
         <section
           data-admin-security-detail-restricted
-          className="rounded-2xl border border-slate-200 bg-slate-50 p-6"
+          className="vf-security-command__restricted rounded-2xl border p-6"
         >
-          <p className="text-sm font-semibold text-slate-600">
+          <p className="vf-security-command__label text-sm font-semibold">
             ADMIN SECURITY DETAIL
           </p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">
+          <h2 className="vf-security-command__section-title mt-1 text-xl font-black">
             상세 보안 관찰 정보는 ADMIN 전용입니다.
           </h2>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
+          <p className="vf-security-command__detail mt-3 max-w-4xl text-sm leading-6">
             CSP 위반 URI·source file, 활성 세션 관리, 미완료 hardening 항목은
             ADMIN 로그인 상태에서만 표시됩니다. 현재 역할에는 고수준 RBAC 및
             보안 헤더 상태만 제공합니다.
