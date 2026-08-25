@@ -230,7 +230,7 @@ export function AiModelOperationsCenter() {
   const sourceFailureCount = Object.keys(sourceErrors).length;
 
   return (
-    <div data-ai-model-command-center className="vf-model-command mx-auto max-w-[1580px] space-y-7">
+    <div data-ai-model-operations-center data-ai-model-command-center className="vf-model-command mx-auto max-w-[1580px] space-y-7">
       <header className="vf-model-command__hero flex flex-wrap items-end justify-between gap-5">
         <div>
           <p className="vf-model-command__eyebrow text-xs font-black uppercase tracking-[0.24em]">AI Operations Intelligence</p>
