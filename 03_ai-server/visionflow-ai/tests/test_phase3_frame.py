@@ -315,12 +315,14 @@ def test_segmentation_runs_only_on_its_independent_stride() -> None:
     assert first.segmentation.instances[0].track_id == 11
     assert first.segmentation.assigned_count == 1
     assert first.segmentation.unassigned_count == 0
+    assert not np.all(first.inference.annotated_image == 9)
     assert (
         first.segmentation.instances[0].mask_area_pixels
         == pytest.approx(16.0)
     )
     assert second.segmentation_sampled is False
     assert second.segmentation is None
+    assert np.all(second.inference.annotated_image == 9)
     assert seventh.segmentation_sampled is True
     assert seventh.segmentation is not None
     assert seventh.segmentation.frame_index == 7

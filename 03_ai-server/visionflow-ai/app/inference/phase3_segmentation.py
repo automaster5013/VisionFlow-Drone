@@ -4,7 +4,23 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any
 
+import cv2
+import numpy as np
+
 from app.inference.phase3_association import TrackedPersonBox
+
+_SEGMENTATION_COLORS: tuple[tuple[int, int, int], ...] = (
+    (56, 56, 255),
+    (151, 157, 255),
+    (31, 112, 255),
+    (29, 178, 255),
+    (49, 210, 207),
+    (10, 249, 72),
+    (23, 204, 146),
+    (134, 219, 61),
+    (52, 147, 26),
+    (187, 212, 0),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,6 +101,153 @@ class Phase3SegmentationFrameResult:
             instance.class_name == class_name
             for instance in self.instances
         )
+
+
+def render_segmentation_overlay(
+    *,
+    image: np.ndarray,
+    result: Phase3SegmentationFrameResult,
+    alpha: float = 0.35,
+) -> np.ndarray:
+    source = np.asarray(image)
+    if source.ndim != 3 or source.shape[2] != 3:
+        raise ValueError("image must have shape (height, width, 3).")
+    if source.shape[0] <= 0 or source.shape[1] <= 0:
+        raise ValueError("image height and width must be positive.")
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError("alpha must be in the range [0, 1].")
+
+    rendered = source.copy()
+    overlay = rendered.copy()
+    drawable: list[
+        tuple[SegmentationInstance, np.ndarray, tuple[int, int, int]]
+    ] = []
+
+    height, width = rendered.shape[:2]
+    for instance in result.instances:
+        if len(instance.polygon) < 3:
+            continue
+
+        raw_points = np.asarray(
+            [
+                (point.x, point.y)
+                for point in instance.polygon
+            ],
+            dtype=np.float64,
+        )
+        if not np.all(np.isfinite(raw_points)):
+            continue
+
+        points = np.rint(raw_points).astype(np.int32)
+        points[:, 0] = np.clip(points[:, 0], 0, width - 1)
+        points[:, 1] = np.clip(points[:, 1], 0, height - 1)
+
+        if (
+            len(np.unique(points, axis=0)) < 3
+            or cv2.contourArea(points) <= 0.0
+        ):
+            continue
+
+        color = _segmentation_color(instance)
+        cv2.fillPoly(overlay, [points], color)
+        drawable.append((instance, points, color))
+
+    if not drawable:
+        return rendered
+
+    cv2.addWeighted(
+        overlay,
+        alpha,
+        rendered,
+        1.0 - alpha,
+        0.0,
+        dst=rendered,
+    )
+
+    for instance, points, color in drawable:
+        cv2.polylines(
+            rendered,
+            [points],
+            isClosed=True,
+            color=color,
+            thickness=2,
+            lineType=cv2.LINE_AA,
+        )
+        _draw_segmentation_label(
+            image=rendered,
+            instance=instance,
+            points=points,
+            color=color,
+        )
+
+    return rendered
+
+
+def _segmentation_color(
+    instance: SegmentationInstance,
+) -> tuple[int, int, int]:
+    color_key = (
+        instance.track_id
+        if instance.track_id is not None
+        else instance.class_id
+    )
+    return _SEGMENTATION_COLORS[
+        color_key % len(_SEGMENTATION_COLORS)
+    ]
+
+
+def _draw_segmentation_label(
+    *,
+    image: np.ndarray,
+    instance: SegmentationInstance,
+    points: np.ndarray,
+    color: tuple[int, int, int],
+) -> None:
+    label = instance.class_name
+    if instance.track_id is not None:
+        label = f"{label} #{instance.track_id}"
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.45
+    thickness = 1
+    (text_width, text_height), baseline = cv2.getTextSize(
+        label,
+        font,
+        font_scale,
+        thickness,
+    )
+    anchor_x = int(np.min(points[:, 0]))
+    anchor_y = int(np.min(points[:, 1]))
+    text_x = min(
+        max(anchor_x, 0),
+        max(0, image.shape[1] - text_width - 1),
+    )
+    text_y = max(text_height + baseline + 1, anchor_y)
+    text_y = min(
+        text_y,
+        max(0, image.shape[0] - baseline - 1),
+    )
+
+    cv2.rectangle(
+        image,
+        (text_x, max(0, text_y - text_height - baseline - 1)),
+        (
+            min(image.shape[1] - 1, text_x + text_width + 1),
+            min(image.shape[0] - 1, text_y + baseline),
+        ),
+        color,
+        thickness=cv2.FILLED,
+    )
+    cv2.putText(
+        image,
+        label,
+        (text_x, text_y),
+        font,
+        font_scale,
+        (255, 255, 255),
+        thickness,
+        lineType=cv2.LINE_AA,
+    )
 
 
 def _to_list(value: Any) -> list[Any]:

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Any, Callable
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, replace
+from typing import Any
 
 import numpy as np
 from ultralytics import YOLO
@@ -15,13 +15,13 @@ from app.inference.phase3_pose import (
     Phase3PoseFrameResult,
     build_pose_frame_result,
 )
+from app.inference.phase3_ppe_depth import PpeDepthFrameResult
+from app.inference.phase3_runtime import Phase3Runtime
 from app.inference.phase3_segmentation import (
     Phase3SegmentationFrameResult,
     build_segmentation_frame_result,
+    render_segmentation_overlay,
 )
-from app.inference.phase3_ppe_depth import PpeDepthFrameResult
-from app.inference.phase3_runtime import Phase3Runtime
-
 
 ModelFactory = Callable[[str], Any]
 
@@ -182,6 +182,14 @@ class Phase3FrameAnalyzer:
                 tracked_people=tracked_people,
             )
         )
+        if segmentation_result is not None:
+            inference = replace(
+                inference,
+                annotated_image=render_segmentation_overlay(
+                    image=inference.annotated_image,
+                    result=segmentation_result,
+                ),
+            )
 
         return Phase3FrameAnalysis(
             inference=inference,

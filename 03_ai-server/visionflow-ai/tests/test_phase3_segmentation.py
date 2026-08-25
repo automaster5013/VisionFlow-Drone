@@ -2,11 +2,17 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import cv2
+import numpy as np
 import pytest
 
 from app.inference.phase3_association import TrackedPersonBox
 from app.inference.phase3_segmentation import (
+    Phase3SegmentationFrameResult,
+    SegmentationInstance,
+    SegmentationPoint,
     build_segmentation_frame_result,
+    render_segmentation_overlay,
 )
 
 
@@ -134,6 +140,91 @@ def test_non_person_and_low_iou_person_remain_unassigned() -> None:
     assert result.person_instance_count == 1
     assert result.assigned_count == 0
     assert result.unassigned_count == 1
+
+
+def test_segmentation_overlay_renders_mask_without_mutating_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = np.full((24, 24, 3), 10, dtype=np.uint8)
+    source_before = source.copy()
+    labels: list[str] = []
+
+    def capture_text(_image, text, *_args, **_kwargs):
+        labels.append(text)
+
+    monkeypatch.setattr(cv2, "putText", capture_text)
+    result = Phase3SegmentationFrameResult(
+        frame_index=1,
+        instances=(
+            SegmentationInstance(
+                class_id=0,
+                class_name="person",
+                confidence=0.91,
+                x1=2,
+                y1=2,
+                x2=12,
+                y2=12,
+                polygon=(
+                    SegmentationPoint(2, 2),
+                    SegmentationPoint(12, 2),
+                    SegmentationPoint(12, 12),
+                    SegmentationPoint(2, 12),
+                ),
+                track_id=11,
+            ),
+        ),
+    )
+
+    rendered = render_segmentation_overlay(
+        image=source,
+        result=result,
+    )
+
+    assert np.array_equal(source, source_before)
+    assert not np.shares_memory(rendered, source)
+    assert not np.array_equal(rendered[8, 8], source[8, 8])
+    assert np.array_equal(rendered[22, 22], source[22, 22])
+    assert labels == ["person #11"]
+
+
+def test_empty_and_degenerate_masks_leave_image_unchanged() -> None:
+    source = np.full((16, 16, 3), 20, dtype=np.uint8)
+    empty = Phase3SegmentationFrameResult(
+        frame_index=1,
+        instances=(),
+    )
+    degenerate = Phase3SegmentationFrameResult(
+        frame_index=1,
+        instances=(
+            SegmentationInstance(
+                class_id=0,
+                class_name="person",
+                confidence=0.7,
+                x1=1,
+                y1=1,
+                x2=8,
+                y2=8,
+                polygon=(
+                    SegmentationPoint(1, 1),
+                    SegmentationPoint(2, 2),
+                    SegmentationPoint(3, 3),
+                ),
+            ),
+        ),
+    )
+
+    empty_rendered = render_segmentation_overlay(
+        image=source,
+        result=empty,
+    )
+    degenerate_rendered = render_segmentation_overlay(
+        image=source,
+        result=degenerate,
+    )
+
+    assert np.array_equal(empty_rendered, source)
+    assert not np.shares_memory(empty_rendered, source)
+    assert np.array_equal(degenerate_rendered, source)
 
 
 def test_sequence_class_names_and_fallback_are_supported() -> None:
