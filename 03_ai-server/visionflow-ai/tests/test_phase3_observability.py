@@ -27,6 +27,11 @@ from app.inference.phase3_processor import (
     PpeFrameResult,
     PpeTrackAssessment,
 )
+from app.inference.phase3_segmentation import (
+    Phase3SegmentationFrameResult,
+    SegmentationInstance,
+    SegmentationPoint,
+)
 
 
 class _FakePhase3Reporter:
@@ -185,6 +190,54 @@ def test_non_ppe_frame_only_updates_frame_counter() -> None:
     assert snapshot.depth_trigger_attempts == 0
 
 
+def test_segmentation_sample_is_counted_without_ppe_result() -> None:
+    stream = StringIO()
+    observer = Phase3ConsoleObserver(stream=stream)
+    segmentation = Phase3SegmentationFrameResult(
+        frame_index=28,
+        instances=(
+            SegmentationInstance(
+                class_id=0,
+                class_name="person",
+                confidence=0.91,
+                x1=0.0,
+                y1=0.0,
+                x2=4.0,
+                y2=4.0,
+                polygon=(
+                    SegmentationPoint(x=0.0, y=0.0),
+                    SegmentationPoint(x=4.0, y=0.0),
+                    SegmentationPoint(x=4.0, y=4.0),
+                    SegmentationPoint(x=0.0, y=4.0),
+                ),
+            ),
+        ),
+    )
+
+    observer.record_analysis(
+        SimpleNamespace(
+            inference=_inference(),
+            ppe=None,
+            ppe_sampled=False,
+            segmentation=segmentation,
+            segmentation_sampled=True,
+        )
+    )
+    observer.emit_summary()
+
+    snapshot = observer.snapshot()
+    output = stream.getvalue()
+
+    assert snapshot.frames_analyzed == 1
+    assert snapshot.segmentation_samples == 1
+    assert snapshot.segmentation_instances == 1
+    assert snapshot.segmentation_mask_area_pixels == 16.0
+    assert "SEGMENTATION_SAMPLES=1" in output
+    assert "SEGMENTATION_INSTANCES=1" in output
+    assert "SEGMENTATION_MASK_AREA_PX=16.000" in output
+    assert snapshot.depth_trigger_attempts == 0
+
+
 def test_depth_result_is_emitted_with_latency_and_bucket() -> None:
     stream = StringIO()
     observer = Phase3ConsoleObserver(stream=stream)
@@ -236,6 +289,9 @@ def test_emit_summary_reports_all_counters() -> None:
     assert "PHASE3_SUMMARY" in output
     assert "FRAMES_ANALYZED=1" in output
     assert "PPE_SAMPLES=1" in output
+    assert "SEGMENTATION_SAMPLES=0" in output
+    assert "SEGMENTATION_INSTANCES=0" in output
+    assert "SEGMENTATION_MASK_AREA_PX=0.000" in output
     assert "DEPTH_TRIGGER_ATTEMPTS=1" in output
     assert "DEPTH_TRIGGERS_ACCEPTED=1" in output
     assert "DEPTH_TRIGGERS_REJECTED=0" in output
