@@ -27,6 +27,28 @@ class ResidualCommandSurfacesTest(unittest.TestCase):
             for token in tokens:
                 self.assertIn(token, source, f"{relative}: {token}")
 
+    def test_demo_mode_aligns_with_shared_shell_content_grid(self):
+        page = (WEB / "app" / "demo-mode" / "page.tsx").read_text(
+            encoding="utf-8"
+        )
+        layout = (WEB / "app" / "layout.tsx").read_text(encoding="utf-8")
+
+        self.assertIn(
+            '<main className="vf-command-main flex-1 p-4 sm:p-6 xl:p-7">',
+            layout,
+        )
+        self.assertIn("data-demo-mode-command", page)
+        self.assertIn(
+            'className="vf-demo-mode-command min-h-full"',
+            page,
+        )
+        self.assertIn('className="mx-auto max-w-[1500px]"', page)
+        self.assertNotIn("min-h-screen", page)
+        self.assertNotIn("px-4 py-6", page)
+        self.assertNotIn("sm:px-6", page)
+        self.assertNotIn("lg:px-8", page)
+        self.assertNotIn("<main", page)
+
     def test_css_contract(self):
         css = CSS.read_text(encoding="utf-8")
         tokens = (

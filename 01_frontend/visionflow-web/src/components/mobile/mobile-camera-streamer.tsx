@@ -535,8 +535,11 @@ export function MobileCameraStreamer() {
   );
 
   return (
-    <main className="vf-camera-command min-h-screen px-4 py-6 text-slate-900">
-      <div className="mx-auto max-w-7xl space-y-5">
+    <div
+      data-mobile-camera-command
+      className="vf-camera-command min-h-full text-slate-900"
+    >
+      <div className="mx-auto max-w-[1500px] space-y-5">
         <header className="vf-camera-command__hero rounded-2xl p-5 shadow-lg sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -813,7 +816,7 @@ export function MobileCameraStreamer() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -28,10 +28,13 @@ export default async function DemoModePage() {
   }
 
   return (
-    <main data-demo-mode-command className="vf-demo-mode-command min-h-screen bg-slate-100 px-4 py-6 sm:px-6 lg:px-8">
+    <div
+      data-demo-mode-command
+      className="vf-demo-mode-command min-h-full"
+    >
       <div className="mx-auto max-w-[1500px]">
         <DemoModeConsole />
       </div>
-    </main>
+    </div>
   );
 }

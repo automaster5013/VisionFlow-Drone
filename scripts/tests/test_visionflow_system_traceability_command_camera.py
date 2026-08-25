@@ -46,6 +46,29 @@ class CommandCameraTraceabilityTests(unittest.TestCase):
 
         self.assertIn("vf-camera-preview-page", page)
 
+    def test_camera_command_aligns_with_shared_shell_content_grid(self) -> None:
+        streamer = read_frontend(
+            "components/mobile/mobile-camera-streamer.tsx"
+        )
+        layout = read_frontend("app/layout.tsx")
+
+        self.assertIn(
+            '<main className="vf-command-main flex-1 p-4 sm:p-6 xl:p-7">',
+            layout,
+        )
+        self.assertIn("data-mobile-camera-command", streamer)
+        self.assertIn(
+            'className="vf-camera-command min-h-full text-slate-900"',
+            streamer,
+        )
+        self.assertIn(
+            'className="mx-auto max-w-[1500px] space-y-5"',
+            streamer,
+        )
+        self.assertNotIn("min-h-screen px-4 py-6", streamer)
+        self.assertNotIn("max-w-7xl", streamer)
+        self.assertNotIn("<main", streamer)
+
     def test_camera_command_preserves_capture_and_ai_api_contracts(self) -> None:
         streamer = read_frontend(
             "components/mobile/mobile-camera-streamer.tsx"
