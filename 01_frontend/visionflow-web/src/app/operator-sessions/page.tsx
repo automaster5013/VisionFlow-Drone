@@ -58,13 +58,13 @@ export default async function OperatorSessionsPage() {
 
   const result = await loadSessions();
   return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-sm font-semibold text-sky-700">SECURITY OPERATIONS</p>
-        <h1 className="mt-1 text-3xl font-bold text-slate-950">
+    <div data-operator-sessions-command className="vf-session-command mx-auto max-w-[1500px] space-y-6">
+      <header className="vf-session-command__hero">
+        <p className="vf-session-command__eyebrow text-sm font-semibold text-sky-700">SECURITY OPERATIONS</p>
+        <h1 className="vf-session-command__title mt-1 text-3xl font-bold text-slate-950">
           운영자 활성 세션 관리
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="vf-session-command__lede mt-2 text-sm text-slate-600">
           브라우저에 발급된 세션의 사용 시각과 만료 시각을 확인하고, 분실하거나
           의심되는 세션을 즉시 종료합니다. 원본 키와 세션 토큰은 표시하지 않습니다.
         </p>

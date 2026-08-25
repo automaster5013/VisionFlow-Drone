@@ -565,23 +565,23 @@ export function DemoModeConsole() {
         : "-";
 
   return (
-    <section className="space-y-6">
-      <header className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-blue-50 p-6 shadow-sm">
+    <section className="vf-demo-mode-command__console space-y-6">
+      <header className="vf-demo-mode-command__hero rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-blue-50 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-violet-700">
+            <p className="vf-demo-mode-command__eyebrow text-sm font-black uppercase tracking-[0.2em] text-violet-700">
               Presentation Control
             </p>
-            <h1 className="mt-2 text-3xl font-black text-slate-950">
+            <h1 className="vf-demo-mode-command__title mt-2 text-3xl font-black text-slate-950">
               VisionFlow 시연 모드
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="vf-demo-mode-command__lede mt-3 max-w-3xl text-sm leading-6 text-slate-600">
               스마트폰 실시간 촬영과 네트워크 독립형 로컬 MP4
               추론을 안전하게 전환합니다. 두 입력은 동시에
               실행되지 않습니다.
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-right">
+          <div className="vf-demo-mode-command__status rounded-2xl border border-slate-200 bg-white px-5 py-4 text-right">
             <p className="text-xs font-bold text-slate-500">현재 모드</p>
             <p className="mt-1 text-lg font-black text-slate-950">
               {modeLabel(mode)}
@@ -734,7 +734,8 @@ export function DemoModeConsole() {
       </div>
 
       <div
-        className={`rounded-2xl border p-4 text-sm ${
+        data-tone={error ? "error" : "notice"}
+        className={`vf-demo-mode-notice rounded-2xl border p-4 text-sm ${
           error
             ? "border-red-300 bg-red-50 text-red-800"
             : "border-blue-200 bg-blue-50 text-blue-800"
@@ -779,7 +780,7 @@ function ModeCard({
 
   return (
     <article
-      className={`rounded-3xl border p-6 shadow-sm ${
+      className={`vf-demo-mode-command__mode-card rounded-3xl border p-6 shadow-sm ${
         active ? activeClass : "border-slate-200 bg-white"
       }`}
     >
@@ -803,7 +804,7 @@ function ModeCard({
         type="button"
         disabled={disabled}
         onClick={onClick}
-        className={`mt-6 w-full rounded-xl px-5 py-4 font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${buttonClass}`}
+        className={`vf-demo-mode-command__mode-action mt-6 w-full rounded-xl px-5 py-4 font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${buttonClass}`}
       >
         {button}
       </button>
