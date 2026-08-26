@@ -41,6 +41,10 @@
       "auxiliaryInference": false,
       "backendReporting": false,
       "snapshotEnabled": false,
+      "matchIouThreshold": 0.5,
+      "smallObjectDefinition": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION",
+      "smallObjectMaxAreaPx": 1024,
+      "metricProvenance": "MODEL_DIFFERENCE_PROXY",
       "recoveredLabel": "RECOVERED SMALL OBJECT"
     }
   },

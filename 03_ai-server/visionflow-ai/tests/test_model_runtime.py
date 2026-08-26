@@ -6,7 +6,10 @@ import unittest
 from pathlib import Path
 
 from app.model_contract import ModelContractError, TrackKind
-from app.model_runtime import create_runtime_model_selection
+from app.model_runtime import (
+    create_runtime_model_comparison_selection,
+    create_runtime_model_selection,
+)
 from tests.test_model_contract import (
     REGISTRY_PATH,
     S1_TEMPLATE_PATH,
@@ -154,6 +157,62 @@ class RuntimeModelSelectionTest(unittest.TestCase):
             create_runtime_model_selection(
                 model_profile="DETERMINISTIC_COMPARE",
                 model_path="models/yolo26m.pt",
+                profiles_path=str(self.profiles),
+            )
+
+    def test_compare_selection_resolves_general_and_s2_with_exact_policy(self) -> None:
+        manifest_path, weight_path, manifest = self._materialize(
+            S2_TEMPLATE_PATH,
+            "yolo26m-visdrone-s2-best.pt",
+        )
+        comparison = create_runtime_model_comparison_selection(
+            baseline_model_path="models/yolo26m.pt",
+            candidate_model_path=str(weight_path),
+            candidate_manifest_path=str(manifest_path),
+            profiles_path=str(self.profiles),
+        )
+        baseline_status = {"profile": "GENERAL_LIVE", "classCount": 80}
+        candidate_status = model_status(manifest, weight_path)
+        candidate_status["profile"] = "AERIAL_SMALL_OBJECT_LIVE"
+        contracts = comparison.validate_loaded_status(
+            baseline_status=baseline_status,
+            candidate_status=candidate_status,
+        )
+        status = comparison.enrich_status(
+            baseline_status=baseline_status,
+            candidate_status=candidate_status,
+            contracts=contracts,
+        )
+
+        self.assertEqual(comparison.baseline.requested_profile, "GENERAL_LIVE")
+        self.assertEqual(
+            comparison.candidate.requested_profile,
+            "AERIAL_SMALL_OBJECT_LIVE",
+        )
+        self.assertEqual(comparison.policy.match_iou_threshold, 0.5)
+        self.assertEqual(comparison.policy.small_object_max_area_px, 1024)
+        self.assertEqual(comparison.policy.metric_provenance, "MODEL_DIFFERENCE_PROXY")
+        self.assertEqual(status["profile"], "DETERMINISTIC_COMPARE")
+
+    def test_compare_selection_requires_candidate_manifest(self) -> None:
+        with self.assertRaisesRegex(ModelContractError, "후보 S2 매니페스트"):
+            create_runtime_model_comparison_selection(
+                baseline_model_path="models/yolo26m.pt",
+                candidate_model_path="models/yolo26m-visdrone-s2-best.pt",
+                candidate_manifest_path=" ",
+                profiles_path=str(self.profiles),
+            )
+
+    def test_compare_selection_rejects_s1_candidate_manifest(self) -> None:
+        manifest_path, weight_path, _ = self._materialize(
+            S1_TEMPLATE_PATH,
+            "yolo26m-visdrone-s1-best.pt",
+        )
+        with self.assertRaisesRegex(ModelContractError, "s2-best"):
+            create_runtime_model_comparison_selection(
+                baseline_model_path="models/yolo26m.pt",
+                candidate_model_path=str(weight_path),
+                candidate_manifest_path=str(manifest_path),
                 profiles_path=str(self.profiles),
             )
 

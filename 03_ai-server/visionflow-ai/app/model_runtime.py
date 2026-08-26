@@ -7,6 +7,11 @@ from typing import Any
 
 from app.model_contract import (
     CONTRACT_ID,
+    SHOWDOWN_MATCH_IOU_THRESHOLD,
+    SHOWDOWN_METRIC_PROVENANCE,
+    SHOWDOWN_RECOVERED_LABEL,
+    SMALL_OBJECT_DEFINITION,
+    SMALL_OBJECT_MAX_AREA_PX,
     ModelContractError,
     ModelProfile,
     ModelRole,
@@ -159,6 +164,64 @@ class RuntimeModelSelection:
         return enriched
 
 
+@dataclass(frozen=True, slots=True)
+class ShowdownComparisonPolicy:
+    match_iou_threshold: float
+    small_object_definition: str
+    small_object_max_area_px: int
+    metric_provenance: str
+    recovered_label: str
+
+    def status(self) -> dict[str, object]:
+        return {
+            "matchIouThreshold": self.match_iou_threshold,
+            "smallObjectDefinition": self.small_object_definition,
+            "smallObjectMaxAreaPx": self.small_object_max_area_px,
+            "metricProvenance": self.metric_provenance,
+            "recoveredLabel": self.recovered_label,
+            "groundTruthRecallAvailable": False,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeModelComparisonSelection:
+    baseline: RuntimeModelSelection
+    candidate: RuntimeModelSelection
+    policy: ShowdownComparisonPolicy
+
+    def validate_loaded_status(
+        self,
+        *,
+        baseline_status: Mapping[str, object],
+        candidate_status: Mapping[str, object],
+    ) -> dict[str, Mapping[str, object]]:
+        return {
+            "baseline": self.baseline.validate_loaded_status(baseline_status),
+            "candidate": self.candidate.validate_loaded_status(candidate_status),
+        }
+
+    def enrich_status(
+        self,
+        *,
+        baseline_status: Mapping[str, object],
+        candidate_status: Mapping[str, object],
+        contracts: Mapping[str, Mapping[str, object]],
+    ) -> dict[str, object]:
+        return {
+            "profile": ModelProfile.DETERMINISTIC_COMPARE.value,
+            "mode": "COMPARE",
+            "baseline": self.baseline.enrich_status(
+                baseline_status,
+                contracts["baseline"],
+            ),
+            "candidate": self.candidate.enrich_status(
+                candidate_status,
+                contracts["candidate"],
+            ),
+            "comparisonPolicy": self.policy.status(),
+        }
+
+
 def _file_name(path: str) -> str:
     return Path(path.replace("\\", "/")).name
 
@@ -305,4 +368,65 @@ def create_runtime_model_selection(
         class_resolver=class_resolver,
         registry=registry,
         manifest=manifest,
+    )
+
+
+def create_runtime_model_comparison_selection(
+    *,
+    baseline_model_path: str,
+    candidate_model_path: str,
+    candidate_manifest_path: str,
+    profiles_path: str = DEFAULT_PROFILES_PATH,
+) -> RuntimeModelComparisonSelection:
+    normalized_baseline_path = baseline_model_path.strip()
+    normalized_candidate_path = candidate_model_path.strip()
+    normalized_manifest_path = candidate_manifest_path.strip()
+    if not normalized_baseline_path:
+        raise ModelContractError(
+            "DETERMINISTIC_COMPARE 기준선 가중치 경로가 필요합니다."
+        )
+    if not normalized_candidate_path:
+        raise ModelContractError(
+            "DETERMINISTIC_COMPARE 후보 가중치 경로가 필요합니다."
+        )
+    if not normalized_manifest_path:
+        raise ModelContractError(
+            "DETERMINISTIC_COMPARE 후보 S2 매니페스트 경로가 필요합니다."
+        )
+
+    registry = validate_profile_registry(load_json_object(Path(profiles_path)))
+    compare = _profile_config(registry, ModelProfile.DETERMINISTIC_COMPARE)
+    policy = ShowdownComparisonPolicy(
+        match_iou_threshold=float(
+            compare.get("matchIouThreshold", SHOWDOWN_MATCH_IOU_THRESHOLD)
+        ),
+        small_object_definition=str(
+            compare.get("smallObjectDefinition", SMALL_OBJECT_DEFINITION)
+        ),
+        small_object_max_area_px=int(
+            compare.get("smallObjectMaxAreaPx", SMALL_OBJECT_MAX_AREA_PX)
+        ),
+        metric_provenance=str(
+            compare.get("metricProvenance", SHOWDOWN_METRIC_PROVENANCE)
+        ),
+        recovered_label=str(
+            compare.get("recoveredLabel", SHOWDOWN_RECOVERED_LABEL)
+        ),
+    )
+
+    baseline = create_runtime_model_selection(
+        model_profile=ModelProfile.GENERAL_LIVE.value,
+        model_path=normalized_baseline_path,
+        profiles_path=profiles_path,
+    )
+    candidate = create_runtime_model_selection(
+        model_profile=ModelProfile.AERIAL_SMALL_OBJECT_LIVE.value,
+        model_path=normalized_candidate_path,
+        manifest_path=normalized_manifest_path,
+        profiles_path=profiles_path,
+    )
+    return RuntimeModelComparisonSelection(
+        baseline=baseline,
+        candidate=candidate,
+        policy=policy,
     )

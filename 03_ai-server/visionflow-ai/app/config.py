@@ -61,6 +61,9 @@ class Settings:
     model_path: str
     model_manifest_path: str
     model_profiles_path: str
+    compare_baseline_model_path: str
+    compare_candidate_model_path: str
+    compare_candidate_manifest_path: str
     require_cuda: bool
     require_local_model: bool
     confidence: float
@@ -169,6 +172,18 @@ class Settings:
             model_profiles_path=os.getenv(
                 "AI_MODEL_PROFILES_PATH",
                 "config/model-profiles-v1.json",
+            ),
+            compare_baseline_model_path=os.getenv(
+                "AI_COMPARE_BASELINE_MODEL_PATH",
+                "models/yolo26m.pt",
+            ),
+            compare_candidate_model_path=os.getenv(
+                "AI_COMPARE_CANDIDATE_MODEL_PATH",
+                "models/yolo26m-visdrone-s2-best.pt",
+            ),
+            compare_candidate_manifest_path=os.getenv(
+                "AI_COMPARE_CANDIDATE_MANIFEST_PATH",
+                "models/manifests/yolo26m-visdrone-s2-best.manifest.json",
             ),
             require_cuda=_read_bool("AI_REQUIRE_CUDA", False),
             require_local_model=_read_bool("AI_REQUIRE_LOCAL_MODEL", False),
@@ -346,7 +361,9 @@ class Settings:
         if not self.model_profile.strip():
             raise ValueError("AI_MODEL_PROFILE은 비어 있을 수 없습니다.")
 
-        if not self.model_path.strip():
+        is_compare = self.model_profile.strip() == "DETERMINISTIC_COMPARE"
+
+        if not is_compare and not self.model_path.strip():
             raise ValueError("AI_MODEL_PATH는 비어 있을 수 없습니다.")
 
         standard_profiles = {
@@ -367,6 +384,35 @@ class Settings:
             raise ValueError(
                 "AERIAL_SMALL_OBJECT_LIVE에는 AI_MODEL_MANIFEST_PATH가 필요합니다."
             )
+
+        if is_compare:
+            compare_paths = {
+                "AI_COMPARE_BASELINE_MODEL_PATH": self.compare_baseline_model_path,
+                "AI_COMPARE_CANDIDATE_MODEL_PATH": self.compare_candidate_model_path,
+                "AI_COMPARE_CANDIDATE_MANIFEST_PATH": (
+                    self.compare_candidate_manifest_path
+                ),
+            }
+            for name, path in compare_paths.items():
+                if not path.strip():
+                    raise ValueError(f"{name}는 비어 있을 수 없습니다.")
+
+            if self.source_type is not VideoSourceType.DUMMY_VIDEO:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE는 AI_SOURCE_TYPE=DUMMY_VIDEO만 허용합니다."
+                )
+            if self.phase3_enabled:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE에서는 AI_PHASE3_ENABLED=false여야 합니다."
+                )
+            if self.report_events:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE에서는 AI_REPORT_EVENTS=false여야 합니다."
+                )
+            if self.snapshot_policy is not SnapshotPolicy.OFF:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE에서는 AI_SNAPSHOT_POLICY=OFF여야 합니다."
+                )
 
         if self.require_cuda and self.device.strip().lower() in {"", "cpu", "mps"}:
             raise ValueError(

@@ -8,6 +8,11 @@ from pathlib import Path
 
 from app.model_contract import (
     CONTRACT_ID,
+    SHOWDOWN_MATCH_IOU_THRESHOLD,
+    SHOWDOWN_METRIC_PROVENANCE,
+    SHOWDOWN_RECOVERED_LABEL,
+    SMALL_OBJECT_DEFINITION,
+    SMALL_OBJECT_MAX_AREA_PX,
     VISDRONE_CLASS_MAPPING,
     ModelContractError,
     sha256_file,
@@ -127,6 +132,38 @@ class ModelProfileRegistryTest(unittest.TestCase):
         first["canonicalName"] = "pedestrian"
         with self.assertRaisesRegex(ModelContractError, "표준 매핑"):
             validate_profile_registry(registry)
+
+    def test_deterministic_compare_policy_is_exact(self) -> None:
+        registry = validate_profile_registry(load_json(REGISTRY_PATH))
+        profiles = registry["profiles"]
+        assert isinstance(profiles, dict)
+        compare = profiles["DETERMINISTIC_COMPARE"]
+        assert isinstance(compare, dict)
+
+        self.assertEqual(
+            compare["matchIouThreshold"],
+            SHOWDOWN_MATCH_IOU_THRESHOLD,
+        )
+        self.assertEqual(compare["smallObjectDefinition"], SMALL_OBJECT_DEFINITION)
+        self.assertEqual(compare["smallObjectMaxAreaPx"], SMALL_OBJECT_MAX_AREA_PX)
+        self.assertEqual(compare["metricProvenance"], SHOWDOWN_METRIC_PROVENANCE)
+        self.assertEqual(compare["recoveredLabel"], SHOWDOWN_RECOVERED_LABEL)
+
+    def test_deterministic_compare_policy_drift_is_rejected(self) -> None:
+        for field, replacement in (
+            ("matchIouThreshold", 0.6),
+            ("metricProvenance", "RECALL"),
+            ("recoveredLabel", "RECOVERED"),
+        ):
+            with self.subTest(field=field):
+                registry = load_json(REGISTRY_PATH)
+                profiles = registry["profiles"]
+                assert isinstance(profiles, dict)
+                compare = profiles["DETERMINISTIC_COMPARE"]
+                assert isinstance(compare, dict)
+                compare[field] = replacement
+                with self.assertRaisesRegex(ModelContractError, field):
+                    validate_profile_registry(registry)
 
 
 class WeightManifestTest(unittest.TestCase):

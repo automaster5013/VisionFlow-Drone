@@ -10,6 +10,10 @@ from typing import Any
 SCHEMA_VERSION = 1
 CONTRACT_ID = "visionflow.phase2b1.visdrone-weight-contract"
 SMALL_OBJECT_DEFINITION = "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION"
+SMALL_OBJECT_MAX_AREA_PX = 32 * 32
+SHOWDOWN_MATCH_IOU_THRESHOLD = 0.5
+SHOWDOWN_METRIC_PROVENANCE = "MODEL_DIFFERENCE_PROXY"
+SHOWDOWN_RECOVERED_LABEL = "RECOVERED SMALL OBJECT"
 
 
 class ModelProfile(StrEnum):
@@ -248,7 +252,11 @@ def _validate_compare_profile(profile: Mapping[str, object]) -> None:
         "auxiliaryInference": False,
         "backendReporting": False,
         "snapshotEnabled": False,
-        "recoveredLabel": "RECOVERED SMALL OBJECT",
+        "matchIouThreshold": SHOWDOWN_MATCH_IOU_THRESHOLD,
+        "smallObjectDefinition": SMALL_OBJECT_DEFINITION,
+        "smallObjectMaxAreaPx": SMALL_OBJECT_MAX_AREA_PX,
+        "metricProvenance": SHOWDOWN_METRIC_PROVENANCE,
+        "recoveredLabel": SHOWDOWN_RECOVERED_LABEL,
     }
     for key, expected_value in expected.items():
         if profile.get(key) != expected_value:
