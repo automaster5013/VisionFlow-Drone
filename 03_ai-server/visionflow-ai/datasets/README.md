@@ -100,3 +100,19 @@ scripts\run-visionflow-model-dataset-intake.bat ^
 receipt에는 train/val별 이미지·라벨·객체 수, 빈 라벨 이미지 수, 원본 해상도 범위, 클래스별 객체 수, 작은 객체 수·비율, 이미지 전체 SHA-256 fingerprint가 포함됩니다. 서로 다른 경로의 동일 이미지가 양쪽 split에서 발견되거나, 10개 클래스 중 객체가 없는 클래스가 있거나, 관리되는 train/val 라벨 root에 orphan 라벨이 있으면 실패합니다.
 
 `--output`을 생략하거나 `--check-only`를 사용하면 파일을 만들지 않습니다. `output/*`, 실제 `datasets/*`, 모델 가중치는 계속 Git에서 제외합니다. 이 점검은 OpenCV의 CPU 이미지 디코딩만 사용하며 PyTorch·CUDA·YOLO 학습·Docker를 실행하지 않습니다.
+
+## Phase 2B-6B Training GPU Preflight
+
+GPU 학습 사전점검은 concrete 학습 계획과 Phase 2B-6A dataset intake receipt를 함께 입력받습니다. 기본 CPU 모드는 계획을 다시 컴파일하고 현재 이미지 바이트를 다시 검사하여 receipt의 `receiptSha256`, 계획 `evidenceLockSha256`, data YAML·영상 split manifest SHA-256과 train/val full fingerprint가 모두 그대로인지 확인합니다.
+
+```bat
+scripts\run-visionflow-model-training-gpu-preflight.bat ^
+  --root . ^
+  --plan config\visdrone-s1-training.plan.json ^
+  --intake-receipt output\dataset-intake\visdrone-s1-ready.json ^
+  --check-only
+```
+
+CPU 결과가 `READY_FOR_GPU_PROBE`여도 GPU 접근 승인은 아닙니다. 물리 GPU 점검을 별도로 승인한 경우에만 `--confirm-gpu-probe`를 추가합니다. 이 명시적 모드는 학습 계획의 단일 CUDA 장치, GPU 이름·compute capability·VRAM, PyTorch/CUDA/Ultralytics 버전과 정확한 부모 가중치의 Detection 클래스 identity를 확인합니다.
+
+사전점검은 `YOLO.train()`을 호출하지 않고 데이터셋을 수정하지 않습니다. 계획의 `batch`는 계속 `PROVISIONAL`이며 GPU probe 통과 후 상태는 `READY_FOR_BATCH_CALIBRATION`, 다음 작업은 `GPU_BATCH_CALIBRATION_REQUIRED`로 고정됩니다. 실제 batch calibration과 S1/S2 학습은 별도 승인 단계입니다.

@@ -156,3 +156,19 @@ scripts\run-visionflow-model-dataset-intake.bat ^
 receipt는 학습 계획·data YAML·영상 split manifest SHA-256, train/val full fingerprint, 이미지 디코딩과 해상도 범위, 빈 라벨·orphan 라벨, 10개 클래스별 객체 수와 원본 해상도 기준 작은 객체 비율을 연결합니다. `trainingExecuted`, `gpuAccessed`, `dockerAccessed`, `torchImported`, `ultralyticsImported`는 모두 `false`이고 `imageDecodeCpuOnly`만 `true`입니다.
 
 이 receipt가 `READY`여도 실제 학습 승인은 아닙니다. GPU batch calibration, 실제 `YOLO.train()` 호출, best 가중치 생성과 매니페스트 승격은 후속 단계에서 각각 별도 검증합니다.
+
+## 학습 GPU 사전점검 계약
+
+Phase 2B-6B는 기존 LIVE·Docker용 `app.gpu_preflight`와 분리된 학습 입력 사전점검입니다. 먼저 CPU에서 concrete 계획과 Phase 2B-6A receipt를 현재 파일로 재계산해 완전 일치시키며, 이 기본 경로에서는 Torch·Ultralytics 모델·CUDA를 불러오지 않습니다.
+
+```bat
+scripts\run-visionflow-model-training-gpu-preflight.bat ^
+  --root . ^
+  --plan config\visdrone-s2-training.plan.json ^
+  --intake-receipt output\dataset-intake\visdrone-s2-ready.json ^
+  --check-only
+```
+
+별도의 물리 GPU 승인을 받은 경우에만 같은 명령에 `--confirm-gpu-probe`를 추가합니다. GPU probe는 계획에 잠긴 부모 파일 SHA-256을 유지한 채 S1의 COCO Detection identity 또는 S2의 VisDrone 원본 10-class identity를 확인하고 지정 CUDA 장치로 모델을 이동합니다. 장치 이름, compute capability, 총 VRAM, 모델 로드 후 가용 VRAM, PyTorch·CUDA·Ultralytics 버전을 receipt에 기록합니다.
+
+두 모드 모두 `trainingExecuted=false`, `batchCalibrated=false`, `dockerAccessed=false`, `dataMutated=false`입니다. GPU 모드도 `YOLO.train()`을 호출하지 않으며 계획의 batch를 확정 성능값으로 승격하지 않습니다. 통과 후 다음 경계는 별도 승인되는 GPU batch calibration입니다.

@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visionflow.phase2b6.training-gpu-preflight.schema",
+  "title": "VisionFlow Phase 2B-6B training GPU preflight receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "status",
+    "stage",
+    "nextAction",
+    "plan",
+    "datasetIntake",
+    "model",
+    "dataset",
+    "training",
+    "runtime",
+    "modelProbe",
+    "safeguards",
+    "preflightReceiptSha256"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractId": {
+      "const": "visionflow.phase2b6.training-gpu-preflight"
+    },
+    "status": {
+      "enum": ["READY_FOR_GPU_PROBE", "READY_FOR_BATCH_CALIBRATION"]
+    },
+    "stage": { "enum": ["VISDRONE_S1", "VISIONFLOW_S2"] },
+    "nextAction": {
+      "enum": [
+        "EXPLICIT_GPU_PROBE_REQUIRED",
+        "GPU_BATCH_CALIBRATION_REQUIRED"
+      ]
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "evidenceLockSha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "evidenceLockSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "datasetIntake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "fileSha256",
+        "receiptSha256",
+        "combinedFingerprintSha256"
+      ],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "fileSha256": { "$ref": "#/$defs/sha256" },
+        "receiptSha256": { "$ref": "#/$defs/sha256" },
+        "combinedFingerprintSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parentPath",
+        "parentFileName",
+        "parentSha256",
+        "outputFileName"
+      ],
+      "properties": {
+        "parentPath": { "type": "string", "minLength": 1 },
+        "parentFileName": {
+          "enum": ["yolo26m.pt", "yolo26m-visdrone-s1-best.pt"]
+        },
+        "parentSha256": { "$ref": "#/$defs/sha256" },
+        "outputFileName": {
+          "enum": [
+            "yolo26m-visdrone-s1-best.pt",
+            "yolo26m-visdrone-s2-best.pt"
+          ]
+        }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataYamlSha256",
+        "splitManifestSha256",
+        "classCount",
+        "splitUnit"
+      ],
+      "properties": {
+        "dataYamlSha256": { "$ref": "#/$defs/sha256" },
+        "splitManifestSha256": { "$ref": "#/$defs/sha256" },
+        "classCount": { "const": 10 },
+        "splitUnit": { "const": "VIDEO_SEQUENCE" }
+      }
+    },
+    "training": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestedDevice",
+        "imgsz",
+        "plannedBatch",
+        "batchStatus"
+      ],
+      "properties": {
+        "requestedDevice": { "type": "string", "pattern": "^[0-9]+$" },
+        "imgsz": { "type": "integer", "minimum": 32 },
+        "plannedBatch": { "type": "integer", "minimum": 1 },
+        "batchStatus": { "const": "PROVISIONAL" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "ultralytics",
+        "torch",
+        "cudaRuntime",
+        "deviceIndex",
+        "deviceName",
+        "computeCapability",
+        "totalVramBytes",
+        "freeVramBytesAfterModelLoad"
+      ],
+      "properties": {
+        "mode": { "enum": ["CPU_CHECK_ONLY", "CONFIRMED_GPU_PROBE"] },
+        "ultralytics": { "type": "string", "minLength": 1 },
+        "torch": { "type": ["string", "null"], "minLength": 1 },
+        "cudaRuntime": { "type": ["string", "null"], "minLength": 1 },
+        "deviceIndex": { "type": ["integer", "null"], "minimum": 0 },
+        "deviceName": { "type": ["string", "null"], "minLength": 1 },
+        "computeCapability": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]+\\.[0-9]+$"
+        },
+        "totalVramBytes": { "type": ["integer", "null"], "minimum": 1 },
+        "freeVramBytesAfterModelLoad": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        }
+      }
+    },
+    "modelProbe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["loaded", "device", "task", "classCount"],
+      "properties": {
+        "loaded": { "type": "boolean" },
+        "device": {
+          "type": ["string", "null"],
+          "pattern": "^cuda:[0-9]+$"
+        },
+        "task": { "type": ["string", "null"], "enum": ["detect", null] },
+        "classCount": { "type": ["integer", "null"], "minimum": 10 }
+      }
+    },
+    "safeguards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trainingExecuted",
+        "batchCalibrated",
+        "dockerAccessed",
+        "dataMutated",
+        "gpuAccessed",
+        "torchImported",
+        "ultralyticsImported",
+        "modelLoaded"
+      ],
+      "properties": {
+        "trainingExecuted": { "const": false },
+        "batchCalibrated": { "const": false },
+        "dockerAccessed": { "const": false },
+        "dataMutated": { "const": false },
+        "gpuAccessed": { "type": "boolean" },
+        "torchImported": { "type": "boolean" },
+        "ultralyticsImported": { "type": "boolean" },
+        "modelLoaded": { "type": "boolean" }
+      }
+    },
+    "preflightReceiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "stage": { "const": "VISDRONE_S1" } } },
+      "then": {
+        "properties": {
+          "model": {
+            "properties": {
+              "parentFileName": { "const": "yolo26m.pt" },
+              "outputFileName": {
+                "const": "yolo26m-visdrone-s1-best.pt"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "model": {
+            "properties": {
+              "parentFileName": {
+                "const": "yolo26m-visdrone-s1-best.pt"
+              },
+              "outputFileName": {
+                "const": "yolo26m-visdrone-s2-best.pt"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "READY_FOR_GPU_PROBE" } }
+      },
+      "then": {
+        "properties": {
+          "nextAction": { "const": "EXPLICIT_GPU_PROBE_REQUIRED" },
+          "runtime": {
+            "properties": {
+              "mode": { "const": "CPU_CHECK_ONLY" },
+              "torch": { "const": null },
+              "cudaRuntime": { "const": null },
+              "deviceIndex": { "const": null },
+              "deviceName": { "const": null },
+              "computeCapability": { "const": null },
+              "totalVramBytes": { "const": null },
+              "freeVramBytesAfterModelLoad": { "const": null }
+            }
+          },
+          "modelProbe": {
+            "properties": {
+              "loaded": { "const": false },
+              "device": { "const": null },
+              "task": { "const": null },
+              "classCount": { "const": null }
+            }
+          },
+          "safeguards": {
+            "properties": {
+              "gpuAccessed": { "const": false },
+              "torchImported": { "const": false },
+              "ultralyticsImported": { "const": false },
+              "modelLoaded": { "const": false }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "nextAction": { "const": "GPU_BATCH_CALIBRATION_REQUIRED" },
+          "runtime": {
+            "properties": {
+              "mode": { "const": "CONFIRMED_GPU_PROBE" },
+              "torch": { "type": "string", "minLength": 1 },
+              "cudaRuntime": { "type": "string", "minLength": 1 },
+              "deviceIndex": { "type": "integer", "minimum": 0 },
+              "deviceName": { "type": "string", "minLength": 1 },
+              "computeCapability": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+$"
+              },
+              "totalVramBytes": { "type": "integer", "minimum": 1 },
+              "freeVramBytesAfterModelLoad": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "modelProbe": {
+            "properties": {
+              "loaded": { "const": true },
+              "device": { "type": "string", "pattern": "^cuda:[0-9]+$" },
+              "task": { "const": "detect" },
+              "classCount": { "type": "integer", "minimum": 10 }
+            }
+          },
+          "safeguards": {
+            "properties": {
+              "gpuAccessed": { "const": true },
+              "torchImported": { "const": true },
+              "ultralyticsImported": { "const": true },
+              "modelLoaded": { "const": true }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
