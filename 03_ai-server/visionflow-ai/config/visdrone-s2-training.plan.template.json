@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "contractId": "visionflow.phase2b5.transfer-training-plan",
+  "template": true,
+  "planVersion": 1,
+  "stage": "VISIONFLOW_S2",
+  "model": {
+    "profile": "AERIAL_SMALL_OBJECT_LIVE",
+    "role": "AERIAL_SMALL_OBJECT_DETECTION",
+    "family": "YOLO26",
+    "scale": "m",
+    "task": "detect",
+    "parent": {
+      "filePath": "models/yolo26m-visdrone-s1-best.pt",
+      "fileName": "yolo26m-visdrone-s1-best.pt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "manifestPath": "models/manifests/yolo26m-visdrone-s1-best.manifest.json",
+      "manifestSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "outputFileName": "yolo26m-visdrone-s2-best.pt"
+  },
+  "data": {
+    "dataYaml": "datasets/visionflow-s2/data.yaml",
+    "datasetName": "VisionFlow-VisDrone-S2",
+    "datasetVersion": "REPLACE_WITH_DATASET_VERSION",
+    "splitManifest": "datasets/visionflow-s2/split-manifest.json",
+    "sourceDatasets": ["VISDRONE2019_DET", "VISIONFLOW_PRESENTATION"],
+    "trainSplit": "train",
+    "valSplit": "val",
+    "fingerprintMode": "labels"
+  },
+  "training": {
+    "imgsz": 1280,
+    "epochs": 100,
+    "batch": 2,
+    "seed": 26,
+    "device": "0",
+    "workers": 4,
+    "optimizer": "MuSGD",
+    "patience": 30,
+    "deterministic": true,
+    "amp": true,
+    "close_mosaic": 10,
+    "cache": false
+  },
+  "inferenceEvidence": {
+    "defaultHeadMode": "END_TO_END",
+    "compareHeadModes": ["END_TO_END", "ONE_TO_MANY_NMS"],
+    "trainingHeadSwitchAllowed": false
+  }
+}

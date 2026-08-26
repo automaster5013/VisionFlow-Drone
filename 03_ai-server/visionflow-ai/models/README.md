@@ -119,3 +119,25 @@ scripts\visionflow-gpu-preflight.ps1 `
 ```
 
 GPU 점검은 호스트/컨테이너 SHA-256 일치뿐 아니라 S2 lineage, 10개 VisDrone 클래스, 데이터 분리 정책과 평가 지표까지 확인합니다. 모델은 이미지에 포함하지 않고 읽기 전용 `/app/models` 볼륨으로 연결합니다.
+
+## 전이학습 계획 계약
+
+Phase 2B-5는 학습을 실행하지 않고 S1/S2 입력과 공개 Ultralytics 인자를 검증해 readiness lock을 만듭니다. YOLO26가 도입된 Ultralytics 8.4.0 이상을 요구하며, 실제 설치 버전은 lock 증거에 그대로 기록합니다.
+
+| 단계 | 부모 | 출력 | 데이터 구성 |
+|---|---|---|---|
+| `VISDRONE_S1` | `yolo26m.pt` | `yolo26m-visdrone-s1-best.pt` | `VISDRONE2019_DET` |
+| `VISIONFLOW_S2` | `yolo26m-visdrone-s1-best.pt` + S1 매니페스트 | `yolo26m-visdrone-s2-best.pt` | `VISDRONE2019_DET` + `VISIONFLOW_PRESENTATION` |
+
+```bat
+scripts\run-visionflow-model-training-plan.bat ^
+  --root . ^
+  --plan config\visdrone-s2-training.plan.json ^
+  --output artifacts\training-plans\visdrone-s2-ready.json
+```
+
+`--output`을 생략하거나 `--check-only`를 쓰면 파일을 만들지 않고 JSON만 출력합니다. 기존 readiness report는 덮어쓰지 않습니다. 보고서에는 계획·부모 가중치·S1 부모 매니페스트·data YAML·영상 split manifest의 SHA-256, train/val fingerprint, 설치된 Ultralytics 버전과 순서가 고정된 공개 학습 인자가 포함됩니다.
+
+학습 인자는 `imgsz`, `epochs`, `batch`, `seed`, `device`, `workers`, `optimizer=MuSGD`, `patience`, `deterministic=true`, `amp`, `close_mosaic`, `cache`만 허용합니다. YOLO26 내부 checkpoint 인자인 `muon_w`, `sgd_w`, `cls_w`, `o2m`, `topk`는 사용자 인자가 아니므로 계획에서 차단합니다. NMS-free `END_TO_END`와 `ONE_TO_MANY_NMS`는 학습 후 동일 가중치의 추론 증거를 비교하는 모드이며 가짜 학습 head 전환 옵션으로 전달하지 않습니다.
+
+readiness lock의 `trainingExecuted`, `gpuAccessed`, `dockerAccessed`, `torchImported`, `ultralyticsImported`는 모두 `false`입니다. 실제 `YOLO.train()` 실행, GPU batch 확정, 생성된 best 가중치와 매니페스트 승격은 별도 승인이 필요한 Phase 2B-6 범위입니다.

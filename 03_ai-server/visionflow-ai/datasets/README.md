@@ -60,3 +60,25 @@ scripts\run-visionflow-labeled-small-object-evaluation.bat ^
 ```
 
 실행기는 두 모델을 순차·격리 적재하고 동일한 정렬 이미지 목록을 사용합니다. 실제 가중치와 held-out 데이터가 준비되기 전에는 GPU 평가를 실행하거나 결과를 추정하지 않습니다.
+
+## S1/S2 학습 계획 잠금
+
+실제 GPU 학습 전에 `config/visdrone-s1-training.plan.template.json` 또는 `config/visdrone-s2-training.plan.template.json`을 복사해 실계획을 만듭니다. 실제 부모 가중치·S1 매니페스트·데이터 경로와 SHA-256을 넣고 `template`을 `false`로 바꿉니다. 템플릿의 `batch=2`는 8GB VRAM 출발점일 뿐 최종 성능값이 아니며, Phase 2B-6 GPU 승인 후 사전점검으로 확정합니다.
+
+```bat
+scripts\run-visionflow-model-training-plan.bat ^
+  --root . ^
+  --plan config\visdrone-s1-training.plan.json ^
+  --check-only
+```
+
+계획 잠금은 GPU·PyTorch·YOLO 모델을 불러오거나 학습을 시작하지 않습니다. 다음 항목이 모두 맞아야 `READY` 증거를 생성합니다.
+
+- Ultralytics 8.4.0 이상과 공개 학습 인자만 사용
+- VisDrone2019-DET 원본 10개 클래스의 ID·이름 일치 및 PPE 혼합 차단
+- train/val 이미지 중복 없음, 모든 이미지의 라벨 파일 존재
+- 모든 train/val 이미지가 정확히 하나의 동일 split `VIDEO_SEQUENCE` root에 소속
+- `FINAL_HELDOUT` 영상이 학습 split에 포함되지 않음
+- S1은 `yolo26m.pt`, S2는 검증된 S1 best와 S1 매니페스트를 부모로 사용
+
+실제 데이터셋에는 `split-manifest.json`의 TRAIN·VAL·FINAL_HELDOUT 영상 root를 모두 기록합니다. S2 `data.yaml`은 VisDrone 재학습 데이터와 VisionFlow 발표환경 유사 데이터를 하나의 10-class 계약으로 합쳐 가리켜야 합니다. 인접 프레임을 다른 split에 섞거나 동일 이미지를 train/val 양쪽에서 참조하면 계획 잠금 단계에서 실패합니다.

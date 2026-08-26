@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visionflow.phase2b5.transfer-training-plan.schema",
+  "title": "VisionFlow YOLO26 VisDrone two-stage transfer-training plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "template",
+    "planVersion",
+    "stage",
+    "model",
+    "data",
+    "training",
+    "inferenceEvidence"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractId": {
+      "const": "visionflow.phase2b5.transfer-training-plan"
+    },
+    "template": { "type": "boolean" },
+    "planVersion": { "type": "integer", "minimum": 1 },
+    "stage": { "enum": ["VISDRONE_S1", "VISIONFLOW_S2"] },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "role",
+        "family",
+        "scale",
+        "task",
+        "parent",
+        "outputFileName"
+      ],
+      "properties": {
+        "profile": { "const": "AERIAL_SMALL_OBJECT_LIVE" },
+        "role": { "const": "AERIAL_SMALL_OBJECT_DETECTION" },
+        "family": { "const": "YOLO26" },
+        "scale": { "const": "m" },
+        "task": { "const": "detect" },
+        "parent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["filePath", "fileName", "sha256"],
+          "properties": {
+            "filePath": { "type": "string", "minLength": 1 },
+            "fileName": {
+              "enum": ["yolo26m.pt", "yolo26m-visdrone-s1-best.pt"]
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "manifestPath": { "type": "string", "minLength": 1 },
+            "manifestSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "outputFileName": {
+          "enum": [
+            "yolo26m-visdrone-s1-best.pt",
+            "yolo26m-visdrone-s2-best.pt"
+          ]
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataYaml",
+        "datasetName",
+        "datasetVersion",
+        "splitManifest",
+        "sourceDatasets",
+        "trainSplit",
+        "valSplit",
+        "fingerprintMode"
+      ],
+      "properties": {
+        "dataYaml": { "type": "string", "minLength": 1 },
+        "datasetName": { "type": "string", "minLength": 1 },
+        "datasetVersion": { "type": "string", "minLength": 1 },
+        "splitManifest": { "type": "string", "minLength": 1 },
+        "sourceDatasets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["VISDRONE2019_DET", "VISIONFLOW_PRESENTATION"]
+          }
+        },
+        "trainSplit": { "const": "train" },
+        "valSplit": { "const": "val" },
+        "fingerprintMode": { "const": "labels" }
+      }
+    },
+    "training": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "imgsz",
+        "epochs",
+        "batch",
+        "seed",
+        "device",
+        "workers",
+        "optimizer",
+        "patience",
+        "deterministic",
+        "amp",
+        "close_mosaic",
+        "cache"
+      ],
+      "properties": {
+        "imgsz": { "type": "integer", "minimum": 32 },
+        "epochs": { "type": "integer", "minimum": 1 },
+        "batch": { "type": "integer", "minimum": 1 },
+        "seed": { "type": "integer", "minimum": 0 },
+        "device": { "type": "string", "minLength": 1 },
+        "workers": { "type": "integer", "minimum": 0 },
+        "optimizer": { "const": "MuSGD" },
+        "patience": { "type": "integer", "minimum": 0 },
+        "deterministic": { "const": true },
+        "amp": { "type": "boolean" },
+        "close_mosaic": { "type": "integer", "minimum": 0 },
+        "cache": { "type": "boolean" }
+      }
+    },
+    "inferenceEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "defaultHeadMode",
+        "compareHeadModes",
+        "trainingHeadSwitchAllowed"
+      ],
+      "properties": {
+        "defaultHeadMode": { "const": "END_TO_END" },
+        "compareHeadModes": {
+          "const": ["END_TO_END", "ONE_TO_MANY_NMS"]
+        },
+        "trainingHeadSwitchAllowed": { "const": false }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "stage": { "const": "VISDRONE_S1" } } },
+      "then": {
+        "properties": {
+          "model": {
+            "properties": {
+              "parent": {
+                "properties": { "fileName": { "const": "yolo26m.pt" } },
+                "not": {
+                  "anyOf": [
+                    { "required": ["manifestPath"] },
+                    { "required": ["manifestSha256"] }
+                  ]
+                }
+              },
+              "outputFileName": {
+                "const": "yolo26m-visdrone-s1-best.pt"
+              }
+            }
+          },
+          "data": {
+            "properties": {
+              "sourceDatasets": { "const": ["VISDRONE2019_DET"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "stage": { "const": "VISIONFLOW_S2" } } },
+      "then": {
+        "properties": {
+          "model": {
+            "properties": {
+              "parent": {
+                "required": [
+                  "filePath",
+                  "fileName",
+                  "sha256",
+                  "manifestPath",
+                  "manifestSha256"
+                ],
+                "properties": {
+                  "fileName": {
+                    "const": "yolo26m-visdrone-s1-best.pt"
+                  }
+                }
+              },
+              "outputFileName": {
+                "const": "yolo26m-visdrone-s2-best.pt"
+              }
+            }
+          },
+          "data": {
+            "properties": {
+              "sourceDatasets": {
+                "const": ["VISDRONE2019_DET", "VISIONFLOW_PRESENTATION"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
