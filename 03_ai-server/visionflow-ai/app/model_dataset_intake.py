@@ -147,6 +147,7 @@ def _split_intake(
     total_image_bytes = 0
     empty_label_image_count = 0
     object_count = 0
+    maximum_objects_per_image = 0
     small_object_count = 0
     widths: list[int] = []
     heights: list[int] = []
@@ -171,6 +172,7 @@ def _split_intake(
         )
         if not class_ids:
             empty_label_image_count += 1
+        maximum_objects_per_image = max(maximum_objects_per_image, len(class_ids))
         for class_id in class_ids:
             class_counts[class_id] += 1
         object_count += len(class_ids)
@@ -194,6 +196,7 @@ def _split_intake(
         "emptyLabelImageCount": empty_label_image_count,
         "emptyLabelImageRate": empty_label_image_count / image_count,
         "objectCount": object_count,
+        "maximumObjectsPerImage": maximum_objects_per_image,
         "smallObjectCount": small_object_count,
         "smallObjectRate": small_object_count / object_count,
         "totalImageBytes": total_image_bytes,

@@ -153,7 +153,7 @@ scripts\run-visionflow-model-dataset-intake.bat ^
   --output output\dataset-intake\visdrone-s2-ready.json
 ```
 
-receipt는 학습 계획·data YAML·영상 split manifest SHA-256, train/val full fingerprint, 이미지 디코딩과 해상도 범위, 빈 라벨·orphan 라벨, 10개 클래스별 객체 수와 원본 해상도 기준 작은 객체 비율을 연결합니다. `trainingExecuted`, `gpuAccessed`, `dockerAccessed`, `torchImported`, `ultralyticsImported`는 모두 `false`이고 `imageDecodeCpuOnly`만 `true`입니다.
+receipt는 학습 계획·data YAML·영상 split manifest SHA-256, train/val full fingerprint, 이미지 디코딩과 해상도 범위, 빈 라벨·orphan 라벨, 이미지당 최대 객체 수, 10개 클래스별 객체 수와 원본 해상도 기준 작은 객체 비율을 연결합니다. `maximumObjectsPerImage`는 밀집 객체가 학습 메모리에 미치는 영향을 AutoBatch가 반영하는 증거입니다. `trainingExecuted`, `gpuAccessed`, `dockerAccessed`, `torchImported`, `ultralyticsImported`는 모두 `false`이고 `imageDecodeCpuOnly`만 `true`입니다.
 
 이 receipt가 `READY`여도 실제 학습 승인은 아닙니다. GPU batch calibration, 실제 `YOLO.train()` 호출, best 가중치 생성과 매니페스트 승격은 후속 단계에서 각각 별도 검증합니다.
 
@@ -172,3 +172,20 @@ scripts\run-visionflow-model-training-gpu-preflight.bat ^
 별도의 물리 GPU 승인을 받은 경우에만 같은 명령에 `--confirm-gpu-probe`를 추가합니다. GPU probe는 계획에 잠긴 부모 파일 SHA-256을 유지한 채 S1의 COCO Detection identity 또는 S2의 VisDrone 원본 10-class identity를 확인하고 지정 CUDA 장치로 모델을 이동합니다. 장치 이름, compute capability, 총 VRAM, 모델 로드 후 가용 VRAM, PyTorch·CUDA·Ultralytics 버전을 receipt에 기록합니다.
 
 두 모드 모두 `trainingExecuted=false`, `batchCalibrated=false`, `dockerAccessed=false`, `dataMutated=false`입니다. GPU 모드도 `YOLO.train()`을 호출하지 않으며 계획의 batch를 확정 성능값으로 승격하지 않습니다. 통과 후 다음 경계는 별도 승인되는 GPU batch calibration입니다.
+
+## GPU Batch Calibration 계약
+
+Phase 2B-6C는 Phase 2B-6A intake와 GPU에서 생성한 Phase 2B-6B preflight receipt를 현재 계획·부모 가중치·데이터 fingerprint에 다시 연결합니다. CPU 기본 경로는 입력 증거만 확인하고 `READY_FOR_EXPLICIT_GPU_BATCH_CALIBRATION`을 반환합니다.
+
+```bat
+scripts\run-visionflow-model-training-batch-calibration.bat ^
+  --root . ^
+  --plan config\visdrone-s2-training.plan.json ^
+  --intake-receipt output\dataset-intake\visdrone-s2-ready.json ^
+  --preflight-receipt output\training-gpu-preflight\visdrone-s2-gpu.json ^
+  --check-only
+```
+
+실제 GPU 보정은 같은 명령에 `--confirm-gpu-batch-calibration`을 명시한 경우에만 실행됩니다. Ultralytics AutoBatch의 60% VRAM 정책과 train split의 이미지당 최대 객체 수를 사용하고, deep-copy 학습 그래프의 메모리만 프로파일링합니다. Ultralytics wrapper의 `YOLO.train()`, optimizer step, 체크포인트·가중치 저장, 계획·데이터 변경은 금지됩니다.
+
+추천 batch가 계획값과 같으면 상태는 `READY_FOR_TRAINING_APPROVAL`, 다음 작업은 `EXPLICIT_TRAINING_APPROVAL_REQUIRED`입니다. 값이 다르면 `PLAN_BATCH_UPDATE_REQUIRED`이며 계획을 사람이 수정한 뒤 Phase 2B-6A intake, 2B-6B GPU preflight와 2B-6C calibration을 모두 다시 실행해야 합니다. 어떤 경우에도 이 단계가 실제 S1/S2 학습 승인을 대신하지 않습니다.

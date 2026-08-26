@@ -150,6 +150,7 @@
         "emptyLabelImageCount",
         "emptyLabelImageRate",
         "objectCount",
+        "maximumObjectsPerImage",
         "smallObjectCount",
         "smallObjectRate",
         "totalImageBytes",
@@ -175,6 +176,7 @@
           "maximum": 1
         },
         "objectCount": { "type": "integer", "minimum": 10 },
+        "maximumObjectsPerImage": { "type": "integer", "minimum": 1 },
         "smallObjectCount": { "type": "integer", "minimum": 0 },
         "smallObjectRate": {
           "type": "number",

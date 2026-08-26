@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visionflow.phase2b6.training-batch-calibration.schema",
+  "title": "VisionFlow Phase 2B-6C training batch calibration receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "status",
+    "stage",
+    "nextAction",
+    "plan",
+    "datasetIntake",
+    "gpuPreflight",
+    "model",
+    "dataset",
+    "calibration",
+    "runtime",
+    "safeguards",
+    "calibrationReceiptSha256"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractId": {
+      "const": "visionflow.phase2b6.training-batch-calibration"
+    },
+    "status": {
+      "enum": [
+        "READY_FOR_EXPLICIT_GPU_BATCH_CALIBRATION",
+        "READY_FOR_TRAINING_APPROVAL",
+        "PLAN_BATCH_UPDATE_REQUIRED"
+      ]
+    },
+    "stage": { "enum": ["VISDRONE_S1", "VISIONFLOW_S2"] },
+    "nextAction": {
+      "enum": [
+        "EXPLICIT_GPU_BATCH_CALIBRATION_REQUIRED",
+        "EXPLICIT_TRAINING_APPROVAL_REQUIRED",
+        "UPDATE_PLAN_BATCH_AND_RERUN_PHASE2B6A_6B_6C"
+      ]
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "evidenceLockSha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "evidenceLockSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "datasetIntake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "fileSha256",
+        "receiptSha256",
+        "combinedFingerprintSha256"
+      ],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "fileSha256": { "$ref": "#/$defs/sha256" },
+        "receiptSha256": { "$ref": "#/$defs/sha256" },
+        "combinedFingerprintSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "gpuPreflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "fileSha256", "receiptSha256", "status"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "fileSha256": { "$ref": "#/$defs/sha256" },
+        "receiptSha256": { "$ref": "#/$defs/sha256" },
+        "status": { "const": "READY_FOR_BATCH_CALIBRATION" }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parentPath",
+        "parentFileName",
+        "parentSha256",
+        "outputFileName"
+      ],
+      "properties": {
+        "parentPath": { "type": "string", "minLength": 1 },
+        "parentFileName": {
+          "enum": ["yolo26m.pt", "yolo26m-visdrone-s1-best.pt"]
+        },
+        "parentSha256": { "$ref": "#/$defs/sha256" },
+        "outputFileName": {
+          "enum": [
+            "yolo26m-visdrone-s1-best.pt",
+            "yolo26m-visdrone-s2-best.pt"
+          ]
+        }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataYamlSha256",
+        "splitManifestSha256",
+        "combinedFingerprintSha256",
+        "trainImageCount",
+        "maximumObjectsPerImage"
+      ],
+      "properties": {
+        "dataYamlSha256": { "$ref": "#/$defs/sha256" },
+        "splitManifestSha256": { "$ref": "#/$defs/sha256" },
+        "combinedFingerprintSha256": { "$ref": "#/$defs/sha256" },
+        "trainImageCount": { "type": "integer", "minimum": 1 },
+        "maximumObjectsPerImage": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "symbol",
+        "memoryFraction",
+        "imgsz",
+        "amp",
+        "plannedBatch",
+        "recommendedBatch",
+        "batchStatus",
+        "planBatchMatchesRecommendation"
+      ],
+      "properties": {
+        "method": { "const": "ULTRALYTICS_CHECK_TRAIN_BATCH_SIZE" },
+        "symbol": {
+          "const": "ultralytics.utils.autobatch.check_train_batch_size"
+        },
+        "memoryFraction": { "const": 0.6 },
+        "imgsz": { "type": "integer", "minimum": 32 },
+        "amp": { "type": "boolean" },
+        "plannedBatch": { "type": "integer", "minimum": 1 },
+        "recommendedBatch": { "type": ["integer", "null"], "minimum": 1 },
+        "batchStatus": { "enum": ["PROVISIONAL", "CALIBRATED"] },
+        "planBatchMatchesRecommendation": { "type": ["boolean", "null"] }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "ultralytics",
+        "torch",
+        "cudaRuntime",
+        "deviceIndex",
+        "deviceName",
+        "computeCapability",
+        "totalVramBytes",
+        "freeVramBytesBeforeProfile",
+        "freeVramBytesAfterProfile",
+        "allocatedVramBytesBeforeProfile",
+        "reservedVramBytesBeforeProfile",
+        "peakAllocatedVramBytes",
+        "peakReservedVramBytes"
+      ],
+      "properties": {
+        "mode": {
+          "enum": ["CPU_CHECK_ONLY", "CONFIRMED_GPU_BATCH_CALIBRATION"]
+        },
+        "ultralytics": { "type": "string", "minLength": 1 },
+        "torch": { "type": ["string", "null"], "minLength": 1 },
+        "cudaRuntime": { "type": ["string", "null"], "minLength": 1 },
+        "deviceIndex": { "type": ["integer", "null"], "minimum": 0 },
+        "deviceName": { "type": ["string", "null"], "minLength": 1 },
+        "computeCapability": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]+\\.[0-9]+$"
+        },
+        "totalVramBytes": { "type": ["integer", "null"], "minimum": 1 },
+        "freeVramBytesBeforeProfile": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "freeVramBytesAfterProfile": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "allocatedVramBytesBeforeProfile": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "reservedVramBytesBeforeProfile": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "peakAllocatedVramBytes": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "peakReservedVramBytes": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        }
+      }
+    },
+    "safeguards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trainingExecuted",
+        "yoloTrainCalled",
+        "optimizerStepExecuted",
+        "weightsPersisted",
+        "planMutated",
+        "dataMutated",
+        "dockerAccessed",
+        "gpuAccessed",
+        "torchImported",
+        "ultralyticsImported",
+        "modelLoaded",
+        "trainingGraphProfiled",
+        "batchCalibrated",
+        "inputsUnchanged"
+      ],
+      "properties": {
+        "trainingExecuted": { "const": false },
+        "yoloTrainCalled": { "const": false },
+        "optimizerStepExecuted": { "const": false },
+        "weightsPersisted": { "const": false },
+        "planMutated": { "const": false },
+        "dataMutated": { "const": false },
+        "dockerAccessed": { "const": false },
+        "gpuAccessed": { "type": "boolean" },
+        "torchImported": { "type": "boolean" },
+        "ultralyticsImported": { "type": "boolean" },
+        "modelLoaded": { "type": "boolean" },
+        "trainingGraphProfiled": { "type": "boolean" },
+        "batchCalibrated": { "type": "boolean" },
+        "inputsUnchanged": { "const": true }
+      }
+    },
+    "calibrationReceiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "stage": { "const": "VISDRONE_S1" } } },
+      "then": {
+        "properties": {
+          "model": {
+            "properties": {
+              "parentFileName": { "const": "yolo26m.pt" },
+              "outputFileName": {
+                "const": "yolo26m-visdrone-s1-best.pt"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "model": {
+            "properties": {
+              "parentFileName": {
+                "const": "yolo26m-visdrone-s1-best.pt"
+              },
+              "outputFileName": {
+                "const": "yolo26m-visdrone-s2-best.pt"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "runtime": { "properties": { "mode": {
+          "const": "CPU_CHECK_ONLY"
+        } } } }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "READY_FOR_EXPLICIT_GPU_BATCH_CALIBRATION"
+          },
+          "nextAction": {
+            "const": "EXPLICIT_GPU_BATCH_CALIBRATION_REQUIRED"
+          },
+          "calibration": {
+            "properties": {
+              "recommendedBatch": { "const": null },
+              "batchStatus": { "const": "PROVISIONAL" },
+              "planBatchMatchesRecommendation": { "const": null }
+            }
+          },
+          "safeguards": {
+            "properties": {
+              "gpuAccessed": { "const": false },
+              "torchImported": { "const": false },
+              "ultralyticsImported": { "const": false },
+              "modelLoaded": { "const": false },
+              "trainingGraphProfiled": { "const": false },
+              "batchCalibrated": { "const": false }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "calibration": {
+            "properties": {
+              "recommendedBatch": { "type": "integer", "minimum": 1 },
+              "batchStatus": { "const": "CALIBRATED" },
+              "planBatchMatchesRecommendation": { "type": "boolean" }
+            }
+          },
+          "runtime": {
+            "properties": {
+              "torch": { "type": "string", "minLength": 1 },
+              "cudaRuntime": { "type": "string", "minLength": 1 },
+              "deviceIndex": { "type": "integer", "minimum": 0 },
+              "deviceName": { "type": "string", "minLength": 1 },
+              "computeCapability": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+$"
+              },
+              "totalVramBytes": { "type": "integer", "minimum": 1 },
+              "freeVramBytesBeforeProfile": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "freeVramBytesAfterProfile": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "allocatedVramBytesBeforeProfile": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reservedVramBytesBeforeProfile": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "peakAllocatedVramBytes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "peakReservedVramBytes": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "safeguards": {
+            "properties": {
+              "gpuAccessed": { "const": true },
+              "torchImported": { "const": true },
+              "ultralyticsImported": { "const": true },
+              "modelLoaded": { "const": true },
+              "trainingGraphProfiled": { "const": true },
+              "batchCalibrated": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "calibration": {
+            "properties": {
+              "planBatchMatchesRecommendation": { "const": true }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "READY_FOR_TRAINING_APPROVAL" },
+          "nextAction": { "const": "EXPLICIT_TRAINING_APPROVAL_REQUIRED" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "calibration": {
+            "properties": {
+              "planBatchMatchesRecommendation": { "const": false }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "PLAN_BATCH_UPDATE_REQUIRED" },
+          "nextAction": {
+            "const": "UPDATE_PLAN_BATCH_AND_RERUN_PHASE2B6A_6B_6C"
+          }
+        }
+      }
+    }
+  ]
+}

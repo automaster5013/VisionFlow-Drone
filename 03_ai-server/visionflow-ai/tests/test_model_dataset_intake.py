@@ -231,6 +231,10 @@ class ModelDatasetIntakeTest(unittest.TestCase):
                 self.assertEqual(report["dataset"]["fingerprintMode"], "full")
                 self.assertEqual(report["dataset"]["classCount"], 10)
                 self.assertEqual(report["dataset"]["train"]["objectCount"], 10)
+                self.assertEqual(
+                    report["dataset"]["train"]["maximumObjectsPerImage"],
+                    10,
+                )
                 self.assertEqual(report["dataset"]["val"]["smallObjectCount"], 10)
                 self.assertEqual(len(report["receiptSha256"]), 64)
 
@@ -246,6 +250,12 @@ class ModelDatasetIntakeTest(unittest.TestCase):
         self.assertEqual(dataset_properties["fingerprintMode"]["const"], "full")
         self.assertEqual(dataset_properties["classCount"]["const"], 10)
         class_items = schema["$defs"]["splitEvidence"]["properties"]["classes"]
+        self.assertEqual(
+            schema["$defs"]["splitEvidence"]["properties"][
+                "maximumObjectsPerImage"
+            ]["minimum"],
+            1,
+        )
         self.assertEqual(len(class_items["prefixItems"]), 10)
         self.assertFalse(class_items["items"])
         safeguards = properties["safeguards"]["properties"]
@@ -316,6 +326,17 @@ class ModelDatasetIntakeTest(unittest.TestCase):
         self.assertEqual(train["imageCount"], 2)
         self.assertEqual(train["emptyLabelImageCount"], 1)
         self.assertEqual(train["emptyLabelImageRate"], 0.5)
+        self.assertEqual(train["maximumObjectsPerImage"], 10)
+
+    def test_maximum_objects_per_image_is_measured_for_autobatch(self) -> None:
+        crowded = self.train_image.with_name("crowded.jpg")
+        crowded.write_bytes(b"crowded-image")
+        self._write_label(crowded, self._all_class_labels() * 3)
+        report = self._build()
+        train = report["dataset"]["train"]
+        self.assertEqual(train["imageCount"], 2)
+        self.assertEqual(train["objectCount"], 40)
+        self.assertEqual(train["maximumObjectsPerImage"], 30)
 
     def test_full_fingerprint_changes_when_image_bytes_change(self) -> None:
         first = self._build()

@@ -97,7 +97,7 @@ scripts\run-visionflow-model-dataset-intake.bat ^
   --output output\dataset-intake\visdrone-s1-ready.json
 ```
 
-receipt에는 train/val별 이미지·라벨·객체 수, 빈 라벨 이미지 수, 원본 해상도 범위, 클래스별 객체 수, 작은 객체 수·비율, 이미지 전체 SHA-256 fingerprint가 포함됩니다. 서로 다른 경로의 동일 이미지가 양쪽 split에서 발견되거나, 10개 클래스 중 객체가 없는 클래스가 있거나, 관리되는 train/val 라벨 root에 orphan 라벨이 있으면 실패합니다.
+receipt에는 train/val별 이미지·라벨·객체 수, 이미지당 최대 객체 수, 빈 라벨 이미지 수, 원본 해상도 범위, 클래스별 객체 수, 작은 객체 수·비율, 이미지 전체 SHA-256 fingerprint가 포함됩니다. `maximumObjectsPerImage`는 밀집된 VisDrone 장면의 AutoBatch 메모리 프로파일에 그대로 전달됩니다. 서로 다른 경로의 동일 이미지가 양쪽 split에서 발견되거나, 10개 클래스 중 객체가 없는 클래스가 있거나, 관리되는 train/val 라벨 root에 orphan 라벨이 있으면 실패합니다.
 
 `--output`을 생략하거나 `--check-only`를 사용하면 파일을 만들지 않습니다. `output/*`, 실제 `datasets/*`, 모델 가중치는 계속 Git에서 제외합니다. 이 점검은 OpenCV의 CPU 이미지 디코딩만 사용하며 PyTorch·CUDA·YOLO 학습·Docker를 실행하지 않습니다.
 
@@ -116,3 +116,18 @@ scripts\run-visionflow-model-training-gpu-preflight.bat ^
 CPU 결과가 `READY_FOR_GPU_PROBE`여도 GPU 접근 승인은 아닙니다. 물리 GPU 점검을 별도로 승인한 경우에만 `--confirm-gpu-probe`를 추가합니다. 이 명시적 모드는 학습 계획의 단일 CUDA 장치, GPU 이름·compute capability·VRAM, PyTorch/CUDA/Ultralytics 버전과 정확한 부모 가중치의 Detection 클래스 identity를 확인합니다.
 
 사전점검은 `YOLO.train()`을 호출하지 않고 데이터셋을 수정하지 않습니다. 계획의 `batch`는 계속 `PROVISIONAL`이며 GPU probe 통과 후 상태는 `READY_FOR_BATCH_CALIBRATION`, 다음 작업은 `GPU_BATCH_CALIBRATION_REQUIRED`로 고정됩니다. 실제 batch calibration과 S1/S2 학습은 별도 승인 단계입니다.
+
+## Phase 2B-6C GPU Batch Calibration
+
+GPU batch calibration은 Phase 2B-6A intake와 `READY_FOR_BATCH_CALIBRATION` 상태의 Phase 2B-6B receipt를 다시 잠급니다. 기본 `--check-only` 경로는 Torch·Ultralytics·CUDA를 불러오지 않으며 실제 GPU 보정에는 별도의 `--confirm-gpu-batch-calibration` 승인이 필요합니다.
+
+```bat
+scripts\run-visionflow-model-training-batch-calibration.bat ^
+  --root . ^
+  --plan config\visdrone-s1-training.plan.json ^
+  --intake-receipt output\dataset-intake\visdrone-s1-ready.json ^
+  --preflight-receipt output\training-gpu-preflight\visdrone-s1-gpu.json ^
+  --check-only
+```
+
+명시 승인 경로는 GPU 메모리 60%를 목표로 Ultralytics AutoBatch 학습 그래프를 프로파일링합니다. train split의 `maximumObjectsPerImage`와 이미지 수를 사용하며 `YOLO.train()`, optimizer step, 가중치 저장, 계획·데이터 수정은 수행하지 않습니다. 추천 batch가 계획과 다르면 계획을 자동 수정하지 않고 Phase 2B-6A·6B 증거를 다시 생성하도록 요구합니다.
