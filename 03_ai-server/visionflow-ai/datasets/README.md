@@ -40,3 +40,23 @@ scripts\run-visionflow-model-evaluation.bat ^
   -ModelFile yolo26m-visdrone-s2-best.pt ^
   -DataYaml final-heldout/data.yaml
 ```
+
+## FINAL_HELDOUT 영상 계약
+
+실제 작은 객체 Recall·미탐률 비교에는 라벨이 있는 `FINAL_HELDOUT`만 사용합니다. `data.yaml`의 `test`가 가리키는 모든 이미지에는 빈 라벨을 포함한 YOLO detect 라벨 파일이 있어야 하고, 클래스 ID/이름은 VisDrone2019-DET 10개 클래스와 정확히 일치해야 합니다.
+
+`final-heldout.split-manifest.template.json`을 `split-manifest.json`으로 복사한 뒤 실제 데이터 버전, 원본 영상 파일, SHA-256, 영상별 이미지 root를 기록하고 `template`을 `false`로 바꿉니다. 각 평가 이미지는 정확히 하나의 `FINAL_HELDOUT` 영상 root에만 속해야 합니다. `sourceVideoSha256` 중복, 서로 겹치는 split, 데이터셋 밖의 경로는 평가 전에 차단됩니다.
+
+작은 객체 면적은 resize된 추론 입력이 아니라 원본 이미지에서 YOLO 라벨의 폭·높이를 복원해 계산하며 `area < 1024 px`만 포함합니다. 런타임 Showdown의 `MODEL_DIFFERENCE_PROXY`는 이 정답 기반 결과에 합산하지 않습니다.
+
+```bat
+scripts\run-visionflow-labeled-small-object-evaluation.bat ^
+  --baseline-model models\yolo26m.pt ^
+  --candidate-model models\yolo26m-visdrone-s2-best.pt ^
+  --candidate-manifest models\manifests\yolo26m-visdrone-s2-best.manifest.json ^
+  --data datasets\final-heldout\data.yaml ^
+  --split-manifest datasets\final-heldout\split-manifest.json ^
+  --device 0 --imgsz 1280
+```
+
+실행기는 두 모델을 순차·격리 적재하고 동일한 정렬 이미지 목록을 사용합니다. 실제 가중치와 held-out 데이터가 준비되기 전에는 GPU 평가를 실행하거나 결과를 추정하지 않습니다.

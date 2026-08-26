@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visionflow.phase2b4.labeled-small-object-evaluation.schema",
+  "title": "VisionFlow labeled small-object evaluation report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAt",
+    "metricProvenance",
+    "dataset",
+    "policy",
+    "baseline",
+    "candidate",
+    "comparison",
+    "evidence"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractId": { "const": "visionflow.phase2b4.labeled-small-object-evaluation" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "metricProvenance": { "const": "LABELED_HELD_OUT_GROUND_TRUTH" },
+    "dataset": {
+      "type": "object",
+      "required": [
+        "split",
+        "splitUnit",
+        "fingerprintSha256",
+        "splitManifestSha256",
+        "imageCount",
+        "groundTruthCount",
+        "smallGroundTruthCount"
+      ],
+      "properties": {
+        "split": { "const": "FINAL_HELDOUT" },
+        "splitUnit": { "const": "VIDEO_SEQUENCE" },
+        "fingerprintSha256": { "$ref": "#/$defs/sha256" },
+        "splitManifestSha256": { "$ref": "#/$defs/sha256" },
+        "imageCount": { "type": "integer", "minimum": 1 },
+        "groundTruthCount": { "type": "integer", "minimum": 1 },
+        "smallGroundTruthCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "matchIouThreshold",
+        "smallObjectDefinition",
+        "smallObjectMaxAreaPx",
+        "baselineCanonicalClasses"
+      ],
+      "properties": {
+        "matchIouThreshold": { "const": 0.5 },
+        "smallObjectDefinition": {
+          "const": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION"
+        },
+        "smallObjectMaxAreaPx": { "const": 1024 },
+        "baselineCanonicalClasses": {
+          "const": ["person", "bicycle", "car", "truck", "bus", "motorcycle"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "baseline": { "$ref": "#/$defs/modelResult" },
+    "candidate": { "$ref": "#/$defs/modelResult" },
+    "comparison": {
+      "type": "object",
+      "required": ["recoveredSmallObjectCount", "smallRecallDelta", "smallMissRateDelta"],
+      "properties": {
+        "recoveredSmallObjectCount": { "type": "integer", "minimum": 0 },
+        "smallRecallDelta": { "type": "number" },
+        "smallMissRateDelta": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["recallClaimEligible", "runtimeProxyExcluded", "missedObjectsCsv"],
+      "properties": {
+        "recallClaimEligible": { "const": true },
+        "runtimeProxyExcluded": { "const": true },
+        "missedObjectsCsv": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "modelResult": {
+      "type": "object",
+      "required": ["model", "metrics", "performance"],
+      "properties": {
+        "model": {
+          "type": "object",
+          "required": ["fileName", "sha256", "profile"],
+          "properties": {
+            "fileName": { "type": "string", "minLength": 1 },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "profile": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": true
+        },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "performance": {
+          "type": "object",
+          "required": [
+            "measurementScope",
+            "averageLatencyMs",
+            "p50LatencyMs",
+            "p95LatencyMs",
+            "maxLatencyMs",
+            "fps",
+            "peakVramAllocatedBytes",
+            "peakVramReservedBytes"
+          ],
+          "properties": {
+            "measurementScope": { "const": "SEQUENTIAL_ISOLATED_MODEL_RUN" },
+            "averageLatencyMs": { "type": "number", "minimum": 0 },
+            "p50LatencyMs": { "type": "number", "minimum": 0 },
+            "p95LatencyMs": { "type": "number", "minimum": 0 },
+            "maxLatencyMs": { "type": "number", "minimum": 0 },
+            "fps": { "type": "number", "minimum": 0 },
+            "peakVramAllocatedBytes": { "type": "integer", "minimum": 0 },
+            "peakVramReservedBytes": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "tp", "fp", "fn", "precision", "recall", "missRate",
+        "smallGroundTruthCount", "smallTp", "smallFn", "smallRecall",
+        "smallMissRate", "perClass"
+      ],
+      "properties": {
+        "tp": { "type": "integer", "minimum": 0 },
+        "fp": { "type": "integer", "minimum": 0 },
+        "fn": { "type": "integer", "minimum": 0 },
+        "precision": { "type": "number", "minimum": 0, "maximum": 1 },
+        "recall": { "type": "number", "minimum": 0, "maximum": 1 },
+        "missRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "smallGroundTruthCount": { "type": "integer", "minimum": 0 },
+        "smallTp": { "type": "integer", "minimum": 0 },
+        "smallFn": { "type": "integer", "minimum": 0 },
+        "smallRecall": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "smallMissRate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "perClass": { "type": "array" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

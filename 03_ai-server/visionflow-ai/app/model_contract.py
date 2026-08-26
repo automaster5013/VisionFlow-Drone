@@ -14,6 +14,20 @@ SMALL_OBJECT_MAX_AREA_PX = 32 * 32
 SHOWDOWN_MATCH_IOU_THRESHOLD = 0.5
 SHOWDOWN_METRIC_PROVENANCE = "MODEL_DIFFERENCE_PROXY"
 SHOWDOWN_RECOVERED_LABEL = "RECOVERED SMALL OBJECT"
+LABELED_EVALUATION_POLICY_ID = "LABELED_SMALL_OBJECT_COMPARE"
+LABELED_EVALUATION_CONTRACT_ID = (
+    "visionflow.phase2b4.labeled-small-object-evaluation"
+)
+LABELED_METRIC_PROVENANCE = "LABELED_HELD_OUT_GROUND_TRUTH"
+FINAL_HELDOUT_SPLIT = "FINAL_HELDOUT"
+COCO_VISDRONE_CANONICAL_CLASSES = (
+    "person",
+    "bicycle",
+    "car",
+    "truck",
+    "bus",
+    "motorcycle",
+)
 
 
 class ModelProfile(StrEnum):
@@ -202,6 +216,7 @@ def validate_profile_registry(registry: Mapping[str, object]) -> dict[str, Any]:
         "profileRegistry.classMappings.VISDRONE2019_DET",
     )
     _validate_visdrone_mapping(mapping, "profileRegistry.classMappings.VISDRONE2019_DET")
+    _validate_labeled_evaluation_contract(normalized.get("evaluationContracts"))
     return normalized
 
 
@@ -281,6 +296,36 @@ def _validate_visdrone_mapping(mapping: Sequence[object], field: str) -> None:
         )
     if normalized != [dict(item) for item in VISDRONE_CLASS_MAPPING]:
         _fail(f"{field}가 VisDrone2019-DET 10-class 표준 매핑과 다릅니다.")
+
+
+def _validate_labeled_evaluation_contract(raw_contracts: object) -> None:
+    field = "profileRegistry.evaluationContracts"
+    contracts = _object(raw_contracts, field)
+    if set(contracts) != {LABELED_EVALUATION_POLICY_ID}:
+        _fail(f"{field}에는 Phase 2B-4 표준 평가 계약만 정확히 있어야 합니다.")
+    contract = _object(
+        contracts[LABELED_EVALUATION_POLICY_ID],
+        f"{field}.{LABELED_EVALUATION_POLICY_ID}",
+    )
+    expected = {
+        "baselineProfile": ModelProfile.GENERAL_LIVE.value,
+        "candidateProfile": ModelProfile.AERIAL_SMALL_OBJECT_LIVE.value,
+        "datasetSplit": FINAL_HELDOUT_SPLIT,
+        "splitUnit": "VIDEO_SEQUENCE",
+        "sameDatasetFingerprint": True,
+        "matchIouThreshold": SHOWDOWN_MATCH_IOU_THRESHOLD,
+        "smallObjectDefinition": SMALL_OBJECT_DEFINITION,
+        "smallObjectMaxAreaPx": SMALL_OBJECT_MAX_AREA_PX,
+        "metricProvenance": LABELED_METRIC_PROVENANCE,
+        "runtimeProxyExcluded": True,
+        "baselineCanonicalClasses": list(COCO_VISDRONE_CANONICAL_CLASSES),
+    }
+    for key, expected_value in expected.items():
+        if contract.get(key) != expected_value:
+            _fail(
+                f"{field}.{LABELED_EVALUATION_POLICY_ID}.{key}가 "
+                "라벨 기반 평가 계약과 다릅니다."
+            )
 
 
 def validate_weight_manifest(

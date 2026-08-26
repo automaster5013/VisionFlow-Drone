@@ -111,5 +111,27 @@
         "trackKind": "CYCLE"
       }
     ]
+  },
+  "evaluationContracts": {
+    "LABELED_SMALL_OBJECT_COMPARE": {
+      "baselineProfile": "GENERAL_LIVE",
+      "candidateProfile": "AERIAL_SMALL_OBJECT_LIVE",
+      "datasetSplit": "FINAL_HELDOUT",
+      "splitUnit": "VIDEO_SEQUENCE",
+      "sameDatasetFingerprint": true,
+      "matchIouThreshold": 0.5,
+      "smallObjectDefinition": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION",
+      "smallObjectMaxAreaPx": 1024,
+      "metricProvenance": "LABELED_HELD_OUT_GROUND_TRUTH",
+      "runtimeProxyExcluded": true,
+      "baselineCanonicalClasses": [
+        "person",
+        "bicycle",
+        "car",
+        "truck",
+        "bus",
+        "motorcycle"
+      ]
+    }
   }
 }

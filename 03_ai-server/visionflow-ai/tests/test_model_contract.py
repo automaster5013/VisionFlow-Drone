@@ -7,7 +7,11 @@ import unittest
 from pathlib import Path
 
 from app.model_contract import (
+    COCO_VISDRONE_CANONICAL_CLASSES,
     CONTRACT_ID,
+    FINAL_HELDOUT_SPLIT,
+    LABELED_EVALUATION_POLICY_ID,
+    LABELED_METRIC_PROVENANCE,
     SHOWDOWN_MATCH_IOU_THRESHOLD,
     SHOWDOWN_METRIC_PROVENANCE,
     SHOWDOWN_RECOVERED_LABEL,
@@ -162,6 +166,37 @@ class ModelProfileRegistryTest(unittest.TestCase):
                 compare = profiles["DETERMINISTIC_COMPARE"]
                 assert isinstance(compare, dict)
                 compare[field] = replacement
+                with self.assertRaisesRegex(ModelContractError, field):
+                    validate_profile_registry(registry)
+
+    def test_labeled_small_object_evaluation_contract_is_exact(self) -> None:
+        registry = validate_profile_registry(load_json(REGISTRY_PATH))
+        contracts = registry["evaluationContracts"]
+        assert isinstance(contracts, dict)
+        labeled = contracts[LABELED_EVALUATION_POLICY_ID]
+        assert isinstance(labeled, dict)
+        self.assertEqual(labeled["datasetSplit"], FINAL_HELDOUT_SPLIT)
+        self.assertEqual(labeled["metricProvenance"], LABELED_METRIC_PROVENANCE)
+        self.assertTrue(labeled["runtimeProxyExcluded"])
+        self.assertEqual(
+            labeled["baselineCanonicalClasses"],
+            list(COCO_VISDRONE_CANONICAL_CLASSES),
+        )
+
+    def test_labeled_evaluation_contract_drift_is_rejected(self) -> None:
+        for field, replacement in (
+            ("datasetSplit", "VAL"),
+            ("metricProvenance", SHOWDOWN_METRIC_PROVENANCE),
+            ("runtimeProxyExcluded", False),
+            ("baselineCanonicalClasses", ["person", "van"]),
+        ):
+            with self.subTest(field=field):
+                registry = load_json(REGISTRY_PATH)
+                contracts = registry["evaluationContracts"]
+                assert isinstance(contracts, dict)
+                labeled = contracts[LABELED_EVALUATION_POLICY_ID]
+                assert isinstance(labeled, dict)
+                labeled[field] = replacement
                 with self.assertRaisesRegex(ModelContractError, field):
                     validate_profile_registry(registry)
 

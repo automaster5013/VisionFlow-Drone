@@ -54,6 +54,22 @@ AI_SNAPSHOT_POLICY=OFF
 
 VRAM은 두 모델이 같은 프로세스에 동시에 적재된 상태의 CUDA allocated/reserved/max allocated 값입니다. 프레임 단위 메모리 할당을 모델별 VRAM으로 잘못 분리해 표시하지 않습니다. BoT-SORT Track ID 비교, ROI 확대 및 추적 유지 증거는 다음 상세 단계에서 추가합니다.
 
+## 라벨 기반 Small-Object 평가
+
+Phase 2B-4 평가 계약은 `FINAL_HELDOUT` 정답 라벨과 IoU 0.5의 클래스별 결정론적 일대일 매칭으로 TP/FP/FN, Recall, 미탐률과 클래스별 지표를 생성합니다. 지표 provenance는 `LABELED_HELD_OUT_GROUND_TRUTH`로 고정하며, 런타임 Showdown의 `MODEL_DIFFERENCE_PROXY`와 분리합니다.
+
+COCO 기준선은 VisDrone과 공통인 `person`, `bicycle`, `car`, `truck`, `bus`, `motorcycle`만 평가 대상으로 사용합니다. COCO에 없는 `van`, `tricycle`, `awning-tricycle` 정답은 기준선 미탐으로 남고, 후보 VisDrone 모델은 10개 원본 클래스를 표준 canonical mapping으로 평가합니다. 따라서 서로 다른 taxonomy를 같은 클래스 ID로 직접 비교하지 않습니다.
+
+평가 보고서는 다음 증거를 함께 보관합니다.
+
+- 두 모델의 전체·작은 객체 TP/FP/FN, Precision/Recall/미탐률과 클래스별 결과
+- 후보가 기준선 미탐에서 복구한 실제 작은 객체 수와 `missed-small-objects.csv`
+- 동일 데이터셋 fingerprint와 영상 단위 split manifest SHA-256
+- 모델별 평균·p50·p95·최대 지연, FPS와 순차 격리 실행 범위의 peak CUDA allocated/reserved
+- 모델 파일 SHA-256과 후보 가중치 매니페스트 identity
+
+오프라인 순차 평가는 입력 큐가 없으므로 드롭률을 0으로 꾸미지 않고 측정 불가로 기록합니다. 기존 `app.model_evaluation`의 Ultralytics P/R/mAP 결과와 이 작은 객체 증거를 함께 검토한 뒤에만 S2 실가중치 매니페스트의 최종 평가 필드를 채웁니다.
+
 ## 매니페스트
 
 실가중치 옆에는 같은 stem의 매니페스트를 둡니다.

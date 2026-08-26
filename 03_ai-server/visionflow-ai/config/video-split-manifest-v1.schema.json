@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visionflow.phase2b4.video-split-manifest.schema",
+  "title": "VisionFlow video-sequence split manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "template",
+    "datasetVersion",
+    "splitUnit",
+    "adjacentFramesAcrossSplits",
+    "finalEvaluationExcludedFromTraining",
+    "sequences"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractId": { "const": "visionflow.phase2b4.video-split-manifest" },
+    "template": { "type": "boolean" },
+    "datasetVersion": { "type": "string", "minLength": 1 },
+    "splitUnit": { "const": "VIDEO_SEQUENCE" },
+    "adjacentFramesAcrossSplits": { "const": false },
+    "finalEvaluationExcludedFromTraining": { "const": true },
+    "sequences": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequenceId",
+          "sourceVideoFile",
+          "sourceVideoSha256",
+          "split",
+          "imageRoots"
+        ],
+        "properties": {
+          "sequenceId": { "type": "string", "minLength": 1 },
+          "sourceVideoFile": { "type": "string", "minLength": 1 },
+          "sourceVideoSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "split": {
+            "enum": ["TRAIN", "VAL", "TEST", "FINAL_HELDOUT"]
+          },
+          "imageRoots": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}
