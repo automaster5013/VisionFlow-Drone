@@ -141,3 +141,18 @@ scripts\run-visionflow-model-training-plan.bat ^
 학습 인자는 `imgsz`, `epochs`, `batch`, `seed`, `device`, `workers`, `optimizer=MuSGD`, `patience`, `deterministic=true`, `amp`, `close_mosaic`, `cache`만 허용합니다. YOLO26 내부 checkpoint 인자인 `muon_w`, `sgd_w`, `cls_w`, `o2m`, `topk`는 사용자 인자가 아니므로 계획에서 차단합니다. NMS-free `END_TO_END`와 `ONE_TO_MANY_NMS`는 학습 후 동일 가중치의 추론 증거를 비교하는 모드이며 가짜 학습 head 전환 옵션으로 전달하지 않습니다.
 
 readiness lock의 `trainingExecuted`, `gpuAccessed`, `dockerAccessed`, `torchImported`, `ultralyticsImported`는 모두 `false`입니다. 실제 `YOLO.train()` 실행, GPU batch 확정, 생성된 best 가중치와 매니페스트 승격은 별도 승인이 필요한 Phase 2B-6 범위입니다.
+
+## Dataset Intake와 학습 시작 경계
+
+Phase 2B-6A는 concrete S1/S2 학습 계획을 다시 검증한 뒤 CPU-only dataset intake receipt를 생성합니다. Phase 2B-5의 빠른 `labels` fingerprint와 별도로 이미지 원본 바이트를 포함한 `full` fingerprint를 사용하며, train/val의 경로가 달라도 콘텐츠 SHA-256이 같으면 데이터 누출로 차단합니다.
+
+```bat
+scripts\run-visionflow-model-dataset-intake.bat ^
+  --root . ^
+  --plan config\visdrone-s2-training.plan.json ^
+  --output output\dataset-intake\visdrone-s2-ready.json
+```
+
+receipt는 학습 계획·data YAML·영상 split manifest SHA-256, train/val full fingerprint, 이미지 디코딩과 해상도 범위, 빈 라벨·orphan 라벨, 10개 클래스별 객체 수와 원본 해상도 기준 작은 객체 비율을 연결합니다. `trainingExecuted`, `gpuAccessed`, `dockerAccessed`, `torchImported`, `ultralyticsImported`는 모두 `false`이고 `imageDecodeCpuOnly`만 `true`입니다.
+
+이 receipt가 `READY`여도 실제 학습 승인은 아닙니다. GPU batch calibration, 실제 `YOLO.train()` 호출, best 가중치 생성과 매니페스트 승격은 후속 단계에서 각각 별도 검증합니다.

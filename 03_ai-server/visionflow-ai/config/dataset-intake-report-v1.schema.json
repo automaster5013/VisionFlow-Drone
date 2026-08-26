@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visionflow.phase2b6.dataset-intake-report.schema",
+  "title": "VisionFlow Phase 2B-6A dataset intake report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "status",
+    "stage",
+    "plan",
+    "dataset",
+    "runtime",
+    "safeguards",
+    "receiptSha256"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractId": {
+      "const": "visionflow.phase2b6.dataset-intake-report"
+    },
+    "status": { "const": "READY" },
+    "stage": { "enum": ["VISDRONE_S1", "VISIONFLOW_S2"] },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "evidenceLockSha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "evidenceLockSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "sourceDatasets",
+        "basePath",
+        "dataYamlPath",
+        "dataYamlSha256",
+        "splitManifestPath",
+        "splitManifestSha256",
+        "splitUnit",
+        "classCount",
+        "fingerprintMode",
+        "combinedFingerprintSha256",
+        "crossSplitDuplicateContentCount",
+        "orphanLabelFileCount",
+        "train",
+        "val"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "sourceDatasets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["VISDRONE2019_DET", "VISIONFLOW_PRESENTATION"]
+          }
+        },
+        "basePath": { "type": "string", "minLength": 1 },
+        "dataYamlPath": { "type": "string", "minLength": 1 },
+        "dataYamlSha256": { "$ref": "#/$defs/sha256" },
+        "splitManifestPath": { "type": "string", "minLength": 1 },
+        "splitManifestSha256": { "$ref": "#/$defs/sha256" },
+        "splitUnit": { "const": "VIDEO_SEQUENCE" },
+        "classCount": { "const": 10 },
+        "fingerprintMode": { "const": "full" },
+        "combinedFingerprintSha256": { "$ref": "#/$defs/sha256" },
+        "crossSplitDuplicateContentCount": { "const": 0 },
+        "orphanLabelFileCount": { "const": 0 },
+        "train": { "$ref": "#/$defs/splitEvidence" },
+        "val": { "$ref": "#/$defs/splitEvidence" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ultralytics", "minimumUltralytics"],
+      "properties": {
+        "ultralytics": { "type": "string", "minLength": 1 },
+        "minimumUltralytics": { "const": "8.4.0" }
+      }
+    },
+    "safeguards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trainingExecuted",
+        "gpuAccessed",
+        "dockerAccessed",
+        "torchImported",
+        "ultralyticsImported",
+        "imageDecodeCpuOnly"
+      ],
+      "properties": {
+        "trainingExecuted": { "const": false },
+        "gpuAccessed": { "const": false },
+        "dockerAccessed": { "const": false },
+        "torchImported": { "const": false },
+        "ultralyticsImported": { "const": false },
+        "imageDecodeCpuOnly": { "const": true }
+      }
+    },
+    "receiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "classEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sourceName", "objectCount"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 0, "maximum": 9 },
+        "sourceName": {
+          "enum": [
+            "pedestrian",
+            "people",
+            "bicycle",
+            "car",
+            "van",
+            "truck",
+            "tricycle",
+            "awning-tricycle",
+            "bus",
+            "motor"
+          ]
+        },
+        "objectCount": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "splitEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "split",
+        "imageCount",
+        "labelFileCount",
+        "missingLabelFileCount",
+        "emptyLabelImageCount",
+        "emptyLabelImageRate",
+        "objectCount",
+        "smallObjectCount",
+        "smallObjectRate",
+        "totalImageBytes",
+        "minimumWidth",
+        "maximumWidth",
+        "minimumHeight",
+        "maximumHeight",
+        "uniqueImageContentCount",
+        "duplicateImageContentCount",
+        "fingerprintMode",
+        "fingerprintSha256",
+        "classes"
+      ],
+      "properties": {
+        "split": { "enum": ["train", "val"] },
+        "imageCount": { "type": "integer", "minimum": 1 },
+        "labelFileCount": { "type": "integer", "minimum": 1 },
+        "missingLabelFileCount": { "const": 0 },
+        "emptyLabelImageCount": { "type": "integer", "minimum": 0 },
+        "emptyLabelImageRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "objectCount": { "type": "integer", "minimum": 10 },
+        "smallObjectCount": { "type": "integer", "minimum": 0 },
+        "smallObjectRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "totalImageBytes": { "type": "integer", "minimum": 1 },
+        "minimumWidth": { "type": "integer", "minimum": 1 },
+        "maximumWidth": { "type": "integer", "minimum": 1 },
+        "minimumHeight": { "type": "integer", "minimum": 1 },
+        "maximumHeight": { "type": "integer", "minimum": 1 },
+        "uniqueImageContentCount": { "type": "integer", "minimum": 1 },
+        "duplicateImageContentCount": { "type": "integer", "minimum": 0 },
+        "fingerprintMode": { "const": "full" },
+        "fingerprintSha256": { "$ref": "#/$defs/sha256" },
+        "classes": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 10,
+          "prefixItems": [
+            { "$ref": "#/$defs/pedestrianClass" },
+            { "$ref": "#/$defs/peopleClass" },
+            { "$ref": "#/$defs/bicycleClass" },
+            { "$ref": "#/$defs/carClass" },
+            { "$ref": "#/$defs/vanClass" },
+            { "$ref": "#/$defs/truckClass" },
+            { "$ref": "#/$defs/tricycleClass" },
+            { "$ref": "#/$defs/awningTricycleClass" },
+            { "$ref": "#/$defs/busClass" },
+            { "$ref": "#/$defs/motorClass" }
+          ],
+          "items": false
+        }
+      }
+    },
+    "pedestrianClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 0 }, "sourceName": { "const": "pedestrian" } } }
+      ]
+    },
+    "peopleClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 1 }, "sourceName": { "const": "people" } } }
+      ]
+    },
+    "bicycleClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 2 }, "sourceName": { "const": "bicycle" } } }
+      ]
+    },
+    "carClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 3 }, "sourceName": { "const": "car" } } }
+      ]
+    },
+    "vanClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 4 }, "sourceName": { "const": "van" } } }
+      ]
+    },
+    "truckClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 5 }, "sourceName": { "const": "truck" } } }
+      ]
+    },
+    "tricycleClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 6 }, "sourceName": { "const": "tricycle" } } }
+      ]
+    },
+    "awningTricycleClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 7 }, "sourceName": { "const": "awning-tricycle" } } }
+      ]
+    },
+    "busClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 8 }, "sourceName": { "const": "bus" } } }
+      ]
+    },
+    "motorClass": {
+      "allOf": [
+        { "$ref": "#/$defs/classEvidence" },
+        { "properties": { "id": { "const": 9 }, "sourceName": { "const": "motor" } } }
+      ]
+    }
+  }
+}

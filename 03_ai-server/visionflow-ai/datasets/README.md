@@ -20,6 +20,9 @@ datasets/
 ├─ visionflow-presentation/
 │  ├─ data.yaml
 │  └─ split-manifest.json
+├─ visionflow-s2/
+│  ├─ data.yaml
+│  └─ split-manifest.json
 └─ final-heldout/
    ├─ data.yaml
    └─ split-manifest.json
@@ -82,3 +85,18 @@ scripts\run-visionflow-model-training-plan.bat ^
 - S1은 `yolo26m.pt`, S2는 검증된 S1 best와 S1 매니페스트를 부모로 사용
 
 실제 데이터셋에는 `split-manifest.json`의 TRAIN·VAL·FINAL_HELDOUT 영상 root를 모두 기록합니다. S2 `data.yaml`은 VisDrone 재학습 데이터와 VisionFlow 발표환경 유사 데이터를 하나의 10-class 계약으로 합쳐 가리켜야 합니다. 인접 프레임을 다른 split에 섞거나 동일 이미지를 train/val 양쪽에서 참조하면 계획 잠금 단계에서 실패합니다.
+
+## Phase 2B-6A Dataset Intake Receipt
+
+학습 계획이 `READY`여도 실제 이미지 바이트가 바뀌거나, 동일 이미지가 다른 경로로 train/val에 복사되거나, 손상 이미지와 orphan 라벨이 남아 있으면 학습을 시작하지 않습니다. Phase 2B-6A는 CPU에서 이미지를 디코딩하고 원본 바이트를 포함한 `full` fingerprint와 클래스 분포를 잠급니다.
+
+```bat
+scripts\run-visionflow-model-dataset-intake.bat ^
+  --root . ^
+  --plan config\visdrone-s1-training.plan.json ^
+  --output output\dataset-intake\visdrone-s1-ready.json
+```
+
+receipt에는 train/val별 이미지·라벨·객체 수, 빈 라벨 이미지 수, 원본 해상도 범위, 클래스별 객체 수, 작은 객체 수·비율, 이미지 전체 SHA-256 fingerprint가 포함됩니다. 서로 다른 경로의 동일 이미지가 양쪽 split에서 발견되거나, 10개 클래스 중 객체가 없는 클래스가 있거나, 관리되는 train/val 라벨 root에 orphan 라벨이 있으면 실패합니다.
+
+`--output`을 생략하거나 `--check-only`를 사용하면 파일을 만들지 않습니다. `output/*`, 실제 `datasets/*`, 모델 가중치는 계속 Git에서 제외합니다. 이 점검은 OpenCV의 CPU 이미지 디코딩만 사용하며 PyTorch·CUDA·YOLO 학습·Docker를 실행하지 않습니다.
