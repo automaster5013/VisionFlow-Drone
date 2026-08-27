@@ -484,6 +484,8 @@ textarea {
 
 .vf-sidebar-runtime {
   margin-top: auto;
+  border-top: 1px solid var(--vf-sidebar-border);
+  padding: 16px 10px 2px;
 }
 
 .vf-sidebar-runtime__label {
