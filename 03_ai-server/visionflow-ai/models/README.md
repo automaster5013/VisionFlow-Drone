@@ -186,7 +186,7 @@ scripts\run-visionflow-model-training-batch-calibration.bat ^
   --check-only
 ```
 
-실제 GPU 보정은 같은 명령에 `--confirm-gpu-batch-calibration`을 명시한 경우에만 실행됩니다. Ultralytics AutoBatch의 60% VRAM 정책과 train split의 이미지당 최대 객체 수를 사용하고, deep-copy 학습 그래프의 메모리만 프로파일링합니다. Ultralytics wrapper의 `YOLO.train()`, optimizer step, 체크포인트·가중치 저장, 계획·데이터 변경은 금지됩니다.
+실제 GPU 보정은 같은 명령에 `--confirm-gpu-batch-calibration`을 명시한 경우에만 실행됩니다. Ultralytics `profile_ops`의 deep-copy 학습 그래프를 사용하되 후보 batch는 계획값을 상한으로 제한합니다. 계획 batch가 2인 S1에서는 `[1, 2]`만 프로파일링하여 기본 후보군 `4/8/16`의 OOM 위험을 제거합니다. train split의 이미지당 최대 객체 수를 밀집 장면 증거로 전달하고, 후보별 메모리 추정값과 60% VRAM 목표 충족 여부를 receipt에 남깁니다. Ultralytics wrapper의 `YOLO.train()`, optimizer step, 체크포인트·가중치 저장, 계획·데이터 변경은 금지됩니다.
 
 추천 batch가 계획값과 같으면 상태는 `READY_FOR_TRAINING_APPROVAL`, 다음 작업은 `EXPLICIT_TRAINING_APPROVAL_REQUIRED`입니다. 값이 다르면 `PLAN_BATCH_UPDATE_REQUIRED`이며 계획을 사람이 수정한 뒤 Phase 2B-6A intake, 2B-6B GPU preflight와 2B-6C calibration을 모두 다시 실행해야 합니다. 어떤 경우에도 이 단계가 실제 S1/S2 학습 승인을 대신하지 않습니다.
 

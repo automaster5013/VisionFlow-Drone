@@ -9,6 +9,7 @@ from pathlib import Path
 
 from app.model_dataset_intake import build_dataset_intake_report
 from app.model_training_batch_calibration import (
+    AUTOBATCH_CANDIDATE_POLICY,
     AUTOBATCH_MEMORY_FRACTION,
     AUTOBATCH_METHOD,
     AUTOBATCH_SYMBOL,
@@ -152,9 +153,37 @@ class _CalibrationTorch:
             peak_increase=peak_increase,
         )
 
+    @staticmethod
+    def empty(batch: int, channels: int, height: int, width: int) -> object:
+        return type(
+            "FakeTensor",
+            (),
+            {"shape": (batch, channels, height, width)},
+        )()
+
+    @staticmethod
+    def device(value: str) -> str:
+        return value
+
+    @staticmethod
+    def autocast(*, device_type: str, enabled: bool) -> object:
+        class Context:
+            def __enter__(self) -> None:
+                return None
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+        if device_type != "cuda" or not isinstance(enabled, bool):
+            raise AssertionError("invalid autocast request")
+        return Context()
+
 
 class _InnerModel:
     task = "detect"
+
+    def train(self) -> _InnerModel:
+        return self
 
 
 class _CalibrationYolo:
@@ -282,11 +311,28 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
         model = _CalibrationYolo(names or gpu_test.COCO_NAMES)
         observed: dict[str, object] = {}
 
-        def probe(inner: object, **kwargs: object) -> int:
+        def probe(
+            inputs: list[object],
+            inner: object,
+            **kwargs: object,
+        ) -> list[tuple[int, int, float] | None]:
             observed["inner"] = inner
+            observed["candidateBatches"] = [
+                int(item.shape[0])
+                for item in inputs
+            ]
             observed.update(kwargs)
             fake_torch.cuda.profile_graph()
-            return recommended
+            if recommended == 2:
+                memories: list[float | None] = [3.0, 4.0]
+            elif recommended == 1:
+                memories = [3.0, 4.5]
+            else:
+                memories = [5.0, 6.0]
+            return [
+                None if memory is None else (0, 0, memory)
+                for memory in memories
+            ]
 
         report = self._build(
             confirm_gpu_batch_calibration=True,
@@ -318,21 +364,51 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
         self.assertEqual(report["nextAction"], CPU_NEXT_ACTION)
         self.assertEqual(report["dataset"]["maximumObjectsPerImage"], 25)
         self.assertIsNone(report["calibration"]["recommendedBatch"])
+        self.assertEqual(
+            report["runtime"]["candidatePolicy"],
+            AUTOBATCH_CANDIDATE_POLICY,
+        )
+        self.assertEqual(report["runtime"]["candidateBatchSizes"], [1, 2])
+        self.assertEqual(report["runtime"]["candidateProfiles"], [])
+        self.assertIsNone(report["runtime"]["profileMemoryTargetGb"])
         self.assertFalse(report["safeguards"]["gpuAccessed"])
 
-    def test_confirmed_gpu_calibration_uses_official_autobatch_contract(self) -> None:
+    def test_confirmed_gpu_calibration_uses_bounded_profile_contract(self) -> None:
         self._prepare()
         report, observed, model = self._gpu_build()
         self.assertEqual(report["status"], CALIBRATED_STATUS)
         self.assertEqual(report["nextAction"], CALIBRATED_NEXT_ACTION)
         self.assertEqual(report["calibration"]["method"], AUTOBATCH_METHOD)
         self.assertEqual(report["calibration"]["symbol"], AUTOBATCH_SYMBOL)
-        self.assertEqual(observed["batch"], AUTOBATCH_MEMORY_FRACTION)
-        self.assertEqual(observed["imgsz"], 1280)
+        self.assertEqual(observed["candidateBatches"], [1, 2])
+        self.assertEqual(observed["n"], 1)
         self.assertEqual(observed["max_num_obj"], 25)
-        self.assertEqual(observed["dataset_size"], 2)
-        self.assertIs(observed["inner"], model.model)
+        self.assertEqual(observed["device"], "cuda:0")
+        self.assertIsNot(observed["inner"], model.model)
         self.assertEqual(model.device, "cuda:0")
+        self.assertEqual(
+            report["runtime"]["candidatePolicy"],
+            AUTOBATCH_CANDIDATE_POLICY,
+        )
+        self.assertEqual(report["runtime"]["candidateBatchSizes"], [1, 2])
+        self.assertEqual(report["runtime"]["profileMemoryTargetGb"], 4.0)
+        self.assertEqual(
+            report["runtime"]["candidateProfiles"],
+            [
+                {
+                    "batch": 1,
+                    "usable": True,
+                    "profileMemoryGb": 3.0,
+                    "withinMemoryTarget": True,
+                },
+                {
+                    "batch": 2,
+                    "usable": True,
+                    "profileMemoryGb": 4.0,
+                    "withinMemoryTarget": True,
+                },
+            ],
+        )
         self.assertFalse(model.train_called)
         self.assertFalse(report["safeguards"]["trainingExecuted"])
         self.assertFalse(report["safeguards"]["optimizerStepExecuted"])
@@ -357,6 +433,10 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
         self.assertEqual(report["nextAction"], PLAN_UPDATE_NEXT_ACTION)
         self.assertFalse(
             report["calibration"]["planBatchMatchesRecommendation"]
+        )
+        self.assertEqual(report["calibration"]["recommendedBatch"], 1)
+        self.assertFalse(
+            report["runtime"]["candidateProfiles"][1]["withinMemoryTarget"]
         )
         self.assertEqual(self.plan_path.read_bytes(), before)
         self.assertFalse(report["safeguards"]["planMutated"])
@@ -391,14 +471,14 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
         with self.assertRaisesRegex(TrainingBatchCalibrationError, "benchmark=false"):
             self._gpu_build(torch_module=fake_torch)
 
-    def test_autobatch_fallback_and_invalid_recommendation_are_rejected(self) -> None:
+    def test_autobatch_fallback_and_no_safe_candidate_are_rejected(self) -> None:
         self._prepare()
         with self.assertRaisesRegex(TrainingBatchCalibrationError, "fallback"):
             self._gpu_build(
                 torch_module=_CalibrationTorch(peak_increase=False)
             )
-        with self.assertRaisesRegex(TrainingBatchCalibrationError, "안전 범위"):
-            self._gpu_build(recommended=3)
+        with self.assertRaisesRegex(TrainingBatchCalibrationError, "60% VRAM"):
+            self._gpu_build(recommended=0)
 
     def test_parent_class_identity_mismatch_is_rejected(self) -> None:
         self._prepare(stage="VISIONFLOW_S2")
@@ -414,9 +494,16 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
         )
         calibration = properties["calibration"]["properties"]
         self.assertEqual(calibration["method"]["const"], AUTOBATCH_METHOD)
+        self.assertEqual(calibration["symbol"]["const"], AUTOBATCH_SYMBOL)
         self.assertEqual(
             calibration["memoryFraction"]["const"],
             AUTOBATCH_MEMORY_FRACTION,
+        )
+        runtime = properties["runtime"]
+        self.assertIn("candidatePolicy", runtime["required"])
+        self.assertEqual(
+            runtime["properties"]["candidatePolicy"]["const"],
+            AUTOBATCH_CANDIDATE_POLICY,
         )
         safeguards = properties["safeguards"]["properties"]
         for field in (

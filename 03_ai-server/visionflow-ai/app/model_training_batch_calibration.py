@@ -11,6 +11,7 @@ import re
 import sys
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -42,13 +43,14 @@ PLAN_UPDATE_STATUS = "PLAN_BATCH_UPDATE_REQUIRED"
 CPU_NEXT_ACTION = "EXPLICIT_GPU_BATCH_CALIBRATION_REQUIRED"
 CALIBRATED_NEXT_ACTION = "EXPLICIT_TRAINING_APPROVAL_REQUIRED"
 PLAN_UPDATE_NEXT_ACTION = "UPDATE_PLAN_BATCH_AND_RERUN_PHASE2B6A_6B_6C"
-AUTOBATCH_METHOD = "ULTRALYTICS_CHECK_TRAIN_BATCH_SIZE"
-AUTOBATCH_SYMBOL = "ultralytics.utils.autobatch.check_train_batch_size"
+AUTOBATCH_METHOD = "VISIONFLOW_BOUNDED_ULTRALYTICS_PROFILE_OPS"
+AUTOBATCH_SYMBOL = "ultralytics.utils.torch_utils.profile_ops"
 AUTOBATCH_MEMORY_FRACTION = 0.60
+AUTOBATCH_CANDIDATE_POLICY = "POWERS_OF_TWO_UP_TO_PLANNED_BATCH"
 
 TorchProvider = Callable[[], object]
 YoloFactory = Callable[[str], object]
-BatchProbe = Callable[..., int]
+BatchProbe = Callable[..., Sequence[object | None]]
 
 
 class TrainingBatchCalibrationError(ValueError):
@@ -398,10 +400,12 @@ def _load_gpu_components(
                 _fail("Ultralytics YOLO factory를 찾을 수 없습니다.")
             factory = candidate
         if probe is None:
-            autobatch_module = importlib.import_module("ultralytics.utils.autobatch")
-            candidate = getattr(autobatch_module, "check_train_batch_size", None)
+            torch_utils_module = importlib.import_module(
+                "ultralytics.utils.torch_utils"
+            )
+            candidate = getattr(torch_utils_module, "profile_ops", None)
             if candidate is None or not callable(candidate):
-                _fail("Ultralytics AutoBatch 함수를 찾을 수 없습니다.")
+                _fail("Ultralytics profile_ops 함수를 찾을 수 없습니다.")
             probe = candidate
         return torch_module, factory, probe, imported_ultralytics
     except TrainingBatchCalibrationError:
@@ -419,6 +423,40 @@ def _cuda_metric(cuda: object, name: str, device_index: int) -> int:
     return int(method(device_index))
 
 
+def _bounded_candidate_batches(
+    planned_batch: int,
+    train_image_count: int,
+) -> list[int]:
+    ceiling = min(planned_batch, train_image_count, 1024)
+    candidates: list[int] = []
+    value = 1
+    while value <= ceiling:
+        candidates.append(value)
+        value *= 2
+    if candidates[-1] != ceiling:
+        candidates.append(ceiling)
+    return candidates
+
+
+def _profile_memory_gb(profile: object | None) -> float | None:
+    if profile is None:
+        return None
+    if not isinstance(profile, Sequence) or isinstance(
+        profile,
+        (str, bytes, bytearray),
+    ):
+        _fail("Ultralytics profile_ops 결과 형식이 올바르지 않습니다.")
+    if len(profile) < 3:
+        _fail("Ultralytics profile_ops 결과에 메모리 증거가 없습니다.")
+    raw_memory = profile[2]
+    if isinstance(raw_memory, bool) or not isinstance(raw_memory, (int, float)):
+        _fail("Ultralytics profile_ops 메모리 증거가 숫자가 아닙니다.")
+    memory_gb = float(raw_memory)
+    if memory_gb <= 0.0:
+        _fail("Ultralytics profile_ops 메모리 증거는 양수여야 합니다.")
+    return memory_gb
+
+
 def _run_gpu_calibration(
     *,
     stage: str,
@@ -426,13 +464,14 @@ def _run_gpu_calibration(
     device_index: int,
     imgsz: int,
     amp: bool,
+    planned_batch: int,
     train_image_count: int,
     maximum_objects_per_image: int,
     preflight_runtime: Mapping[str, object],
     torch_provider: TorchProvider | None,
     yolo_factory: YoloFactory | None,
     batch_probe: BatchProbe | None,
-) -> tuple[int, dict[str, object]]:
+) -> tuple[int, list[dict[str, object]], float, dict[str, object]]:
     torch_module, factory, probe, imported_ultralytics = _load_gpu_components(
         torch_provider=torch_provider,
         yolo_factory=yolo_factory,
@@ -476,6 +515,19 @@ def _run_gpu_calibration(
         _fail("부모 YOLO 모델을 CUDA 장치로 이동할 수 없습니다.")
     move(f"cuda:{device_index}")
     inner = _validate_model_identity(stage, model)
+    train_method = getattr(inner, "train", None)
+    if train_method is None or not callable(train_method):
+        _fail("AutoBatch에 전달할 내부 PyTorch 모델을 train 모드로 전환할 수 없습니다.")
+    try:
+        inner_copy = deepcopy(inner)
+    except (MemoryError, OSError, RuntimeError, TypeError, ValueError) as error:
+        raise TrainingBatchCalibrationError(
+            f"bounded AutoBatch 모델 복제가 실패했습니다: {error}"
+        ) from error
+    copied_train_method = getattr(inner_copy, "train", None)
+    if copied_train_method is None or not callable(copied_train_method):
+        _fail("복제한 AutoBatch 모델을 train 모드로 전환할 수 없습니다.")
+    inner_copy = copied_train_method()
     free_before, reported_total = cuda.mem_get_info(device_index)
     if int(reported_total) != total_vram:
         _fail("CUDA VRAM 총량 보고가 일관되지 않습니다.")
@@ -485,30 +537,81 @@ def _run_gpu_calibration(
         _fail("CUDA 초기 메모리 계측값은 음수일 수 없습니다.")
     if allocated_before >= total_vram or reserved_before > total_vram:
         _fail("CUDA 초기 메모리 계측값이 GPU 총량을 벗어났습니다.")
+    total_vram_gib = total_vram / float(1 << 30)
+    available_vram_gib = total_vram_gib - (
+        allocated_before + reserved_before
+    ) / float(1 << 30)
+    profile_memory_target_gb = float(
+        round(available_vram_gib * AUTOBATCH_MEMORY_FRACTION)
+    )
+    if profile_memory_target_gb <= 0.0:
+        _fail("60% AutoBatch 메모리 목표가 0 GB 이하입니다.")
+    candidate_batches = _bounded_candidate_batches(
+        planned_batch,
+        train_image_count,
+    )
     reset = getattr(cuda, "reset_peak_memory_stats", None)
     if reset is None or not callable(reset):
         _fail("CUDA peak memory 초기화 함수를 찾을 수 없습니다.")
     reset(device_index)
     try:
-        recommended = probe(
-            inner,
-            imgsz=imgsz,
-            amp=amp,
-            batch=AUTOBATCH_MEMORY_FRACTION,
-            max_num_obj=maximum_objects_per_image,
-            dataset_size=train_image_count,
-        )
+        empty = getattr(torch_module, "empty", None)
+        device_factory = getattr(torch_module, "device", None)
+        autocast_factory = getattr(torch_module, "autocast", None)
+        if empty is None or not callable(empty):
+            _fail("PyTorch empty tensor factory를 찾을 수 없습니다.")
+        if device_factory is None or not callable(device_factory):
+            _fail("PyTorch CUDA device factory를 찾을 수 없습니다.")
+        if autocast_factory is None or not callable(autocast_factory):
+            _fail("PyTorch autocast context를 찾을 수 없습니다.")
+        inputs = [
+            empty(batch, 3, imgsz, imgsz)
+            for batch in candidate_batches
+        ]
+        with autocast_factory(device_type="cuda", enabled=amp):
+            profiles = probe(
+                inputs,
+                inner_copy,
+                n=1,
+                device=device_factory(f"cuda:{device_index}"),
+                max_num_obj=maximum_objects_per_image,
+            )
         synchronize = getattr(cuda, "synchronize", None)
         if synchronize is not None and callable(synchronize):
             synchronize(device_index)
     except (MemoryError, OSError, RuntimeError, TypeError, ValueError) as error:
         raise TrainingBatchCalibrationError(
-            f"Ultralytics AutoBatch 프로파일이 실패했습니다: {error}"
+            f"bounded Ultralytics AutoBatch 프로파일이 실패했습니다: {error}"
         ) from error
-    if isinstance(recommended, bool) or not isinstance(recommended, int):
-        _fail("Ultralytics AutoBatch가 정수 batch를 반환하지 않았습니다.")
-    if recommended < 1 or recommended > train_image_count or recommended > 1024:
-        _fail(f"Ultralytics AutoBatch 추천값이 안전 범위를 벗어났습니다: {recommended}")
+    if not isinstance(profiles, Sequence) or isinstance(
+        profiles,
+        (str, bytes, bytearray),
+    ):
+        _fail("Ultralytics profile_ops가 후보별 결과 목록을 반환하지 않았습니다.")
+    if len(profiles) != len(candidate_batches):
+        _fail("Ultralytics profile_ops 후보 수와 결과 수가 다릅니다.")
+    candidate_profiles: list[dict[str, object]] = []
+    safe_candidates: list[int] = []
+    for batch, profile in zip(candidate_batches, profiles, strict=True):
+        memory_gb = _profile_memory_gb(profile)
+        within_target = (
+            memory_gb is not None
+            and memory_gb <= profile_memory_target_gb
+            and memory_gb < total_vram_gib
+        )
+        candidate_profiles.append(
+            {
+                "batch": batch,
+                "usable": memory_gb is not None,
+                "profileMemoryGb": memory_gb,
+                "withinMemoryTarget": within_target,
+            }
+        )
+        if within_target:
+            safe_candidates.append(batch)
+    if not safe_candidates:
+        _fail("60% VRAM 목표를 만족하는 bounded AutoBatch 후보가 없습니다.")
+    recommended = max(safe_candidates)
     peak_allocated = _cuda_metric(cuda, "max_memory_allocated", device_index)
     peak_reserved = _cuda_metric(cuda, "max_memory_reserved", device_index)
     free_after, reported_total_after = cuda.mem_get_info(device_index)
@@ -540,7 +643,7 @@ def _run_gpu_calibration(
         "peakAllocatedVramBytes": peak_allocated,
         "peakReservedVramBytes": peak_reserved,
     }
-    return recommended, runtime
+    return recommended, candidate_profiles, profile_memory_target_gb, runtime
 
 
 def build_training_batch_calibration_report(
@@ -607,6 +710,8 @@ def build_training_batch_calibration_report(
     status = CPU_STATUS
     next_action = CPU_NEXT_ACTION
     recommended_batch: int | None = None
+    candidate_profiles: list[dict[str, object]] = []
+    profile_memory_target_gb: float | None = None
     batch_status = "PROVISIONAL"
     runtime: dict[str, object] = {
         "mode": "CPU_CHECK_ONLY",
@@ -623,17 +728,30 @@ def build_training_batch_calibration_report(
         "reservedVramBytesBeforeProfile": None,
         "peakAllocatedVramBytes": None,
         "peakReservedVramBytes": None,
+        "candidatePolicy": AUTOBATCH_CANDIDATE_POLICY,
+        "candidateBatchSizes": _bounded_candidate_batches(
+            planned_batch,
+            train_image_count,
+        ),
+        "candidateProfiles": candidate_profiles,
+        "profileMemoryTargetGb": profile_memory_target_gb,
     }
     if confirm_gpu_batch_calibration:
         amp = arguments.get("amp")
         if not isinstance(amp, bool):
             _fail("plan.training.amp는 boolean이어야 합니다.")
-        recommended_batch, runtime = _run_gpu_calibration(
+        (
+            recommended_batch,
+            candidate_profiles,
+            profile_memory_target_gb,
+            runtime,
+        ) = _run_gpu_calibration(
             stage=str(readiness["stage"]),
             parent_path=parent_path,
             device_index=_device_index(arguments.get("device")),
             imgsz=_integer(arguments.get("imgsz"), "plan.training.imgsz", minimum=32),
             amp=amp,
+            planned_batch=planned_batch,
             train_image_count=train_image_count,
             maximum_objects_per_image=maximum_objects,
             preflight_runtime=preflight_runtime,
@@ -641,6 +759,13 @@ def build_training_batch_calibration_report(
             yolo_factory=yolo_factory,
             batch_probe=batch_probe,
         )
+        runtime["candidatePolicy"] = AUTOBATCH_CANDIDATE_POLICY
+        runtime["candidateBatchSizes"] = _bounded_candidate_batches(
+            planned_batch,
+            train_image_count,
+        )
+        runtime["candidateProfiles"] = candidate_profiles
+        runtime["profileMemoryTargetGb"] = profile_memory_target_gb
         batch_status = "CALIBRATED"
         if recommended_batch == planned_batch:
             status = CALIBRATED_STATUS

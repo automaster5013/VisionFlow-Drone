@@ -44,9 +44,24 @@ class VisionFlowModelTrainingBatchCalibrationScriptTest(unittest.TestCase):
         calibration = properties["calibration"]["properties"]
         self.assertEqual(
             calibration["method"]["const"],
-            "ULTRALYTICS_CHECK_TRAIN_BATCH_SIZE",
+            "VISIONFLOW_BOUNDED_ULTRALYTICS_PROFILE_OPS",
+        )
+        self.assertEqual(
+            calibration["symbol"]["const"],
+            "ultralytics.utils.torch_utils.profile_ops",
         )
         self.assertEqual(calibration["memoryFraction"]["const"], 0.6)
+        runtime = properties["runtime"]
+        self.assertEqual(
+            runtime["properties"]["candidatePolicy"]["const"],
+            "POWERS_OF_TWO_UP_TO_PLANNED_BATCH",
+        )
+        for field in (
+            "candidateBatchSizes",
+            "candidateProfiles",
+            "profileMemoryTargetGb",
+        ):
+            self.assertIn(field, runtime["required"])
         safeguards = properties["safeguards"]["properties"]
         for field in (
             "trainingExecuted",
@@ -69,12 +84,15 @@ class VisionFlowModelTrainingBatchCalibrationScriptTest(unittest.TestCase):
         self.assertNotIn("docker ", lowered)
         self.assertIn('importlib.import_module("torch")', source)
         self.assertIn(
-            'importlib.import_module("ultralytics.utils.autobatch")',
+            '"ultralytics.utils.torch_utils"',
             source,
         )
         self.assertIn("confirm_gpu_batch_calibration", source)
+        self.assertIn("_bounded_candidate_batches", source)
         self.assertIn("max_num_obj=maximum_objects_per_image", source)
-        self.assertIn("dataset_size=train_image_count", source)
+        self.assertIn("profileMemoryTargetGb", source)
+        self.assertNotIn("check_train_batch_size", source)
+        self.assertNotIn("dataset_size=train_image_count", source)
 
     def test_intake_locks_dense_scene_autobatch_evidence(self) -> None:
         module_source = INTAKE_MODULE_PATH.read_text(encoding="utf-8")

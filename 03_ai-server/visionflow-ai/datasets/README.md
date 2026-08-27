@@ -135,7 +135,9 @@ scripts\run-visionflow-model-training-batch-calibration.bat ^
   --check-only
 ```
 
-명시 승인 경로는 GPU 메모리 60%를 목표로 Ultralytics AutoBatch 학습 그래프를 프로파일링합니다. train split의 `maximumObjectsPerImage`와 이미지 수를 사용하며 `YOLO.train()`, optimizer step, 가중치 저장, 계획·데이터 수정은 수행하지 않습니다. 추천 batch가 계획과 다르면 계획을 자동 수정하지 않고 Phase 2B-6A·6B 증거를 다시 생성하도록 요구합니다.
+명시 승인 경로는 GPU 메모리 60%를 목표로 Ultralytics `profile_ops` 학습 그래프를 프로파일링합니다. 후보는 계획 batch를 상한으로 하는 2의 거듭제곱과 계획값으로 제한됩니다. 예를 들어 계획 batch가 2이면 `[1, 2]`만 측정하므로 기본 AutoBatch의 상위 후보 `4/8/16`으로 인한 불필요한 OOM을 차단합니다. train split의 `maximumObjectsPerImage`를 밀집 객체 증거로 전달하고, 후보별 `profileMemoryGb`와 60% 목표 충족 여부를 receipt에 기록합니다.
+
+60% 목표를 만족하는 최대 후보만 추천합니다. 추천 batch가 계획과 다르면 계획을 자동 수정하지 않고 `PLAN_BATCH_UPDATE_REQUIRED`를 반환하여 Phase 2B-6A·6B·6C 증거를 다시 생성하도록 요구합니다. 이 단계는 `YOLO.train()`, optimizer step, 가중치 저장, 계획·데이터 수정을 수행하지 않습니다.
 
 ## Phase 2B-6D S1 Training Execution
 

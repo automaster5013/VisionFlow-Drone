@@ -133,9 +133,11 @@
         "planBatchMatchesRecommendation"
       ],
       "properties": {
-        "method": { "const": "ULTRALYTICS_CHECK_TRAIN_BATCH_SIZE" },
+        "method": {
+          "const": "VISIONFLOW_BOUNDED_ULTRALYTICS_PROFILE_OPS"
+        },
         "symbol": {
-          "const": "ultralytics.utils.autobatch.check_train_batch_size"
+          "const": "ultralytics.utils.torch_utils.profile_ops"
         },
         "memoryFraction": { "const": 0.6 },
         "imgsz": { "type": "integer", "minimum": 32 },
@@ -163,7 +165,11 @@
         "allocatedVramBytesBeforeProfile",
         "reservedVramBytesBeforeProfile",
         "peakAllocatedVramBytes",
-        "peakReservedVramBytes"
+        "peakReservedVramBytes",
+        "candidatePolicy",
+        "candidateBatchSizes",
+        "candidateProfiles",
+        "profileMemoryTargetGb"
       ],
       "properties": {
         "mode": {
@@ -202,6 +208,23 @@
         "peakReservedVramBytes": {
           "type": ["integer", "null"],
           "minimum": 1
+        },
+        "candidatePolicy": {
+          "const": "POWERS_OF_TWO_UP_TO_PLANNED_BATCH"
+        },
+        "candidateBatchSizes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 1, "maximum": 1024 }
+        },
+        "candidateProfiles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/candidateProfile" }
+        },
+        "profileMemoryTargetGb": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
         }
       }
     },
@@ -244,6 +267,25 @@
     "calibrationReceiptSha256": { "$ref": "#/$defs/sha256" }
   },
   "$defs": {
+    "candidateProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batch",
+        "usable",
+        "profileMemoryGb",
+        "withinMemoryTarget"
+      ],
+      "properties": {
+        "batch": { "type": "integer", "minimum": 1, "maximum": 1024 },
+        "usable": { "type": "boolean" },
+        "profileMemoryGb": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
+        },
+        "withinMemoryTarget": { "type": "boolean" }
+      }
+    },
     "sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
