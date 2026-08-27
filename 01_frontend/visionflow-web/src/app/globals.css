@@ -445,10 +445,45 @@ textarea {
   color: #d9ceff;
 }
 
+
+.vf-sidebar-emblem {
+  margin-top: 12px;
+  padding-top: 0;
+}
+
+.vf-sidebar-emblem__frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(
+          in srgb,
+          var(--vf-accent) 28%,
+          var(--vf-sidebar-border)
+  );
+  border-radius: 8px;
+  background: color-mix(
+          in srgb,
+          var(--vf-sidebar-panel) 88%,
+          transparent
+  );
+  box-shadow:
+          inset 0 1px rgba(255, 255, 255, 0.04),
+          0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.vf-sidebar-emblem__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 6 / 5;
+  object-fit: cover;
+  object-position: 50% 48%;
+  opacity: 0.94;
+  filter: saturate(0.92) contrast(1.06);
+  user-select: none;
+}
+
+
 .vf-sidebar-runtime {
   margin-top: auto;
-  border-top: 1px solid var(--vf-sidebar-border);
-  padding: 16px 10px 2px;
 }
 
 .vf-sidebar-runtime__label {

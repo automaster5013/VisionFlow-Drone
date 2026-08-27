@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -85,7 +86,19 @@ export function AppSidebar({ operatorSecurity }: AppSidebarProps) {
             })}
           </ul>
         </nav>
-
+        <div className="vf-sidebar-emblem">
+          <div className="vf-sidebar-emblem__frame">
+            <Image
+                src="/branding/emblem.png"
+                alt="PyvaOps Team Emblem"
+                width={2048}
+                height={1117}
+                sizes="196px"
+                className="vf-sidebar-emblem__image"
+                draggable={false}
+            />
+          </div>
+        </div>
         <footer className="vf-sidebar-runtime">
           <p className="vf-sidebar-runtime__label">Runtime profile</p>
           <p className="vf-sidebar-runtime__value">
