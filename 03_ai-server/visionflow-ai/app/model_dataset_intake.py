@@ -346,7 +346,7 @@ def build_dataset_intake_report(
             "dataYamlSha256": data_yaml_sha256,
             "splitManifestPath": str(split_manifest_path),
             "splitManifestSha256": split_manifest_sha256,
-            "splitUnit": "VIDEO_SEQUENCE",
+            "splitUnit": str(data["splitUnit"]),
             "classCount": len(VISDRONE_NAMES),
             "fingerprintMode": "full",
             "combinedFingerprintSha256": combined_fingerprint,

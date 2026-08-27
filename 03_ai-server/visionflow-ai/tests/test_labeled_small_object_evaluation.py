@@ -343,8 +343,10 @@ class LabeledSmallObjectEvaluationTest(unittest.TestCase):
             SMALL_OBJECT_DEFINITION,
         )
         self.assertEqual(
-            split_schema["properties"]["splitUnit"]["const"], "VIDEO_SEQUENCE"
+            split_schema["properties"]["splitUnit"]["enum"],
+            ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"],
         )
+        self.assertEqual(template["splitUnit"], "VIDEO_SEQUENCE")
         self.assertTrue(template["template"])
 
 

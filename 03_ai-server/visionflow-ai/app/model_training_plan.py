@@ -36,6 +36,11 @@ READINESS_STATUS = "READY"
 MINIMUM_ULTRALYTICS_VERSION = "8.4.0"
 DATASET_FINGERPRINT_MODE = "labels"
 FINAL_HELDOUT_SPLIT = "FINAL_HELDOUT"
+VIDEO_SEQUENCE_SPLIT_UNIT = "VIDEO_SEQUENCE"
+OFFICIAL_DATASET_SPLIT_UNIT = "OFFICIAL_DATASET_SPLIT"
+SUPPORTED_SPLIT_UNITS = frozenset(
+    {VIDEO_SEQUENCE_SPLIT_UNIT, OFFICIAL_DATASET_SPLIT_UNIT}
+)
 
 PUBLIC_TRAIN_ARGUMENTS = (
     "imgsz",
@@ -433,6 +438,14 @@ def _validate_data(
         train_images=train_images,
         val_images=val_images,
     )
+    split_unit = str(normalized_split["splitUnit"])
+    if (
+        split_unit == OFFICIAL_DATASET_SPLIT_UNIT
+        and stage is not TrainingStage.VISDRONE_S1
+    ):
+        _fail(
+            "OFFICIAL_DATASET_SPLIT은 VISDRONE_S1에서만 사용할 수 있습니다."
+        )
     combined_fingerprint = _combined_dataset_fingerprint(
         data_yaml_sha256=str(train_spec["yamlSha256"]),
         split_manifest_sha256=str(normalized_split["manifestSha256"]),
@@ -448,7 +461,7 @@ def _validate_data(
         "datasetBase": str(dataset_base),
         "splitManifestPath": str(split_manifest_path),
         "splitManifestSha256": str(normalized_split["manifestSha256"]),
-        "splitUnit": "VIDEO_SEQUENCE",
+        "splitUnit": split_unit,
         "finalEvaluationExcludedFromTraining": True,
         "fingerprintMode": fingerprint_mode,
         "train": _inventory_evidence(train_spec),
@@ -543,21 +556,50 @@ def validate_training_split_manifest(
     if manifest.get("schemaVersion") != SCHEMA_VERSION:
         _fail("split manifest schemaVersion은 1이어야 합니다.")
     if manifest.get("contractId") != SPLIT_MANIFEST_CONTRACT_ID:
-        _fail("split manifest contractId가 영상 단위 분리 계약과 다릅니다.")
+        _fail("split manifest contractId가 데이터 분리 계약과 다릅니다.")
     if manifest.get("template") is True:
         _fail("split manifest 템플릿은 실제 학습 계획에 사용할 수 없습니다.")
     if manifest.get("datasetVersion") != dataset_version:
         _fail("split manifest datasetVersion이 학습 계획과 다릅니다.")
-    if manifest.get("splitUnit") != "VIDEO_SEQUENCE":
-        _fail("split 단위는 VIDEO_SEQUENCE여야 합니다.")
+    split_unit = _text(manifest.get("splitUnit"), "splitManifest.splitUnit")
+    if split_unit not in SUPPORTED_SPLIT_UNITS:
+        _fail(
+            "split 단위는 VIDEO_SEQUENCE 또는 "
+            "OFFICIAL_DATASET_SPLIT이어야 합니다."
+        )
     if manifest.get("adjacentFramesAcrossSplits") is not False:
         _fail("인접 프레임을 서로 다른 split에 섞을 수 없습니다.")
     if manifest.get("finalEvaluationExcludedFromTraining") is not True:
         _fail("FINAL_HELDOUT은 학습에서 제외되어야 합니다.")
 
-    sequences = _array(manifest.get("sequences"), "splitManifest.sequences")
-    if not sequences:
-        _fail("split manifest sequences가 비어 있습니다.")
+    base_keys = {
+        "schemaVersion",
+        "contractId",
+        "template",
+        "datasetVersion",
+        "splitUnit",
+        "adjacentFramesAcrossSplits",
+        "finalEvaluationExcludedFromTraining",
+    }
+    if split_unit == VIDEO_SEQUENCE_SPLIT_UNIT:
+        collection_key = "sequences"
+        entry_id_key = "sequenceId"
+        source_file_key = "sourceVideoFile"
+        source_sha_key = "sourceVideoSha256"
+        entry_label = "sequence"
+    else:
+        collection_key = "sources"
+        entry_id_key = "sourceId"
+        source_file_key = "sourceArtifactFile"
+        source_sha_key = "sourceArtifactSha256"
+        entry_label = "source"
+    _exact_keys(manifest, base_keys | {collection_key}, "splitManifest")
+    entries = _array(
+        manifest.get(collection_key),
+        f"splitManifest.{collection_key}",
+    )
+    if not entries:
+        _fail(f"split manifest {collection_key}가 비어 있습니다.")
     roots_by_split: dict[str, list[Path]] = {
         "TRAIN": [],
         "VAL": [],
@@ -566,36 +608,35 @@ def validate_training_split_manifest(
     }
     seen_ids: set[str] = set()
     seen_source_hashes: set[str] = set()
-    for index, raw_sequence in enumerate(sequences):
-        sequence = _object(raw_sequence, f"splitManifest.sequences[{index}]")
-        sequence_id = _text(
-            sequence.get("sequenceId"), f"splitManifest.sequences[{index}].sequenceId"
+    for index, raw_entry in enumerate(entries):
+        field = f"splitManifest.{collection_key}[{index}]"
+        entry = _object(raw_entry, field)
+        _exact_keys(
+            entry,
+            {entry_id_key, source_file_key, source_sha_key, "split", "imageRoots"},
+            field,
         )
-        if sequence_id in seen_ids:
-            _fail("split manifest sequenceId는 고유해야 합니다.")
-        seen_ids.add(sequence_id)
-        _text(
-            sequence.get("sourceVideoFile"),
-            f"splitManifest.sequences[{index}].sourceVideoFile",
-        )
+        entry_id = _text(entry.get(entry_id_key), f"{field}.{entry_id_key}")
+        if entry_id in seen_ids:
+            _fail(f"split manifest {entry_id_key}는 고유해야 합니다.")
+        seen_ids.add(entry_id)
+        _text(entry.get(source_file_key), f"{field}.{source_file_key}")
         source_sha = _sha256(
-            sequence.get("sourceVideoSha256"),
-            f"splitManifest.sequences[{index}].sourceVideoSha256",
+            entry.get(source_sha_key),
+            f"{field}.{source_sha_key}",
         )
         if source_sha in seen_source_hashes:
-            _fail("split manifest sourceVideoSha256는 고유해야 합니다.")
+            _fail(f"split manifest {source_sha_key}는 고유해야 합니다.")
         seen_source_hashes.add(source_sha)
-        split = _text(
-            sequence.get("split"), f"splitManifest.sequences[{index}].split"
-        )
+        split = _text(entry.get("split"), f"{field}.split")
         if split not in roots_by_split:
-            _fail(f"splitManifest.sequences[{index}].split 값이 올바르지 않습니다.")
-        roots = _array(
-            sequence.get("imageRoots"),
-            f"splitManifest.sequences[{index}].imageRoots",
-        )
+            _fail(f"{field}.split 값이 올바르지 않습니다.")
+        roots = _array(entry.get("imageRoots"), f"{field}.imageRoots")
         if not roots or len({_text(root, "imageRoot") for root in roots}) != len(roots):
-            _fail("각 sequence의 imageRoots는 비어 있지 않은 고유 경로 목록이어야 합니다.")
+            _fail(
+                f"각 {entry_label}의 imageRoots는 비어 있지 않은 "
+                "고유 경로 목록이어야 합니다."
+            )
         for raw_root in roots:
             configured = Path(_text(raw_root, "splitManifest imageRoot"))
             if configured.is_absolute():
@@ -609,26 +650,30 @@ def validate_training_split_manifest(
 
     for required_split in ("TRAIN", "VAL", FINAL_HELDOUT_SPLIT):
         if not roots_by_split[required_split]:
-            _fail(f"split manifest에 {required_split} VIDEO_SEQUENCE가 필요합니다.")
+            _fail(
+                f"split manifest에 {required_split} {split_unit}가 필요합니다."
+            )
 
     _validate_image_membership(
         train_images,
         expected_split="TRAIN",
         roots_by_split=roots_by_split,
+        split_unit=split_unit,
     )
     _validate_image_membership(
         val_images,
         expected_split="VAL",
         roots_by_split=roots_by_split,
+        split_unit=split_unit,
     )
     return {
         "schemaVersion": SCHEMA_VERSION,
         "contractId": SPLIT_MANIFEST_CONTRACT_ID,
         "datasetVersion": dataset_version,
-        "splitUnit": "VIDEO_SEQUENCE",
+        "splitUnit": split_unit,
         "manifestPath": str(manifest_path.resolve()),
         "manifestSha256": sha256_file(manifest_path),
-        "sequenceCount": len(sequences),
+        "provenanceEntryCount": len(entries),
     }
 
 
@@ -637,6 +682,7 @@ def _validate_image_membership(
     *,
     expected_split: str,
     roots_by_split: Mapping[str, Sequence[Path]],
+    split_unit: str,
 ) -> None:
     def belongs(image: Path, root: Path) -> bool:
         try:
@@ -659,7 +705,7 @@ def _validate_image_membership(
         if len(expected_matches) != 1 or wrong_matches:
             _fail(
                 f"{expected_split} 이미지는 정확히 하나의 동일 split "
-                f"VIDEO_SEQUENCE root에만 속해야 합니다: {image}"
+                f"{split_unit} root에만 속해야 합니다: {image}"
             )
 
 

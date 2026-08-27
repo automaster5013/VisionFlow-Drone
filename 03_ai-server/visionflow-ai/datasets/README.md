@@ -2,9 +2,11 @@
 
 실제 데이터는 Git과 Docker 이미지에 포함하지 않습니다. 데이터 버전과 파일 fingerprint, split manifest SHA-256만 모델 매니페스트에 기록합니다.
 
-## 필수 분리 정책
+## 필수 분리·provenance 정책
 
-- split 단위는 이미지가 아니라 원본 `VIDEO_SEQUENCE`입니다.
+- 공식 정적 이미지 벤치마크는 `OFFICIAL_DATASET_SPLIT`을 사용하고, 원본 배포 artifact 파일명·SHA-256과 공식 train/val/test-dev image root를 기록합니다.
+- 영상에서 추출한 VisionFlow 데이터는 이미지가 아니라 원본 `VIDEO_SEQUENCE` 단위로 분리합니다.
+- `OFFICIAL_DATASET_SPLIT`은 정적 VisDrone2019-DET S1에만 허용하며, S2·발표환경·최종 held-out 영상에는 `VIDEO_SEQUENCE`를 유지합니다.
 - 동일 영상의 인접 프레임을 train/val/test에 나누어 넣지 않습니다.
 - 발표용 최종 검증영상은 train·val과 분리된 held-out 세트로 유지합니다.
 - 작은 객체는 원본 해상도에서 COCO 기준 `area < 32² px`로 평가합니다.
@@ -35,6 +37,8 @@ datasets/
 3. 최종 held-out 영상은 두 단계 학습에서 모두 제외합니다.
 
 VisDrone2019-DET의 10개 클래스는 `pedestrian`, `people`, `bicycle`, `car`, `van`, `truck`, `tricycle`, `awning-tricycle`, `bus`, `motor`입니다. PPE 클래스는 없으므로 `ppe-yolo26m-best.pt`의 학습 데이터나 역할과 혼합하지 않습니다.
+
+VisDrone2019-DET는 정적 이미지 탐지 벤치마크이므로 존재하지 않는 원본 영상을 만들지 않습니다. 공식 train·val·test-dev archive를 확보한 뒤 각 archive의 실제 SHA-256을 `sources[].sourceArtifactSha256`에 기록하고, `sourceArtifactFile`에는 배포 파일명을 그대로 기록합니다. train은 `TRAIN`, val은 `VAL`, test-dev는 학습에서 제외되는 `FINAL_HELDOUT`으로 잠급니다.
 
 평가 명령의 `-ModelFile`과 `-DataYaml`에는 고정 모델명과 해당 split의 YAML을 명시합니다.
 
@@ -80,11 +84,12 @@ scripts\run-visionflow-model-training-plan.bat ^
 - Ultralytics 8.4.0 이상과 공개 학습 인자만 사용
 - VisDrone2019-DET 원본 10개 클래스의 ID·이름 일치 및 PPE 혼합 차단
 - train/val 이미지 중복 없음, 모든 이미지의 라벨 파일 존재
-- 모든 train/val 이미지가 정확히 하나의 동일 split `VIDEO_SEQUENCE` root에 소속
+- 모든 train/val 이미지가 정확히 하나의 동일 split provenance root에 소속
+- S1 정적 VisDrone은 `OFFICIAL_DATASET_SPLIT`, 영상 기반 데이터는 `VIDEO_SEQUENCE` 사용
 - `FINAL_HELDOUT` 영상이 학습 split에 포함되지 않음
 - S1은 `yolo26m.pt`, S2는 검증된 S1 best와 S1 매니페스트를 부모로 사용
 
-실제 데이터셋에는 `split-manifest.json`의 TRAIN·VAL·FINAL_HELDOUT 영상 root를 모두 기록합니다. S2 `data.yaml`은 VisDrone 재학습 데이터와 VisionFlow 발표환경 유사 데이터를 하나의 10-class 계약으로 합쳐 가리켜야 합니다. 인접 프레임을 다른 split에 섞거나 동일 이미지를 train/val 양쪽에서 참조하면 계획 잠금 단계에서 실패합니다.
+실제 데이터셋에는 `split-manifest.json`의 TRAIN·VAL·FINAL_HELDOUT root를 모두 기록합니다. `OFFICIAL_DATASET_SPLIT`은 `sources`에 공식 배포 artifact를, `VIDEO_SEQUENCE`는 `sequences`에 원본 영상을 기록하며 두 형식을 섞을 수 없습니다. S2 `data.yaml`은 VisDrone 재학습 데이터와 VisionFlow 발표환경 유사 데이터를 하나의 10-class 계약으로 합쳐 가리켜야 합니다. 인접 프레임을 다른 split에 섞거나 동일 이미지를 train/val 양쪽에서 참조하면 계획 잠금 단계에서 실패합니다.
 
 ## Phase 2B-6A Dataset Intake Receipt
 

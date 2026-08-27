@@ -273,7 +273,7 @@ def _verify_preflight_receipt(
         "dataYamlSha256": str(ready_data["dataYamlSha256"]),
         "splitManifestSha256": str(ready_data["splitManifestSha256"]),
         "classCount": len(VISDRONE_NAMES),
-        "splitUnit": "VIDEO_SEQUENCE",
+        "splitUnit": str(ready_data["splitUnit"]),
     }
     expected_training = {
         "requestedDevice": str(arguments["device"]),

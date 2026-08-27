@@ -21,6 +21,7 @@ from app.model_training_gpu_preflight import (
     build_training_gpu_preflight_report,
     write_training_gpu_preflight_report,
 )
+from app.model_training_plan import OFFICIAL_DATASET_SPLIT_UNIT
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = PROJECT_ROOT / "config/training-gpu-preflight-v1.schema.json"
@@ -208,6 +209,22 @@ class ModelTrainingGpuPreflightTest(unittest.TestCase):
     def _relative(self, path: Path) -> str:
         return path.relative_to(self.root).as_posix()
 
+    def _use_official_dataset_split(self) -> None:
+        manifest = json.loads(self.split_manifest_path.read_text(encoding="utf-8"))
+        sequences = manifest.pop("sequences")
+        manifest["splitUnit"] = OFFICIAL_DATASET_SPLIT_UNIT
+        manifest["sources"] = [
+            {
+                "sourceId": str(sequence["sequenceId"]),
+                "sourceArtifactFile": f"{sequence['sequenceId']}.zip",
+                "sourceArtifactSha256": str(sequence["sourceVideoSha256"]),
+                "split": str(sequence["split"]),
+                "imageRoots": list(sequence["imageRoots"]),
+            }
+            for sequence in sequences
+        ]
+        self.split_manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
     def _write_plan(
         self,
         *,
@@ -361,6 +378,24 @@ class ModelTrainingGpuPreflightTest(unittest.TestCase):
                 self.assertFalse(report["safeguards"]["gpuAccessed"])
                 self.assertFalse(report["safeguards"]["modelLoaded"])
 
+    def test_official_dataset_split_propagates_through_gpu_preflight(self) -> None:
+        self._use_official_dataset_split()
+        self._prepare()
+        cpu_report = self._build()
+        self.assertEqual(
+            cpu_report["dataset"]["splitUnit"],
+            OFFICIAL_DATASET_SPLIT_UNIT,
+        )
+        gpu_report = self._build(
+            confirm_gpu_probe=True,
+            torch_provider=lambda: _FakeTorch(),
+            yolo_factory=lambda _path: _FakeYolo(COCO_NAMES),
+        )
+        self.assertEqual(
+            gpu_report["dataset"]["splitUnit"],
+            OFFICIAL_DATASET_SPLIT_UNIT,
+        )
+
     def test_receipt_content_hash_tampering_is_rejected(self) -> None:
         self._prepare()
         receipt = json.loads(self.receipt_path.read_text(encoding="utf-8"))
@@ -443,6 +478,10 @@ class ModelTrainingGpuPreflightTest(unittest.TestCase):
             [CPU_STATUS, GPU_STATUS],
         )
         safeguards = properties["safeguards"]["properties"]
+        self.assertEqual(
+            properties["dataset"]["properties"]["splitUnit"]["enum"],
+            ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"],
+        )
         self.assertFalse(safeguards["trainingExecuted"]["const"])
         self.assertFalse(safeguards["batchCalibrated"]["const"])
         self.assertFalse(safeguards["dockerAccessed"]["const"])

@@ -471,7 +471,7 @@ def build_training_gpu_preflight_report(
             "dataYamlSha256": str(data_evidence["dataYamlSha256"]),
             "splitManifestSha256": str(data_evidence["splitManifestSha256"]),
             "classCount": len(VISDRONE_NAMES),
-            "splitUnit": "VIDEO_SEQUENCE",
+            "splitUnit": str(data_evidence["splitUnit"]),
         },
         "training": {
             "requestedDevice": str(arguments["device"]),

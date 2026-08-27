@@ -23,6 +23,7 @@ from app.model_training_batch_calibration import (
     build_training_batch_calibration_report,
     write_training_batch_calibration_report,
 )
+from app.model_training_plan import OFFICIAL_DATASET_SPLIT_UNIT
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = PROJECT_ROOT / "config/training-batch-calibration-v1.schema.json"
@@ -188,7 +189,14 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.fixture.tearDown()
 
-    def _prepare(self, *, stage: str = "VISDRONE_S1") -> None:
+    def _prepare(
+        self,
+        *,
+        stage: str = "VISDRONE_S1",
+        official_split: bool = False,
+    ) -> None:
+        if official_split:
+            self.fixture._use_official_dataset_split()
         self.fixture._write_plan(stage=stage)
         extra_image = (
             self.fixture.dataset / "images/train/train-b/frame.jpg"
@@ -209,19 +217,26 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
         manifest = json.loads(
             self.fixture.split_manifest_path.read_text(encoding="utf-8")
         )
-        if not any(
-            item.get("sequenceId") == "train-b"
-            for item in manifest["sequences"]
-        ):
-            manifest["sequences"].append(
-                {
+        collection_key = "sources" if official_split else "sequences"
+        id_key = "sourceId" if official_split else "sequenceId"
+        if not any(item.get(id_key) == "train-b" for item in manifest[collection_key]):
+            if official_split:
+                entry = {
+                    "sourceId": "train-b",
+                    "sourceArtifactFile": "train-b.zip",
+                    "sourceArtifactSha256": "d" * 64,
+                    "split": "TRAIN",
+                    "imageRoots": ["images/train/train-b"],
+                }
+            else:
+                entry = {
                     "sequenceId": "train-b",
                     "sourceVideoFile": "train-b.mp4",
                     "sourceVideoSha256": "d" * 64,
                     "split": "TRAIN",
                     "imageRoots": ["images/train/train-b"],
                 }
-            )
+            manifest[collection_key].append(entry)
         self.fixture.split_manifest_path.write_text(
             json.dumps(manifest),
             encoding="utf-8",
@@ -323,6 +338,16 @@ class ModelTrainingBatchCalibrationTest(unittest.TestCase):
         self.assertFalse(report["safeguards"]["optimizerStepExecuted"])
         self.assertFalse(report["safeguards"]["weightsPersisted"])
         self.assertTrue(report["safeguards"]["trainingGraphProfiled"])
+
+    def test_official_dataset_split_receipt_chain_passes_calibration(self) -> None:
+        self._prepare(official_split=True)
+        preflight = json.loads(self.preflight_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            preflight["dataset"]["splitUnit"],
+            OFFICIAL_DATASET_SPLIT_UNIT,
+        )
+        report = self._build()
+        self.assertEqual(report["status"], CPU_STATUS)
 
     def test_recommended_batch_mismatch_requires_plan_update_without_mutation(self) -> None:
         self._prepare()

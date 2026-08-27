@@ -70,7 +70,9 @@
         "dataYamlSha256": { "$ref": "#/$defs/sha256" },
         "splitManifestPath": { "type": "string", "minLength": 1 },
         "splitManifestSha256": { "$ref": "#/$defs/sha256" },
-        "splitUnit": { "const": "VIDEO_SEQUENCE" },
+        "splitUnit": {
+          "enum": ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"]
+        },
         "classCount": { "const": 10 },
         "fingerprintMode": { "const": "full" },
         "combinedFingerprintSha256": { "$ref": "#/$defs/sha256" },

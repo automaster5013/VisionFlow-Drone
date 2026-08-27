@@ -15,6 +15,7 @@ from app.model_dataset_intake import (
     build_dataset_intake_report,
     write_dataset_intake_report,
 )
+from app.model_training_plan import OFFICIAL_DATASET_SPLIT_UNIT
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = PROJECT_ROOT / "config/dataset-intake-report-v1.schema.json"
@@ -115,6 +116,22 @@ class ModelDatasetIntakeTest(unittest.TestCase):
             json.dumps(self.split_manifest),
             encoding="utf-8",
         )
+
+    def _use_official_dataset_split(self) -> None:
+        sequences = self.split_manifest.pop("sequences")
+        assert isinstance(sequences, list)
+        self.split_manifest["splitUnit"] = OFFICIAL_DATASET_SPLIT_UNIT
+        self.split_manifest["sources"] = [
+            {
+                "sourceId": str(sequence["sequenceId"]),
+                "sourceArtifactFile": f"{sequence['sequenceId']}.zip",
+                "sourceArtifactSha256": str(sequence["sourceVideoSha256"]),
+                "split": str(sequence["split"]),
+                "imageRoots": list(sequence["imageRoots"]),
+            }
+            for sequence in sequences
+        ]
+        self._write_split_manifest()
 
     def _write_plan(self, stage: str = "VISDRONE_S1") -> dict[str, object]:
         if stage == "VISDRONE_S1":
@@ -238,6 +255,14 @@ class ModelDatasetIntakeTest(unittest.TestCase):
                 self.assertEqual(report["dataset"]["val"]["smallObjectCount"], 10)
                 self.assertEqual(len(report["receiptSha256"]), 64)
 
+    def test_official_dataset_split_is_preserved_in_intake_receipt(self) -> None:
+        self._use_official_dataset_split()
+        report = self._build()
+        self.assertEqual(
+            report["dataset"]["splitUnit"],
+            OFFICIAL_DATASET_SPLIT_UNIT,
+        )
+
     def test_schema_locks_ready_full_fingerprint_and_safeguards(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
         properties = schema["properties"]
@@ -247,6 +272,10 @@ class ModelDatasetIntakeTest(unittest.TestCase):
         )
         self.assertEqual(properties["status"]["const"], "READY")
         dataset_properties = properties["dataset"]["properties"]
+        self.assertEqual(
+            dataset_properties["splitUnit"]["enum"],
+            ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"],
+        )
         self.assertEqual(dataset_properties["fingerprintMode"]["const"], "full")
         self.assertEqual(dataset_properties["classCount"]["const"], 10)
         class_items = schema["$defs"]["splitEvidence"]["properties"]["classes"]

@@ -11,14 +11,17 @@ import yaml
 from app.model_contract import VISDRONE_CLASS_MAPPING, sha256_file
 from app.model_training_plan import (
     INTERNAL_YOLO26_ARGUMENTS,
+    OFFICIAL_DATASET_SPLIT_UNIT,
     PUBLIC_TRAIN_ARGUMENTS,
     TRAINING_PLAN_CONTRACT_ID,
+    VIDEO_SEQUENCE_SPLIT_UNIT,
     TrainingPlanError,
     compile_training_plan,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = PROJECT_ROOT / "config/transfer-training-plan-v1.schema.json"
+SPLIT_SCHEMA_PATH = PROJECT_ROOT / "config/video-split-manifest-v1.schema.json"
 S1_TEMPLATE_PATH = (
     PROJECT_ROOT / "config/visdrone-s1-training.plan.template.json"
 )
@@ -107,6 +110,22 @@ class ModelTrainingPlanTest(unittest.TestCase):
         self.split_manifest_path.write_text(
             json.dumps(self.split_manifest), encoding="utf-8"
         )
+
+    def _use_official_dataset_split(self) -> None:
+        sequences = self.split_manifest.pop("sequences")
+        assert isinstance(sequences, list)
+        self.split_manifest["splitUnit"] = OFFICIAL_DATASET_SPLIT_UNIT
+        self.split_manifest["sources"] = [
+            {
+                "sourceId": str(sequence["sequenceId"]),
+                "sourceArtifactFile": f"{sequence['sequenceId']}.zip",
+                "sourceArtifactSha256": str(sequence["sourceVideoSha256"]),
+                "split": str(sequence["split"]),
+                "imageRoots": list(sequence["imageRoots"]),
+            }
+            for sequence in sequences
+        ]
+        self._write_split_manifest()
 
     def _write_plan(self, stage: str = "VISDRONE_S1") -> dict[str, object]:
         if stage == "VISDRONE_S1":
@@ -216,6 +235,7 @@ class ModelTrainingPlanTest(unittest.TestCase):
 
     def test_schema_and_templates_lock_exact_stage_contracts(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        split_schema = json.loads(SPLIT_SCHEMA_PATH.read_text(encoding="utf-8"))
         s1 = json.loads(S1_TEMPLATE_PATH.read_text(encoding="utf-8"))
         s2 = json.loads(S2_TEMPLATE_PATH.read_text(encoding="utf-8"))
         self.assertEqual(
@@ -235,6 +255,12 @@ class ModelTrainingPlanTest(unittest.TestCase):
         )
         training_properties = schema["properties"]["training"]["properties"]
         self.assertFalse(INTERNAL_YOLO26_ARGUMENTS & set(training_properties))
+        self.assertEqual(
+            split_schema["properties"]["splitUnit"]["enum"],
+            [VIDEO_SEQUENCE_SPLIT_UNIT, OFFICIAL_DATASET_SPLIT_UNIT],
+        )
+        self.assertIn("sequences", split_schema["properties"])
+        self.assertIn("sources", split_schema["properties"])
 
     def test_template_plan_is_rejected(self) -> None:
         plan = self._write_plan()
@@ -260,6 +286,28 @@ class ModelTrainingPlanTest(unittest.TestCase):
             "yolo26m-visdrone-s1-best.pt",
         )
         self.assertIn("manifestSha256", s2["model"]["parent"])
+
+    def test_s1_official_dataset_split_provenance_passes(self) -> None:
+        self._use_official_dataset_split()
+        self._write_plan("VISDRONE_S1")
+        report = self._compile()
+        self.assertEqual(report["data"]["splitUnit"], OFFICIAL_DATASET_SPLIT_UNIT)
+
+    def test_official_dataset_split_rejects_video_fields_and_s2_use(self) -> None:
+        self._use_official_dataset_split()
+        sources = self.split_manifest["sources"]
+        assert isinstance(sources, list)
+        sources[0]["sourceVideoFile"] = "fabricated.mp4"
+        self._write_split_manifest()
+        self._write_plan("VISDRONE_S1")
+        with self.assertRaisesRegex(TrainingPlanError, "키가 계약과 다릅니다"):
+            self._compile()
+
+        del sources[0]["sourceVideoFile"]
+        self._write_split_manifest()
+        self._write_plan("VISIONFLOW_S2")
+        with self.assertRaisesRegex(TrainingPlanError, "VISDRONE_S1"):
+            self._compile()
 
     def test_class_mapping_is_exact_and_ppe_mixing_is_rejected(self) -> None:
         self._write_plan()
@@ -289,6 +337,8 @@ class ModelTrainingPlanTest(unittest.TestCase):
         self._write_split_manifest()
         with self.assertRaisesRegex(TrainingPlanError, "VIDEO_SEQUENCE"):
             self._compile()
+
+        self.assertEqual(self.split_manifest["splitUnit"], VIDEO_SEQUENCE_SPLIT_UNIT)
 
         sequences[0]["split"] = "TRAIN"
         self._write_split_manifest()

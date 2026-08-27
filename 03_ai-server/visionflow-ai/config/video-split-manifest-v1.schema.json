@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "visionflow.phase2b4.video-split-manifest.schema",
-  "title": "VisionFlow video-sequence split manifest",
+  "title": "VisionFlow dataset provenance split manifest",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,47 +11,101 @@
     "datasetVersion",
     "splitUnit",
     "adjacentFramesAcrossSplits",
-    "finalEvaluationExcludedFromTraining",
-    "sequences"
+    "finalEvaluationExcludedFromTraining"
   ],
   "properties": {
     "schemaVersion": { "const": 1 },
     "contractId": { "const": "visionflow.phase2b4.video-split-manifest" },
     "template": { "type": "boolean" },
     "datasetVersion": { "type": "string", "minLength": 1 },
-    "splitUnit": { "const": "VIDEO_SEQUENCE" },
+    "splitUnit": {
+      "enum": ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"]
+    },
     "adjacentFramesAcrossSplits": { "const": false },
     "finalEvaluationExcludedFromTraining": { "const": true },
     "sequences": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "sequenceId",
-          "sourceVideoFile",
-          "sourceVideoSha256",
-          "split",
-          "imageRoots"
-        ],
+      "items": { "$ref": "#/$defs/videoSequence" }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/officialDatasetSource" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "splitUnit": { "const": "VIDEO_SEQUENCE" } },
+        "required": ["splitUnit"]
+      },
+      "then": {
+        "required": ["sequences"],
+        "not": { "required": ["sources"] }
+      }
+    },
+    {
+      "if": {
         "properties": {
-          "sequenceId": { "type": "string", "minLength": 1 },
-          "sourceVideoFile": { "type": "string", "minLength": 1 },
-          "sourceVideoSha256": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
-          },
-          "split": {
-            "enum": ["TRAIN", "VAL", "TEST", "FINAL_HELDOUT"]
-          },
-          "imageRoots": {
-            "type": "array",
-            "minItems": 1,
-            "uniqueItems": true,
-            "items": { "type": "string", "minLength": 1 }
-          }
-        }
+          "splitUnit": { "const": "OFFICIAL_DATASET_SPLIT" }
+        },
+        "required": ["splitUnit"]
+      },
+      "then": {
+        "required": ["sources"],
+        "not": { "required": ["sequences"] }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "split": {
+      "enum": ["TRAIN", "VAL", "TEST", "FINAL_HELDOUT"]
+    },
+    "imageRoots": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "videoSequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequenceId",
+        "sourceVideoFile",
+        "sourceVideoSha256",
+        "split",
+        "imageRoots"
+      ],
+      "properties": {
+        "sequenceId": { "type": "string", "minLength": 1 },
+        "sourceVideoFile": { "type": "string", "minLength": 1 },
+        "sourceVideoSha256": { "$ref": "#/$defs/sha256" },
+        "split": { "$ref": "#/$defs/split" },
+        "imageRoots": { "$ref": "#/$defs/imageRoots" }
+      }
+    },
+    "officialDatasetSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "sourceArtifactFile",
+        "sourceArtifactSha256",
+        "split",
+        "imageRoots"
+      ],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "sourceArtifactFile": { "type": "string", "minLength": 1 },
+        "sourceArtifactSha256": { "$ref": "#/$defs/sha256" },
+        "split": { "$ref": "#/$defs/split" },
+        "imageRoots": { "$ref": "#/$defs/imageRoots" }
       }
     }
   }
