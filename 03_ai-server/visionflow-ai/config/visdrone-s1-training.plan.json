@@ -32,7 +32,7 @@
   "training": {
     "imgsz": 1280,
     "epochs": 100,
-    "batch": 2,
+    "batch": 1,
     "seed": 26,
     "device": "0",
     "workers": 4,
