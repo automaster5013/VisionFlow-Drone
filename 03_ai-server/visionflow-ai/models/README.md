@@ -189,3 +189,22 @@ scripts\run-visionflow-model-training-batch-calibration.bat ^
 실제 GPU 보정은 같은 명령에 `--confirm-gpu-batch-calibration`을 명시한 경우에만 실행됩니다. Ultralytics AutoBatch의 60% VRAM 정책과 train split의 이미지당 최대 객체 수를 사용하고, deep-copy 학습 그래프의 메모리만 프로파일링합니다. Ultralytics wrapper의 `YOLO.train()`, optimizer step, 체크포인트·가중치 저장, 계획·데이터 변경은 금지됩니다.
 
 추천 batch가 계획값과 같으면 상태는 `READY_FOR_TRAINING_APPROVAL`, 다음 작업은 `EXPLICIT_TRAINING_APPROVAL_REQUIRED`입니다. 값이 다르면 `PLAN_BATCH_UPDATE_REQUIRED`이며 계획을 사람이 수정한 뒤 Phase 2B-6A intake, 2B-6B GPU preflight와 2B-6C calibration을 모두 다시 실행해야 합니다. 어떤 경우에도 이 단계가 실제 S1/S2 학습 승인을 대신하지 않습니다.
+
+## S1 학습 실행 계약
+
+Phase 2B-6D는 `VISDRONE_S1`만 실행하며 S2 조기 학습을 차단합니다. check-only 결과 `READY_FOR_EXPLICIT_S1_TRAINING`은 입력 증거가 현재 상태와 일치한다는 뜻일 뿐 GPU 학습 승인이 아닙니다. 실제 실행은 별도 승인 후 `--confirm-s1-training`과 신규 receipt 경로를 함께 제공해야 합니다.
+
+```bat
+scripts\run-visionflow-model-training-execution.bat ^
+  --root . ^
+  --plan config\visdrone-s1-training.plan.json ^
+  --intake-receipt output\dataset-intake\visdrone-s1-ready.json ^
+  --preflight-receipt output\training-gpu-preflight\visdrone-s1-gpu.json ^
+  --calibration-receipt output\training-batch-calibration\visdrone-s1-gpu.json ^
+  --run-name visdrone-s1-001 ^
+  --check-only
+```
+
+명시 실행은 승인된 CUDA·PyTorch·Ultralytics identity와 COCO 부모 모델을 다시 확인한 후 잠긴 인자로 `YOLO.train()`을 정확히 한 번 호출합니다. 새 run 폴더의 `best.pt`·`last.pt`를 검증하고 best를 표준 파일명 `yolo26m-visdrone-s1-best.pt`로 원자 승격하며 모든 SHA-256을 execution receipt에 남깁니다. 자동 resume와 기존 파일 덮어쓰기는 허용하지 않습니다.
+
+`TRAINED_AWAITING_EVALUATION`은 학습 산출물 생성 완료 상태이지 모델 활성화 상태가 아닙니다. 현재 weight manifest 계약은 `MEASURED` 평가 결과를 요구하므로 Phase 2B-6D는 매니페스트를 채우지 않습니다. S1 라벨 평가와 매니페스트 검증을 통과한 뒤에만 S2 부모 lineage로 사용할 수 있습니다.

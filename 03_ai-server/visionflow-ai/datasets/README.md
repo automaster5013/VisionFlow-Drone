@@ -131,3 +131,22 @@ scripts\run-visionflow-model-training-batch-calibration.bat ^
 ```
 
 명시 승인 경로는 GPU 메모리 60%를 목표로 Ultralytics AutoBatch 학습 그래프를 프로파일링합니다. train split의 `maximumObjectsPerImage`와 이미지 수를 사용하며 `YOLO.train()`, optimizer step, 가중치 저장, 계획·데이터 수정은 수행하지 않습니다. 추천 batch가 계획과 다르면 계획을 자동 수정하지 않고 Phase 2B-6A·6B 증거를 다시 생성하도록 요구합니다.
+
+## Phase 2B-6D S1 Training Execution
+
+S1 실행 계약은 Phase 2B-5 계획, 2B-6A dataset intake, 2B-6B GPU preflight와 `READY_FOR_TRAINING_APPROVAL` 상태의 2B-6C calibration receipt를 현재 파일로 다시 계산해 연결합니다. 기본 경로에서는 Torch·Ultralytics·CUDA를 불러오거나 학습 결과 폴더를 만들지 않습니다.
+
+```bat
+scripts\run-visionflow-model-training-execution.bat ^
+  --root . ^
+  --plan config\visdrone-s1-training.plan.json ^
+  --intake-receipt output\dataset-intake\visdrone-s1-ready.json ^
+  --preflight-receipt output\training-gpu-preflight\visdrone-s1-gpu.json ^
+  --calibration-receipt output\training-batch-calibration\visdrone-s1-gpu.json ^
+  --run-name visdrone-s1-001 ^
+  --check-only
+```
+
+이 단계는 `VISDRONE_S1`만 허용합니다. 실제 학습은 물리 GPU 사용과 장시간 실행을 다시 승인받은 뒤 `--confirm-s1-training`과 새 `--output` receipt 경로를 함께 지정해야 합니다. 승인된 공개 학습 인자 외에는 `YOLO.train()`에 전달하지 않으며 `project`, `name`, `exist_ok=false`, `resume=false`는 실행 계약이 통제합니다.
+
+학습 도중 계획·데이터·receipt·부모 가중치가 바뀌면 `best.pt`를 승격하지 않습니다. 성공한 run의 `best.pt`와 `last.pt`를 SHA-256으로 기록하고, best만 `models/yolo26m-visdrone-s1-best.pt`로 원자적으로 복사합니다. 기존 run 폴더·표준 가중치·receipt는 덮어쓰지 않습니다. 완료 상태는 `TRAINED_AWAITING_EVALUATION`이며 라벨 기반 소형 객체 평가 전에는 S1 매니페스트를 완성하거나 S2 부모로 승격하지 않습니다.
