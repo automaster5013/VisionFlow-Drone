@@ -12,7 +12,8 @@ import re
 import shutil
 import sys
 import tempfile
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -150,6 +151,16 @@ def _safe_new_path(root: Path, relative_path: Path, field: str) -> Path:
     if lexical.exists() or lexical.is_symlink():
         _fail(f"기존 {field}을(를) 덮어쓰지 않습니다: {lexical}")
     return lexical
+
+
+@contextmanager
+def _working_directory(path: Path) -> Iterator[None]:
+    previous = Path.cwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
 
 
 def _validate_run_name(run_name: str) -> str:
@@ -609,9 +620,23 @@ def build_s1_training_execution_report(
         train = getattr(parent_model, "train", None)
         if train is None or not callable(train):
             _fail("S1 부모 YOLO 모델에 train()이 없습니다.")
+        data_yaml_path = _safe_existing_file(
+            root,
+            _text(arguments.get("data"), "training.arguments.data"),
+            "training data.yaml",
+        )
+        current_dataset = _object(current["dataset"], "current.dataset")
+        expected_data_yaml_sha = _text(
+            current_dataset.get("dataYamlSha256"),
+            "current.dataset.dataYamlSha256",
+        )
+        if sha256_file(data_yaml_path) != expected_data_yaml_sha:
+            _fail("학습 인자의 data.yaml SHA-256이 잠긴 dataset 증거와 다릅니다.")
+        dataset_working_directory = data_yaml_path.parent
         started_at = _timestamp(now)
         try:
-            result = train(**controlled_arguments)
+            with _working_directory(dataset_working_directory):
+                result = train(**controlled_arguments)
         except (MemoryError, OSError, RuntimeError, TypeError, ValueError) as error:
             raise S1TrainingExecutionError(f"S1 YOLO.train()이 실패했습니다: {error}") from error
         completed_at = _timestamp(now)

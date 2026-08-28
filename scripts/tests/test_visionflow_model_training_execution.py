@@ -31,6 +31,11 @@ class VisionFlowModelTrainingExecutionScriptTest(unittest.TestCase):
         self.assertIn('"exist_ok": False', source)
         self.assertIn('"resume": False', source)
         self.assertEqual(source.count("train(**controlled_arguments)"), 1)
+        self.assertIn(
+            "with _working_directory(dataset_working_directory):",
+            source,
+        )
+        self.assertIn("training data.yaml", source)
 
     def test_schema_locks_s1_statuses_artifact_name_and_evaluation_boundary(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))

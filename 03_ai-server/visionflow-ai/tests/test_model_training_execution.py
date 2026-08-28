@@ -74,9 +74,11 @@ class _TrainingModel:
         self.failure = failure
         self.mutate = mutate
         self.train_calls: list[dict[str, object]] = []
+        self.working_directories: list[Path] = []
 
     def train(self, **kwargs: object) -> object:
         self.train_calls.append(dict(kwargs))
+        self.working_directories.append(Path.cwd().resolve())
         run_dir = Path(str(kwargs["project"])) / str(kwargs["name"])
         weights = run_dir / "weights"
         weights.mkdir(parents=True)
@@ -176,7 +178,9 @@ class ModelTrainingExecutionTest(unittest.TestCase):
         self.assertIsNone(report["artifacts"]["canonicalWeight"])
 
     def test_explicit_training_calls_yolo_once_and_promotes_named_weight(self) -> None:
+        working_directory_before = Path.cwd().resolve()
         report, model = self._runtime_build()
+        self.assertEqual(Path.cwd().resolve(), working_directory_before)
         self.assertEqual(report["status"], TRAINED_STATUS)
         self.assertEqual(report["nextAction"], TRAINED_NEXT_ACTION)
         self.assertEqual(len(model.train_calls), 1)
@@ -188,6 +192,10 @@ class ModelTrainingExecutionTest(unittest.TestCase):
         self.assertFalse(arguments["exist_ok"])
         self.assertFalse(arguments["resume"])
         self.assertEqual(arguments["name"], self.run_name)
+        self.assertEqual(
+            model.working_directories,
+            [Path(str(arguments["data"])).resolve().parent],
+        )
         canonical = self.root / "models/yolo26m-visdrone-s1-best.pt"
         self.assertTrue(canonical.is_file())
         self.assertEqual(
@@ -242,8 +250,18 @@ class ModelTrainingExecutionTest(unittest.TestCase):
                 )
             )
         failing_model = _TrainingModel(failure=RuntimeError("synthetic failure"))
+        working_directory_before = Path.cwd().resolve()
         with self.assertRaisesRegex(S1TrainingExecutionError, r"train\(\)이 실패"):
             self._runtime_build(model=failing_model)
+        self.assertEqual(Path.cwd().resolve(), working_directory_before)
+        self.assertEqual(
+            failing_model.working_directories,
+            [
+                Path(
+                    str(failing_model.train_calls[0]["data"])
+                ).resolve().parent
+            ],
+        )
         self.assertFalse(
             (self.root / "models/yolo26m-visdrone-s1-best.pt").exists()
         )
