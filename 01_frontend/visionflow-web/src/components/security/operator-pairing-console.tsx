@@ -55,10 +55,16 @@ function bodyMessage(value: unknown, fallback: string): string {
     : fallback;
 }
 
+const MOBILE_RUNTIME_REFRESH_ATTEMPTS = 8;
+const MOBILE_RUNTIME_REFRESH_INTERVAL_MS = 1_000;
+
 async function loadMobileHttpsRuntime(): Promise<MobileHttpsRuntimeProfile | null> {
-  const response = await fetch("/api/mobile/runtime-network", {
-    cache: "no-store",
-  });
+  const response = await fetch(
+    `/api/mobile/runtime-network?refresh=${Date.now()}`,
+    {
+      cache: "no-store",
+    },
+  );
   const body: unknown = await response.json().catch(() => null);
 
   if (!response.ok || typeof body !== "object" || body === null) {
@@ -66,6 +72,12 @@ async function loadMobileHttpsRuntime(): Promise<MobileHttpsRuntimeProfile | nul
   }
 
   return body as MobileHttpsRuntimeProfile;
+}
+
+function waitForNextRuntimeProbe(): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, MOBILE_RUNTIME_REFRESH_INTERVAL_MS);
+  });
 }
 
 function normalizeMobileOrigin(value: string): string {
@@ -164,7 +176,7 @@ export function OperatorPairingConsole() {
 
           setRuntimeProfile(profile);
 
-          if (profile?.origin) {
+          if (profile?.fresh && profile.origin) {
             setMobileOrigin(profile.origin);
             setMobileOriginManual(false);
             return;
@@ -267,20 +279,41 @@ export function OperatorPairingConsole() {
     setRuntimeLoading(true);
     setError(null);
 
+    const previousGeneratedAt = runtimeProfile?.generatedAt ?? null;
+    let latestProfile: MobileHttpsRuntimeProfile | null = null;
+
     try {
-      const profile = await loadMobileHttpsRuntime();
-      setRuntimeProfile(profile);
+      for (
+        let attempt = 0;
+        attempt < MOBILE_RUNTIME_REFRESH_ATTEMPTS;
+        attempt += 1
+      ) {
+        latestProfile = await loadMobileHttpsRuntime();
+        setRuntimeProfile(latestProfile);
 
-      if (!profile) {
-        throw new Error(
-          "Windows host 자동 감지 정보를 읽지 못했습니다. Runtime Agent가 실행 중인지 확인하세요.",
-        );
+        const generatedAgain =
+          previousGeneratedAt === null ||
+          latestProfile?.generatedAt !== previousGeneratedAt;
+
+        if (latestProfile?.fresh && latestProfile.origin && generatedAgain) {
+          setMobileOrigin(latestProfile.origin);
+          setMobileOriginManual(false);
+          return;
+        }
+
+        if (attempt < MOBILE_RUNTIME_REFRESH_ATTEMPTS - 1) {
+          await waitForNextRuntimeProbe();
+        }
       }
 
-      if (profile.origin) {
-        setMobileOrigin(profile.origin);
-        setMobileOriginManual(false);
+      if (!mobileOriginManual) {
+        setMobileOrigin("");
       }
+
+      throw new Error(
+        latestProfile?.message ??
+          "Windows host 자동 감지 정보를 새로 받지 못했습니다. Runtime Agent가 실행 중인지 확인하세요.",
+      );
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -431,8 +464,9 @@ export function OperatorPairingConsole() {
     : null;
   const detectedOriginBlocked =
     !mobileOriginManual &&
-    runtimeProfile?.origin === mobileOrigin.trim() &&
-    !runtimeProfile.ready;
+    (!runtimeProfile?.fresh ||
+      !runtimeProfile.ready ||
+      runtimeProfile.origin !== mobileOrigin.trim());
   const runtimeTone = mobileOriginManual
     ? "border-amber-200 bg-amber-50 text-amber-800"
     : runtimeProfile?.ready
@@ -481,7 +515,7 @@ export function OperatorPairingConsole() {
                   setMobileOrigin(event.target.value);
                   setMobileOriginManual(true);
                 }}
-                disabled={Boolean(creation)}
+                disabled={Boolean(creation) || runtimeLoading}
                 placeholder="예: https://192.168.10.108:3443"
                 required
                 aria-describedby="mobile-pairing-origin-help"
@@ -511,7 +545,9 @@ export function OperatorPairingConsole() {
                   </button>
                 )}
               </div>
-              {runtimeProfile?.hostIp && !mobileOriginManual && (
+              {runtimeProfile?.fresh &&
+                runtimeProfile.hostIp &&
+                !mobileOriginManual && (
                 <p className="mt-2 font-mono">
                   Host {runtimeProfile.hostIp} · Port {runtimeProfile.port}
                 </p>
@@ -626,7 +662,9 @@ export function OperatorPairingConsole() {
                 <br />
                 mobile HTTPS 상태를 자동으로 확인합니다.
               </p>
-              {runtimeProfile?.origin && !mobileOriginManual && (
+              {runtimeProfile?.fresh &&
+                runtimeProfile.origin &&
+                !mobileOriginManual && (
                 <p className="font-mono text-xs text-slate-600">
                   {runtimeProfile.origin}
                 </p>

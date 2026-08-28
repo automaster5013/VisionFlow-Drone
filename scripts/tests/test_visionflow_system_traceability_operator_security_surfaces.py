@@ -159,5 +159,59 @@ class SystemTraceabilityOperatorSecuritySurfacesTest(unittest.TestCase):
         )
 
 
+    def test_mobile_https_refresh_waits_for_new_fresh_agent_profile(self) -> None:
+        source = read_text(
+            "01_frontend/visionflow-web/src/components/security/"
+            "operator-pairing-console.tsx"
+        )
+
+        for contract in (
+            "MOBILE_RUNTIME_REFRESH_ATTEMPTS = 8",
+            "waitForNextRuntimeProbe",
+            "previousGeneratedAt",
+            "latestProfile?.fresh && latestProfile.origin && generatedAgain",
+            'setMobileOrigin("")',
+            "!runtimeProfile?.fresh",
+        ):
+            self.assertIn(contract, source)
+
+        self.assertIn(
+            "`/api/mobile/runtime-network?refresh=${Date.now()}`",
+            source,
+        )
+
+    def test_mobile_runtime_loader_uses_static_container_runtime_file(self) -> None:
+        source = read_text(
+            "01_frontend/visionflow-web/src/lib/server/"
+            "mobile-https-runtime.ts"
+        )
+
+        for contract in (
+            "const RUNTIME_FILE = path.join(",
+            "/*turbopackIgnore: true*/ process.cwd()",
+            '"mobile-https-runtime"',
+            "lstat(RUNTIME_FILE)",
+        ):
+            self.assertIn(contract, source)
+
+        self.assertNotIn("VISIONFLOW_MOBILE_HTTPS_RUNTIME_FILE", source)
+        self.assertNotIn("runtimeFileCandidates", source)
+        self.assertNotIn("path.resolve(", source)
+
+    def test_local_start_includes_mobile_https_and_runtime_agent(self) -> None:
+        source = read_text(
+            "scripts/local-runtime/start-visionflow-local.ps1"
+        )
+
+        for contract in (
+            '"visionflow-mobile-https"',
+            "Wait-MobileRuntimeProfile",
+            "start-mobile-https-runtime-agent.bat",
+            "MOBILE_RUNTIME_AGENT=FRESH",
+            "MOBILE_RUNTIME_ORIGIN=",
+        ):
+            self.assertIn(contract, source)
+
+
 if __name__ == "__main__":
     unittest.main()

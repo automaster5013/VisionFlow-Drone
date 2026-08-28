@@ -28,6 +28,26 @@ function Wait-Http([string]$Url, [int]$TimeoutSeconds = 180) {
   throw "Timed out waiting for $Url"
 }
 
+function Wait-MobileRuntimeProfile(
+  [string]$ProfilePath,
+  [int]$TimeoutSeconds = 30
+) {
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  do {
+    try {
+      $profile = Get-Content -LiteralPath $ProfilePath -Raw -Encoding UTF8 |
+        ConvertFrom-Json
+      $generatedAt = [DateTimeOffset]::Parse([string]$profile.generatedAt)
+      $ageSeconds = ([DateTimeOffset]::UtcNow - $generatedAt.ToUniversalTime()).TotalSeconds
+      if ($ageSeconds -ge -10 -and $ageSeconds -le 20) {
+        return $profile
+      }
+    } catch {}
+    Start-Sleep -Seconds 1
+  } while ((Get-Date) -lt $deadline)
+  throw "Timed out waiting for a fresh mobile HTTPS runtime profile: $ProfilePath"
+}
+
 if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
   throw "VisionFlow root not found: $Root"
 }
@@ -44,12 +64,13 @@ if ($LASTEXITCODE -ne 0) {
 
 Wait-Docker
 
-# Desktop VisionFlow runtime only. mobile-https is intentionally excluded.
+# Desktop and smartphone demonstration runtime.
 $core = @(
   "visionflow-mysql",
   "visionflow-backend",
   "visionflow-ai",
-  "visionflow-frontend"
+  "visionflow-frontend",
+  "visionflow-mobile-https"
 )
 
 foreach ($name in $core) {
@@ -72,6 +93,19 @@ Wait-Http "http://127.0.0.1:8080/actuator/health" 120
 Wait-Http "http://127.0.0.1:8000/health" 180
 Wait-Http "http://127.0.0.1:3000/api/operator/session" 120
 
+$agentLauncher = Join-Path $Root "scripts\mobile-https-runtime\start-mobile-https-runtime-agent.bat"
+if (-not (Test-Path -LiteralPath $agentLauncher -PathType Leaf)) {
+  throw "Mobile HTTPS Runtime Agent launcher not found: $agentLauncher"
+}
+
+& $agentLauncher
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to request Mobile HTTPS Runtime Agent start."
+}
+
+$runtimeProfilePath = Join-Path $Root "artifacts\mobile-https\runtime\network-profile.json"
+$mobileRuntime = Wait-MobileRuntimeProfile $runtimeProfilePath 30
+
 $session = Invoke-RestMethod -Uri "http://127.0.0.1:3000/api/operator/session" -TimeoutSec 5
 $restart = docker inspect visionflow-frontend --format "{{.HostConfig.RestartPolicy.Name}}"
 $health = docker inspect visionflow-frontend --format "{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}"
@@ -84,6 +118,10 @@ Write-Host "VISIONFLOW_LOCAL_START=PASS"
 Write-Host "BACKEND=UP"
 Write-Host "AI=UP"
 Write-Host "FRONTEND=UP"
+Write-Host "MOBILE_HTTPS=UP"
+Write-Host "MOBILE_RUNTIME_AGENT=FRESH"
+Write-Host "MOBILE_RUNTIME_ORIGIN=$($mobileRuntime.origin)"
+Write-Host "MOBILE_RUNTIME_READY=$([bool]$mobileRuntime.ready)"
 Write-Host "FRONTEND_HEALTH=$health"
 Write-Host "FRONTEND_RESTART_POLICY=$restart"
 Write-Host "FRONTEND_AUTH_MODE=$($session.authMode)"
