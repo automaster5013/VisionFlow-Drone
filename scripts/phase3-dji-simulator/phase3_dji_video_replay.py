@@ -113,18 +113,18 @@ def replay_model_config(s1_controlled_live: bool) -> ReplayModelConfig:
     )
 
 
-SUMMARY_PATTERN = re.compile(
-    r"PHASE3_SUMMARY "
-    r"FRAMES_ANALYZED=(?P<frames>\d+) "
-    r"PPE_SAMPLES=(?P<ppe>\d+) "
-    r"POSE_SAMPLES=(?P<pose>\d+) "
-    r"POSE_ASSIGNED=(?P<pose_assigned>\d+) "
-    r"POSE_UNASSIGNED=(?P<pose_unassigned>\d+) "
-    r"DEPTH_TRIGGER_ATTEMPTS=(?P<triggers>\d+) "
-    r"DEPTH_TRIGGERS_ACCEPTED=(?P<accepted>\d+) "
-    r"DEPTH_TRIGGERS_REJECTED=(?P<rejected>\d+) "
-    r"DEPTH_RESULTS=(?P<depth>\d+)"
-)
+SUMMARY_PATTERN = re.compile(r"(?m)^PHASE3_SUMMARY(?: [^\s=]+=[^\s]+)+\s*$")
+SUMMARY_REQUIRED_FIELDS = {
+    "FRAMES_ANALYZED": "frames",
+    "PPE_SAMPLES": "ppe",
+    "POSE_SAMPLES": "pose",
+    "POSE_ASSIGNED": "pose_assigned",
+    "POSE_UNASSIGNED": "pose_unassigned",
+    "DEPTH_TRIGGER_ATTEMPTS": "triggers",
+    "DEPTH_TRIGGERS_ACCEPTED": "accepted",
+    "DEPTH_TRIGGERS_REJECTED": "rejected",
+    "DEPTH_RESULTS": "depth",
+}
 
 
 def utc_now() -> str:
@@ -312,13 +312,19 @@ def recent_events(
 
 def parse_summary(log_text: str) -> dict[str, int] | None:
     matches = list(SUMMARY_PATTERN.finditer(log_text))
-    if not matches:
-        return None
-    match = matches[-1]
-    return {
-        key: int(value)
-        for key, value in match.groupdict().items()
-    }
+    for match in reversed(matches):
+        fields = dict(
+            token.split("=", 1)
+            for token in match.group(0).split()[1:]
+        )
+        try:
+            return {
+                alias: int(fields[name])
+                for name, alias in SUMMARY_REQUIRED_FIELDS.items()
+            }
+        except (KeyError, ValueError):
+            continue
+    return None
 
 
 def missing_event_diagnosis(summary: dict[str, int]) -> str:

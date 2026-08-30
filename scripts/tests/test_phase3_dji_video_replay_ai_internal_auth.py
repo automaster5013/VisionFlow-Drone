@@ -184,6 +184,42 @@ class Phase3DjiVideoReplayAiInternalAuthTest(unittest.TestCase):
         self.assertIn("다른 MP4", message)
         self.assertNotIn("보고/인증 경로", message)
 
+    def test_parse_summary_accepts_segmentation_metrics(self) -> None:
+        summary = REPLAY.parse_summary(
+            "PHASE3_SUMMARY FRAMES_ANALYZED=300 PPE_SAMPLES=50 "
+            "POSE_SAMPLES=0 POSE_ASSIGNED=0 POSE_UNASSIGNED=0 "
+            "SEGMENTATION_SAMPLES=0 SEGMENTATION_INSTANCES=0 "
+            "SEGMENTATION_ASSIGNED=0 SEGMENTATION_UNASSIGNED=0 "
+            "SEGMENTATION_MASK_AREA_PX=0.000 "
+            "DEPTH_TRIGGER_ATTEMPTS=80 DEPTH_TRIGGERS_ACCEPTED=46 "
+            "DEPTH_TRIGGERS_REJECTED=34 DEPTH_RESULTS=46"
+        )
+
+        self.assertEqual(
+            summary,
+            {
+                "frames": 300,
+                "ppe": 50,
+                "pose": 0,
+                "pose_assigned": 0,
+                "pose_unassigned": 0,
+                "triggers": 80,
+                "accepted": 46,
+                "rejected": 34,
+                "depth": 46,
+            },
+        )
+
+    def test_parse_summary_rejects_missing_required_metric(self) -> None:
+        summary = REPLAY.parse_summary(
+            "PHASE3_SUMMARY FRAMES_ANALYZED=300 PPE_SAMPLES=50 "
+            "POSE_SAMPLES=0 POSE_ASSIGNED=0 POSE_UNASSIGNED=0 "
+            "DEPTH_TRIGGER_ATTEMPTS=80 DEPTH_TRIGGERS_ACCEPTED=46 "
+            "DEPTH_RESULTS=46"
+        )
+
+        self.assertIsNone(summary)
+
     def test_main_loads_key_and_keeps_it_out_of_evidence_fields(self) -> None:
         source = REPLAY_PATH.read_text(encoding="utf-8")
         self.assertIn(
