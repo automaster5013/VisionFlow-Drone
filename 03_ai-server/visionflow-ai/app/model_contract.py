@@ -206,7 +206,7 @@ def validate_profile_registry(registry: Mapping[str, object]) -> dict[str, Any]:
         "profiles.AERIAL_SMALL_OBJECT_LIVE",
         expected_role=ModelRole.AERIAL_SMALL_OBJECT_DETECTION,
         allowed_stages={TrainingStage.VISDRONE_S1, TrainingStage.VISIONFLOW_S2},
-        activation_stages={TrainingStage.VISIONFLOW_S2},
+        activation_stages={TrainingStage.VISDRONE_S1},
         expected_files={
             TrainingStage.VISDRONE_S1: "yolo26m-visdrone-s1-best.pt",
             TrainingStage.VISIONFLOW_S2: "yolo26m-visdrone-s2-best.pt",
@@ -468,8 +468,11 @@ def _validate_data(raw_data: object) -> None:
     _text(data.get("datasetVersion"), "manifest.data.datasetVersion")
     _sha256(data.get("datasetFingerprintSha256"), "manifest.data.datasetFingerprintSha256")
     split = _object(data.get("splitPolicy"), "manifest.data.splitPolicy")
-    if split.get("unit") != "VIDEO_SEQUENCE":
-        _fail("데이터 분리는 VIDEO_SEQUENCE 단위여야 합니다.")
+    if split.get("unit") not in LABELED_EVALUATION_SPLIT_UNITS:
+        _fail(
+            "데이터 분리는 VIDEO_SEQUENCE 또는 "
+            "OFFICIAL_DATASET_SPLIT 단위여야 합니다."
+        )
     if split.get("adjacentFramesAcrossSplits") is not False:
         _fail(
             "동일 영상의 인접 프레임을 서로 다른 split에 섞을 수 없습니다."

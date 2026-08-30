@@ -123,7 +123,9 @@
             "splitManifestSha256"
           ],
           "properties": {
-            "unit": { "const": "VIDEO_SEQUENCE" },
+            "unit": {
+              "enum": ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"]
+            },
             "adjacentFramesAcrossSplits": { "const": false },
             "finalEvaluationExcludedFromTraining": { "const": true },
             "splitManifestSha256": { "$ref": "#/$defs/sha256" }

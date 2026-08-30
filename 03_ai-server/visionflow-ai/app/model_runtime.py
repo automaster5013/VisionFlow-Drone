@@ -332,7 +332,7 @@ def create_runtime_model_selection(
     normalized_manifest_path = manifest_path.strip()
     if requires_manifest and not normalized_manifest_path:
         raise ModelContractError(
-            "AERIAL_SMALL_OBJECT_LIVE에는 S2 실가중치 매니페스트가 필요합니다."
+            "AERIAL_SMALL_OBJECT_LIVE에는 S1 실가중치 매니페스트가 필요합니다."
         )
 
     manifest = (
@@ -391,7 +391,7 @@ def create_runtime_model_comparison_selection(
         )
     if not normalized_manifest_path:
         raise ModelContractError(
-            "DETERMINISTIC_COMPARE 후보 S2 매니페스트 경로가 필요합니다."
+            "DETERMINISTIC_COMPARE 후보 S1 매니페스트 경로가 필요합니다."
         )
 
     registry = validate_profile_registry(load_json_object(Path(profiles_path)))

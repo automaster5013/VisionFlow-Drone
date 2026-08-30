@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "contractId": "visionflow.phase2b1.visdrone-weight-contract",
+  "manifestVersion": 1,
+  "template": false,
+  "model": {
+    "profile": "AERIAL_SMALL_OBJECT_LIVE",
+    "role": "AERIAL_SMALL_OBJECT_DETECTION",
+    "family": "YOLO26",
+    "scale": "m",
+    "task": "detect",
+    "trainingStage": "VISDRONE_S1",
+    "activationEligible": true,
+    "weight": {
+      "fileName": "yolo26m-visdrone-s1-best.pt",
+      "sizeBytes": 44121433,
+      "sha256": "486f29a14b68201defb2148db923633f15b68f0304b50ff1f66b893ea4e16422"
+    },
+    "lineage": {
+      "parentFileName": "yolo26m.pt",
+      "parentSha256": "401cea9ab23ad19246ff7744859816bc599f350e93c9dd30367b6f0a0745d0b7"
+    }
+  },
+  "classes": [
+    {
+      "id": 0,
+      "sourceName": "pedestrian",
+      "canonicalName": "person",
+      "trackKind": "HUMAN"
+    },
+    {
+      "id": 1,
+      "sourceName": "people",
+      "canonicalName": "person",
+      "trackKind": "HUMAN"
+    },
+    {
+      "id": 2,
+      "sourceName": "bicycle",
+      "canonicalName": "bicycle",
+      "trackKind": "CYCLE"
+    },
+    {
+      "id": 3,
+      "sourceName": "car",
+      "canonicalName": "car",
+      "trackKind": "VEHICLE"
+    },
+    {
+      "id": 4,
+      "sourceName": "van",
+      "canonicalName": "van",
+      "trackKind": "VEHICLE"
+    },
+    {
+      "id": 5,
+      "sourceName": "truck",
+      "canonicalName": "truck",
+      "trackKind": "VEHICLE"
+    },
+    {
+      "id": 6,
+      "sourceName": "tricycle",
+      "canonicalName": "tricycle",
+      "trackKind": "VEHICLE"
+    },
+    {
+      "id": 7,
+      "sourceName": "awning-tricycle",
+      "canonicalName": "awning-tricycle",
+      "trackKind": "VEHICLE"
+    },
+    {
+      "id": 8,
+      "sourceName": "bus",
+      "canonicalName": "bus",
+      "trackKind": "VEHICLE"
+    },
+    {
+      "id": 9,
+      "sourceName": "motor",
+      "canonicalName": "motorcycle",
+      "trackKind": "CYCLE"
+    }
+  ],
+  "data": {
+    "datasetName": "VisDrone2019-DET",
+    "datasetVersion": "VisDrone2019-DET-official-ef86c757f85f",
+    "datasetFingerprintSha256": "a33a449363aca637e43b597537151ff5b61459b93b5e17fe48054f7ba22289a5",
+    "splitPolicy": {
+      "unit": "OFFICIAL_DATASET_SPLIT",
+      "adjacentFramesAcrossSplits": false,
+      "finalEvaluationExcludedFromTraining": true,
+      "splitManifestSha256": "079c0ad0382dfd7f0c4f9a80bfc89388f420709c6d4ef6e1db5fc375d2c3d875"
+    }
+  },
+  "training": {
+    "imageSize": 1280,
+    "epochs": 100,
+    "batch": 1,
+    "seed": 26
+  },
+  "runtime": {
+    "python": "3.11.9",
+    "ultralytics": "8.4.84",
+    "torch": "2.12.1+cu130",
+    "cuda": "13.0"
+  },
+  "inference": {
+    "defaultHeadMode": "END_TO_END",
+    "supportedHeadModes": [
+      "END_TO_END",
+      "ONE_TO_MANY_NMS"
+    ]
+  },
+  "evaluation": {
+    "status": "MEASURED",
+    "precision": 0.5744539143735287,
+    "recall": 0.47081559654413896,
+    "map50": 0.46721271857727115,
+    "map50_95": 0.2760489849946542,
+    "smallObject": {
+      "definition": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION",
+      "recall": 0.48877785864626155,
+      "missRate": 0.5112221413537384
+    },
+    "perClass": [
+      {
+        "sourceName": "pedestrian",
+        "precision": 0.6255529776307711,
+        "recall": 0.4905265162334571,
+        "map50": 0.5121174462177235,
+        "map50_95": 0.21910258768900964
+      },
+      {
+        "sourceName": "people",
+        "precision": 0.6121639585146506,
+        "recall": 0.2788582183186951,
+        "map50": 0.3246333492913783,
+        "map50_95": 0.12351492274888187
+      },
+      {
+        "sourceName": "bicycle",
+        "precision": 0.4766498334934982,
+        "recall": 0.2465437788018433,
+        "map50": 0.2561090388242073,
+        "map50_95": 0.11898522705965757
+      },
+      {
+        "sourceName": "car",
+        "precision": 0.7815559934169825,
+        "recall": 0.8311605043812781,
+        "map50": 0.8408255973091403,
+        "map50_95": 0.5525887601634613
+      },
+      {
+        "sourceName": "van",
+        "precision": 0.5532333405319134,
+        "recall": 0.5011263212614798,
+        "map50": 0.4907074501279269,
+        "map50_95": 0.34506714549111667
+      },
+      {
+        "sourceName": "truck",
+        "precision": 0.5161709034143336,
+        "recall": 0.5652500940203083,
+        "map50": 0.5200636449462874,
+        "map50_95": 0.34905024960889985
+      },
+      {
+        "sourceName": "tricycle",
+        "precision": 0.381984513715984,
+        "recall": 0.44528301886792454,
+        "map50": 0.33640562814175806,
+        "map50_95": 0.19732205631991448
+      },
+      {
+        "sourceName": "awning-tricycle",
+        "precision": 0.45793978018871184,
+        "recall": 0.2687813021702838,
+        "map50": 0.2571300995481313,
+        "map50_95": 0.1554199181743724
+      },
+      {
+        "sourceName": "bus",
+        "precision": 0.7518063031300797,
+        "recall": 0.5955191586143966,
+        "map50": 0.6565702003552543,
+        "map50_95": 0.4852007907037653
+      },
+      {
+        "sourceName": "motor",
+        "precision": 0.5874815396983619,
+        "recall": 0.48510705277172345,
+        "map50": 0.4775647310109047,
+        "map50_95": 0.21423819198746238
+      }
+    ]
+  }
+}

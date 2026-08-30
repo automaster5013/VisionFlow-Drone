@@ -48,6 +48,7 @@ def materialize_manifest(template_path: Path, weight_path: Path) -> dict[str, ob
     manifest["template"] = False
     model = manifest["model"]
     assert isinstance(model, dict)
+    model["activationEligible"] = True
     weight = model["weight"]
     assert isinstance(weight, dict)
     weight["sizeBytes"] = weight_path.stat().st_size
@@ -211,20 +212,20 @@ class WeightManifestTest(unittest.TestCase):
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary_directory.cleanup)
         self.root = Path(self.temporary_directory.name)
-        self.s2_weight = self.root / "yolo26m-visdrone-s2-best.pt"
-        self.s2_weight.write_bytes(b"visionflow-s2-weight")
+        self.s1_weight = self.root / "yolo26m-visdrone-s1-best.pt"
+        self.s1_weight.write_bytes(b"visionflow-s1-weight")
         self.registry = load_json(REGISTRY_PATH)
-        self.manifest = materialize_manifest(S2_TEMPLATE_PATH, self.s2_weight)
+        self.manifest = materialize_manifest(S1_TEMPLATE_PATH, self.s1_weight)
 
-    def test_s2_activation_contract_passes(self) -> None:
+    def test_s1_activation_contract_passes(self) -> None:
         result = validate_weight_manifest(
             self.manifest,
             self.registry,
-            weight_path=self.s2_weight,
-            model_status=model_status(self.manifest, self.s2_weight),
+            weight_path=self.s1_weight,
+            model_status=model_status(self.manifest, self.s1_weight),
             activation=True,
         )
-        self.assertEqual(result["trainingStage"], "VISIONFLOW_S2")
+        self.assertEqual(result["trainingStage"], "VISDRONE_S1")
         self.assertEqual(result["classCount"], 10)
 
     def test_template_is_rejected(self) -> None:
@@ -232,16 +233,16 @@ class WeightManifestTest(unittest.TestCase):
         with self.assertRaisesRegex(ModelContractError, "템플릿"):
             validate_weight_manifest(template, self.registry)
 
-    def test_s1_is_contract_only_and_cannot_activate(self) -> None:
-        s1_weight = self.root / "yolo26m-visdrone-s1-best.pt"
-        s1_weight.write_bytes(b"visionflow-s1-weight")
-        manifest = materialize_manifest(S1_TEMPLATE_PATH, s1_weight)
-        validate_weight_manifest(manifest, self.registry, weight_path=s1_weight)
+    def test_s2_is_contract_only_and_cannot_activate(self) -> None:
+        s2_weight = self.root / "yolo26m-visdrone-s2-best.pt"
+        s2_weight.write_bytes(b"visionflow-s2-weight")
+        manifest = materialize_manifest(S2_TEMPLATE_PATH, s2_weight)
+        validate_weight_manifest(manifest, self.registry, weight_path=s2_weight)
         with self.assertRaisesRegex(ModelContractError, "LIVE 활성화"):
             validate_weight_manifest(
                 manifest,
                 self.registry,
-                weight_path=s1_weight,
+                weight_path=s2_weight,
                 activation=True,
             )
 
@@ -253,13 +254,13 @@ class WeightManifestTest(unittest.TestCase):
         with self.assertRaisesRegex(ModelContractError, "PPE 가중치"):
             validate_weight_manifest(manifest, self.registry)
 
-    def test_wrong_s2_lineage_is_rejected(self) -> None:
+    def test_wrong_s1_lineage_is_rejected(self) -> None:
         manifest = copy.deepcopy(self.manifest)
         model = manifest["model"]
         assert isinstance(model, dict)
         lineage = model["lineage"]
         assert isinstance(lineage, dict)
-        lineage["parentFileName"] = "yolo26m.pt"
+        lineage["parentFileName"] = "yolo26m-visdrone-s1-best.pt"
         with self.assertRaisesRegex(ModelContractError, "lineage"):
             validate_weight_manifest(manifest, self.registry)
 
@@ -271,10 +272,10 @@ class WeightManifestTest(unittest.TestCase):
         assert isinstance(weight, dict)
         weight["sha256"] = "e" * 64
         with self.assertRaisesRegex(ModelContractError, "SHA-256"):
-            validate_weight_manifest(manifest, self.registry, weight_path=self.s2_weight)
+            validate_weight_manifest(manifest, self.registry, weight_path=self.s1_weight)
 
     def test_model_class_mismatch_is_rejected(self) -> None:
-        status = model_status(self.manifest, self.s2_weight)
+        status = model_status(self.manifest, self.s1_weight)
         classes = status["classes"]
         assert isinstance(classes, list)
         first = classes[0]
@@ -286,6 +287,21 @@ class WeightManifestTest(unittest.TestCase):
                 self.registry,
                 model_status=status,
             )
+
+    def test_official_dataset_split_is_accepted(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        data = manifest["data"]
+        assert isinstance(data, dict)
+        split = data["splitPolicy"]
+        assert isinstance(split, dict)
+        split["unit"] = "OFFICIAL_DATASET_SPLIT"
+        result = validate_weight_manifest(
+            manifest,
+            self.registry,
+            weight_path=self.s1_weight,
+            activation=True,
+        )
+        self.assertEqual(result["trainingStage"], "VISDRONE_S1")
 
     def test_adjacent_frame_split_is_rejected(self) -> None:
         manifest = copy.deepcopy(self.manifest)

@@ -1,0 +1,21 @@
+x-visionflow-s1-controlled-live:
+  contractId: visionflow.phase2b6e34.s1-controlled-live-activation
+  finalPresentationDate: "2026-09-09"
+  presentationOnly: true
+  productionSafetyCertification: false
+  s2TrainingComplete: false
+
+services:
+  ai-server:
+    environment:
+      AI_MODEL_PROFILE: AERIAL_SMALL_OBJECT_LIVE
+      AI_MODEL_PATH: /app/models/yolo26m-visdrone-s1-best.pt
+      AI_MODEL_MANIFEST_PATH: /app/models/manifests/yolo26m-visdrone-s1-best.manifest.json
+      AI_MODEL_PROFILES_PATH: /app/config/model-profiles-v1.json
+      AI_EXPECTED_MODEL_SHA256: 486f29a14b68201defb2148db923633f15b68f0304b50ff1f66b893ea4e16422
+      AI_REQUIRE_LOCAL_MODEL: "true"
+      AI_REQUIRE_CUDA: "true"
+      AI_DEVICE: "0"
+      AI_IMAGE_SIZE: "1280"
+      AI_CONFIDENCE: "0.25"
+      AI_IOU: "0.70"

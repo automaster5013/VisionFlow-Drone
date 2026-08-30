@@ -24,7 +24,7 @@
         "VISIONFLOW_S2"
       ],
       "activationTrainingStages": [
-        "VISIONFLOW_S2"
+        "VISDRONE_S1"
       ],
       "weightFiles": {
         "VISDRONE_S1": "yolo26m-visdrone-s1-best.pt",

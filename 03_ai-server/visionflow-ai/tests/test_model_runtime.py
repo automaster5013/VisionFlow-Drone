@@ -87,14 +87,14 @@ class RuntimeModelSelectionTest(unittest.TestCase):
         with self.assertRaisesRegex(ModelContractError, "매니페스트"):
             create_runtime_model_selection(
                 model_profile="AERIAL_SMALL_OBJECT_LIVE",
-                model_path="models/yolo26m-visdrone-s2-best.pt",
+                model_path="models/yolo26m-visdrone-s1-best.pt",
                 profiles_path=str(self.profiles),
             )
 
-    def test_s2_activation_and_exact_visdrone_mapping_pass(self) -> None:
+    def test_s1_activation_and_exact_visdrone_mapping_pass(self) -> None:
         manifest_path, weight_path, manifest = self._materialize(
-            S2_TEMPLATE_PATH,
-            "yolo26m-visdrone-s2-best.pt",
+            S1_TEMPLATE_PATH,
+            "yolo26m-visdrone-s1-best.pt",
         )
         selection = create_runtime_model_selection(
             model_profile="AERIAL_SMALL_OBJECT_LIVE",
@@ -111,7 +111,7 @@ class RuntimeModelSelectionTest(unittest.TestCase):
         motor = selection.resolve_class(9, "motor")
         enriched = selection.enrich_status(status, contract)
 
-        self.assertEqual(contract["trainingStage"], "VISIONFLOW_S2")
+        self.assertEqual(contract["trainingStage"], "VISDRONE_S1")
         self.assertEqual(contract["validation"], "WEIGHT_MANIFEST")
         self.assertEqual(pedestrian.canonical_name, "person")
         self.assertEqual(people.canonical_name, "person")
@@ -127,8 +127,8 @@ class RuntimeModelSelectionTest(unittest.TestCase):
 
     def test_runtime_class_name_drift_is_rejected(self) -> None:
         manifest_path, weight_path, _ = self._materialize(
-            S2_TEMPLATE_PATH,
-            "yolo26m-visdrone-s2-best.pt",
+            S1_TEMPLATE_PATH,
+            "yolo26m-visdrone-s1-best.pt",
         )
         selection = create_runtime_model_selection(
             model_profile="AERIAL_SMALL_OBJECT_LIVE",
@@ -139,12 +139,12 @@ class RuntimeModelSelectionTest(unittest.TestCase):
         with self.assertRaisesRegex(ModelContractError, "클래스 이름"):
             selection.resolve_class(0, "person")
 
-    def test_s1_cannot_be_selected_for_live_runtime(self) -> None:
+    def test_s2_cannot_be_selected_for_live_runtime(self) -> None:
         manifest_path, weight_path, _ = self._materialize(
-            S1_TEMPLATE_PATH,
-            "yolo26m-visdrone-s1-best.pt",
+            S2_TEMPLATE_PATH,
+            "yolo26m-visdrone-s2-best.pt",
         )
-        with self.assertRaisesRegex(ModelContractError, "s2-best"):
+        with self.assertRaisesRegex(ModelContractError, "s1-best"):
             create_runtime_model_selection(
                 model_profile="AERIAL_SMALL_OBJECT_LIVE",
                 model_path=str(weight_path),
@@ -160,10 +160,10 @@ class RuntimeModelSelectionTest(unittest.TestCase):
                 profiles_path=str(self.profiles),
             )
 
-    def test_compare_selection_resolves_general_and_s2_with_exact_policy(self) -> None:
+    def test_compare_selection_resolves_general_and_s1_with_exact_policy(self) -> None:
         manifest_path, weight_path, manifest = self._materialize(
-            S2_TEMPLATE_PATH,
-            "yolo26m-visdrone-s2-best.pt",
+            S1_TEMPLATE_PATH,
+            "yolo26m-visdrone-s1-best.pt",
         )
         comparison = create_runtime_model_comparison_selection(
             baseline_model_path="models/yolo26m.pt",
@@ -195,20 +195,20 @@ class RuntimeModelSelectionTest(unittest.TestCase):
         self.assertEqual(status["profile"], "DETERMINISTIC_COMPARE")
 
     def test_compare_selection_requires_candidate_manifest(self) -> None:
-        with self.assertRaisesRegex(ModelContractError, "후보 S2 매니페스트"):
+        with self.assertRaisesRegex(ModelContractError, "후보 S1 매니페스트"):
             create_runtime_model_comparison_selection(
                 baseline_model_path="models/yolo26m.pt",
-                candidate_model_path="models/yolo26m-visdrone-s2-best.pt",
+                candidate_model_path="models/yolo26m-visdrone-s1-best.pt",
                 candidate_manifest_path=" ",
                 profiles_path=str(self.profiles),
             )
 
-    def test_compare_selection_rejects_s1_candidate_manifest(self) -> None:
+    def test_compare_selection_rejects_s2_candidate_manifest(self) -> None:
         manifest_path, weight_path, _ = self._materialize(
-            S1_TEMPLATE_PATH,
-            "yolo26m-visdrone-s1-best.pt",
+            S2_TEMPLATE_PATH,
+            "yolo26m-visdrone-s2-best.pt",
         )
-        with self.assertRaisesRegex(ModelContractError, "s2-best"):
+        with self.assertRaisesRegex(ModelContractError, "s1-best"):
             create_runtime_model_comparison_selection(
                 baseline_model_path="models/yolo26m.pt",
                 candidate_model_path=str(weight_path),
