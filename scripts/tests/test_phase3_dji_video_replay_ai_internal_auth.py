@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
-
 
 ROOT = Path(__file__).resolve().parents[2]
 SIMULATOR_DIR = ROOT / "scripts" / "phase3-dji-simulator"
@@ -21,11 +22,12 @@ SPEC = importlib.util.spec_from_file_location(
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Cannot load replay gate: {REPLAY_PATH}")
 REPLAY = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = REPLAY
 SPEC.loader.exec_module(REPLAY)
 
 
 class Phase3DjiVideoReplayAiInternalAuthTest(unittest.TestCase):
-    def replay_command(self) -> list[str]:
+    def replay_command(self, *, s1_controlled_live: bool = False) -> list[str]:
         return REPLAY.docker_replay_command(
             root=ROOT,
             video_path=ROOT / "fixture.mp4",
@@ -37,7 +39,88 @@ class Phase3DjiVideoReplayAiInternalAuthTest(unittest.TestCase):
             session_id="00000000-0000-0000-0000-000000000001",
             drone_id=1,
             max_frames=300,
+            model_config=REPLAY.replay_model_config(s1_controlled_live),
         )
+
+    def test_default_command_preserves_general_replay_model(self) -> None:
+        command = self.replay_command()
+        self.assertIn("AI_MODEL_PROFILE=phase3-dji-replay-gpu", command)
+        self.assertIn("AI_MODEL_PATH=/app/models/yolo26m.pt", command)
+        self.assertIn("AI_CONFIDENCE=0.35", command)
+        self.assertIn("AI_IMAGE_SIZE=640", command)
+        self.assertFalse(
+            any(value.startswith("AI_MODEL_MANIFEST_PATH=") for value in command)
+        )
+        self.assertFalse(
+            any(value.startswith("AI_EXPECTED_MODEL_SHA256=") for value in command)
+        )
+
+    def test_s1_command_locks_controlled_live_contract(self) -> None:
+        command = self.replay_command(s1_controlled_live=True)
+        self.assertIn("AI_MODEL_PROFILE=AERIAL_SMALL_OBJECT_LIVE", command)
+        self.assertIn(
+            "AI_MODEL_PATH=/app/models/yolo26m-visdrone-s1-best.pt",
+            command,
+        )
+        self.assertIn(
+            "AI_MODEL_MANIFEST_PATH=/app/models/manifests/"
+            "yolo26m-visdrone-s1-best.manifest.json",
+            command,
+        )
+        self.assertIn(
+            "AI_MODEL_PROFILES_PATH=/workspace/config/model-profiles-v1.json",
+            command,
+        )
+        self.assertIn(
+            f"AI_EXPECTED_MODEL_SHA256={REPLAY.S1_EXPECTED_SHA256}",
+            command,
+        )
+        self.assertIn("AI_CONFIDENCE=0.25", command)
+        self.assertIn("AI_IMAGE_SIZE=1280", command)
+        self.assertNotIn("AI_MODEL_PATH=/app/models/yolo26m.pt", command)
+
+    def test_s1_evidence_identifies_presentation_model_without_secret(self) -> None:
+        evidence = REPLAY.replay_model_config(True).evidence()
+        self.assertEqual(evidence["mode"], "S1_CONTROLLED_LIVE")
+        self.assertEqual(evidence["profile"], "AERIAL_SMALL_OBJECT_LIVE")
+        self.assertEqual(
+            evidence["profilesPath"],
+            "/workspace/config/model-profiles-v1.json",
+        )
+        self.assertEqual(evidence["expectedModelSha256"], REPLAY.S1_EXPECTED_SHA256)
+        self.assertNotIn("aiInternalKey", evidence)
+
+    def test_s1_asset_validation_accepts_exact_weight_sha(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            weight = root / REPLAY.S1_WEIGHT_RELATIVE
+            manifest = root / REPLAY.S1_MANIFEST_RELATIVE
+            profiles = root / REPLAY.S1_PROFILES_RELATIVE
+            for path in (weight, manifest, profiles):
+                path.parent.mkdir(parents=True, exist_ok=True)
+            weight_bytes = b"visionflow-s1-test-weight"
+            weight.write_bytes(weight_bytes)
+            manifest.write_text("{}\n", encoding="utf-8")
+            profiles.write_text("{}\n", encoding="utf-8")
+            expected = hashlib.sha256(weight_bytes).hexdigest()
+
+            with mock.patch.object(REPLAY, "S1_EXPECTED_SHA256", expected):
+                REPLAY.validate_s1_controlled_live_assets(root)
+
+    def test_s1_asset_validation_rejects_wrong_weight_sha(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            weight = root / REPLAY.S1_WEIGHT_RELATIVE
+            manifest = root / REPLAY.S1_MANIFEST_RELATIVE
+            profiles = root / REPLAY.S1_PROFILES_RELATIVE
+            for path in (weight, manifest, profiles):
+                path.parent.mkdir(parents=True, exist_ok=True)
+            weight.write_bytes(b"wrong-weight")
+            manifest.write_text("{}\n", encoding="utf-8")
+            profiles.write_text("{}\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(REPLAY.ReplayError, "SHA-256"):
+                REPLAY.validate_s1_controlled_live_assets(root)
 
     def test_docker_command_inherits_named_ai_key_without_value(self) -> None:
         command = self.replay_command()

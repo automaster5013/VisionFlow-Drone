@@ -38,3 +38,21 @@ artifacts/phase3-software-gate/<UTC_RUN_ID>/
 
 첫 실패가 발생하면 이후 의존 단계는 `SKIPPED` 처리되어 실제 실패 지점을
 명확히 남깁니다.
+
+## S1 controlled-live Software Fallback
+
+기본 Gate는 기존 일반 replay 동작을 보존합니다. 실장비를 사용할 수 없는 동안
+발표용 VisDrone S1 controlled-live 모델까지 포함한 대체 시연 경로를 검증하려면
+다음 opt-in 옵션을 사용합니다.
+
+```bat
+scripts\phase3-dji-simulator\run-phase3-software-gate.bat --s1-controlled-live
+```
+
+이 옵션은 telemetry/event simulator, negative-path regression, PPE fixture 및 전체
+AI 테스트를 그대로 실행하고, `DJI_LIVE video replay E2E` 단계만 SHA-locked S1
+controlled-live 계약으로 전환합니다. Summary의 `replayModelMode`와 replay
+Evidence의 `modelContract`에 실제 선택이 기록됩니다.
+
+실제 DJI hardware와 Android/ADB는 계속 `SKIPPED`이며, 학습·가중치 변경·기존
+상시 AI 컨테이너 재시작은 수행하지 않습니다.

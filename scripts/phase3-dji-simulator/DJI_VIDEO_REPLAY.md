@@ -57,3 +57,28 @@ scripts\phase3-dji-simulator\run-phase3-dji-video-replay.bat --video "C:\path\te
 영상에 사람/PPE trigger가 없으면 AI frame/PPE 처리는 성공하더라도 E2E는
 `NO_PHASE3_EVENT`로 종료됩니다. 이 경우 Evidence를 보존하고 trigger가 포함된
 다른 MP4로 재검증합니다.
+
+## S1 controlled-live 대체 시연
+
+기본 replay는 기존 호환성을 위해 일반 `yolo26m.pt` 모델을 유지합니다. 발표용
+VisDrone S1 controlled-live 모델을 실제 `DJI_LIVE` replay 경로에서 검증할 때만
+다음 opt-in 옵션을 사용합니다.
+
+```bat
+scripts\phase3-dji-simulator\run-phase3-dji-video-replay.bat --s1-controlled-live
+```
+
+이 모드는 다음 계약을 고정합니다.
+
+```text
+profile        = AERIAL_SMALL_OBJECT_LIVE
+weight         = yolo26m-visdrone-s1-best.pt
+manifest       = yolo26m-visdrone-s1-best.manifest.json
+weight SHA-256 = 486f29a14b68201defb2148db923633f15b68f0304b50ff1f66b893ea4e16422
+imgsz          = 1280
+confidence     = 0.25
+```
+
+GPU 컨테이너를 시작하기 전에 host의 weight·manifest·profile registry 존재 여부와
+weight SHA-256을 검증합니다. 불일치하면 replay를 시작하지 않습니다. 이 모드는
+발표용 통제형 LIVE 검증이며 생산 안전 인증 또는 S2 완료를 의미하지 않습니다.

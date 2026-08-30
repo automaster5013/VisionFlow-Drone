@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -49,13 +49,13 @@ def _console_write(text: str) -> None:
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(
+    return datetime.now(UTC).isoformat(
         timespec="milliseconds"
     ).replace("+00:00", "Z")
 
 
 def make_run_id() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
 def resolve(root: Path, value: str) -> Path:
@@ -86,6 +86,14 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--replay-max-frames", type=int, default=300)
+    parser.add_argument(
+        "--s1-controlled-live",
+        action="store_true",
+        help=(
+            "Run the DJI_LIVE replay with the SHA-locked VisDrone S1 "
+            "presentation-only controlled-live model contract."
+        ),
+    )
     parser.add_argument(
         "--evidence-dir",
         default="artifacts/phase3-software-gate",
@@ -144,9 +152,26 @@ def build_steps(
     drone_id: int,
     fixture_video: Path,
     replay_max_frames: int,
+    s1_controlled_live: bool = False,
 ) -> list[GateStep]:
     scripts = root / "scripts" / "phase3-dji-simulator"
     python = sys.executable
+    replay_command = [
+        python,
+        str(scripts / "phase3_dji_video_replay.py"),
+        "--repo-root",
+        str(root),
+        "--backend-url",
+        backend_url,
+        "--drone-id",
+        str(drone_id),
+        "--video",
+        str(fixture_video),
+        "--max-frames",
+        str(replay_max_frames),
+    ]
+    if s1_controlled_live:
+        replay_command.append("--s1-controlled-live")
 
     return [
         GateStep(
@@ -189,21 +214,12 @@ def build_steps(
             ),
         ),
         GateStep(
-            "DJI_LIVE video replay E2E",
             (
-                python,
-                str(scripts / "phase3_dji_video_replay.py"),
-                "--repo-root",
-                str(root),
-                "--backend-url",
-                backend_url,
-                "--drone-id",
-                str(drone_id),
-                "--video",
-                str(fixture_video),
-                "--max-frames",
-                str(replay_max_frames),
+                "DJI_LIVE S1 controlled-live video replay E2E"
+                if s1_controlled_live
+                else "DJI_LIVE video replay E2E"
             ),
+            tuple(replay_command),
         ),
         GateStep(
             "AI full test suite",
@@ -264,6 +280,7 @@ def write_summary(
     backend_url: str,
     drone_id: int,
     fixture_video: Path,
+    s1_controlled_live: bool,
     results: list[dict[str, object]],
 ) -> None:
     payload = {
@@ -274,6 +291,11 @@ def write_summary(
         "backendUrl": backend_url,
         "droneId": drone_id,
         "fixtureVideo": str(fixture_video),
+        "replayModelMode": (
+            "S1_CONTROLLED_LIVE"
+            if s1_controlled_live
+            else "GENERAL_REPLAY"
+        ),
         "hardwareDji": "SKIPPED",
         "aws": "SKIPPED",
         "steps": results,
@@ -327,6 +349,7 @@ def main() -> int:
     print(f"root={root}")
     print(f"backend={backend_url}")
     print(f"droneId={args.drone_id}")
+    print(f"s1ControlledLive={str(args.s1_controlled_live).lower()}")
     print("hardwareDJI=SKIPPED")
     print("aws=SKIPPED")
 
@@ -336,6 +359,7 @@ def main() -> int:
         drone_id=args.drone_id,
         fixture_video=fixture_video,
         replay_max_frames=args.replay_max_frames,
+        s1_controlled_live=args.s1_controlled_live,
     )
 
     results: list[dict[str, object]] = []
@@ -390,6 +414,7 @@ def main() -> int:
         backend_url=backend_url,
         drone_id=args.drone_id,
         fixture_video=fixture_video,
+        s1_controlled_live=args.s1_controlled_live,
         results=results,
     )
 

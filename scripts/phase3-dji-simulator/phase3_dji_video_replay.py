@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
 import uuid
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +19,98 @@ import phase3_dji_simulator as sim
 
 class ReplayError(RuntimeError):
     pass
+
+
+S1_WEIGHT_RELATIVE = Path(
+    "03_ai-server/visionflow-ai/models/yolo26m-visdrone-s1-best.pt"
+)
+S1_MANIFEST_RELATIVE = Path(
+    "03_ai-server/visionflow-ai/models/manifests/"
+    "yolo26m-visdrone-s1-best.manifest.json"
+)
+S1_PROFILES_RELATIVE = Path(
+    "03_ai-server/visionflow-ai/config/model-profiles-v1.json"
+)
+S1_EXPECTED_SHA256 = (
+    "486f29a14b68201defb2148db923633f15b68f0304b50ff1f66b893ea4e16422"
+)
+
+
+@dataclass(frozen=True)
+class ReplayModelConfig:
+    mode: str
+    profile: str
+    model_path: str
+    confidence: str
+    image_size: int
+    manifest_path: str | None = None
+    profiles_path: str | None = None
+    expected_sha256: str | None = None
+
+    def docker_environment(self) -> list[str]:
+        environment = [
+            "-e",
+            f"AI_MODEL_PROFILE={self.profile}",
+            "-e",
+            f"AI_MODEL_PATH={self.model_path}",
+        ]
+        if self.manifest_path is not None:
+            environment.extend(
+                ["-e", f"AI_MODEL_MANIFEST_PATH={self.manifest_path}"]
+            )
+        if self.profiles_path is not None:
+            environment.extend(
+                ["-e", f"AI_MODEL_PROFILES_PATH={self.profiles_path}"]
+            )
+        if self.expected_sha256 is not None:
+            environment.extend(
+                ["-e", f"AI_EXPECTED_MODEL_SHA256={self.expected_sha256}"]
+            )
+        environment.extend(
+            [
+                "-e",
+                f"AI_CONFIDENCE={self.confidence}",
+                "-e",
+                f"AI_IMAGE_SIZE={self.image_size}",
+            ]
+        )
+        return environment
+
+    def evidence(self) -> dict[str, object]:
+        return {
+            "mode": self.mode,
+            "profile": self.profile,
+            "modelPath": self.model_path,
+            "manifestPath": self.manifest_path,
+            "profilesPath": self.profiles_path,
+            "expectedModelSha256": self.expected_sha256,
+            "confidence": float(self.confidence),
+            "imageSize": self.image_size,
+        }
+
+
+def replay_model_config(s1_controlled_live: bool) -> ReplayModelConfig:
+    if not s1_controlled_live:
+        return ReplayModelConfig(
+            mode="GENERAL_REPLAY",
+            profile="phase3-dji-replay-gpu",
+            model_path="/app/models/yolo26m.pt",
+            confidence="0.35",
+            image_size=640,
+        )
+    return ReplayModelConfig(
+        mode="S1_CONTROLLED_LIVE",
+        profile="AERIAL_SMALL_OBJECT_LIVE",
+        model_path="/app/models/yolo26m-visdrone-s1-best.pt",
+        manifest_path=(
+            "/app/models/manifests/"
+            "yolo26m-visdrone-s1-best.manifest.json"
+        ),
+        profiles_path="/workspace/config/model-profiles-v1.json",
+        expected_sha256=S1_EXPECTED_SHA256,
+        confidence="0.25",
+        image_size=1280,
+    )
 
 
 SUMMARY_PATTERN = re.compile(
@@ -35,7 +129,7 @@ SUMMARY_PATTERN = re.compile(
 
 def utc_now() -> str:
     return (
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
         .isoformat(timespec="milliseconds")
         .replace("+00:00", "Z")
     )
@@ -71,6 +165,34 @@ def command_output(args: list[str], *, timeout: float = 30.0) -> str:
         ) from error
 
     return result.stdout.strip()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def validate_s1_controlled_live_assets(root: Path) -> None:
+    required = (
+        root / S1_WEIGHT_RELATIVE,
+        root / S1_MANIFEST_RELATIVE,
+        root / S1_PROFILES_RELATIVE,
+    )
+    missing = [str(path) for path in required if not path.is_file()]
+    if missing:
+        raise ReplayError(
+            "S1 controlled-live asset가 없습니다: " + ", ".join(missing)
+        )
+    weight_path = root / S1_WEIGHT_RELATIVE
+    actual_sha256 = sha256_file(weight_path)
+    if actual_sha256 != S1_EXPECTED_SHA256:
+        raise ReplayError(
+            "S1 controlled-live weight SHA-256 불일치: "
+            f"expected={S1_EXPECTED_SHA256}, actual={actual_sha256}"
+        )
 
 
 def inspect_runtime(
@@ -224,9 +346,11 @@ def docker_replay_command(
     session_id: str,
     drone_id: int,
     max_frames: int,
+    model_config: ReplayModelConfig | None = None,
 ) -> list[str]:
     ai_root = root / "03_ai-server" / "visionflow-ai"
     models = ai_root / "models"
+    selected_model = model_config or replay_model_config(False)
 
     return [
         "docker",
@@ -264,10 +388,7 @@ def docker_replay_command(
         "AI_DJI_REPLAY_LOOP=true",
         "-e",
         "AI_DJI_REPLAY_REALTIME=false",
-        "-e",
-        "AI_MODEL_PROFILE=phase3-dji-replay-gpu",
-        "-e",
-        "AI_MODEL_PATH=/app/models/yolo26m.pt",
+        *selected_model.docker_environment(),
         "-e",
         "AI_REQUIRE_CUDA=true",
         "-e",
@@ -275,11 +396,7 @@ def docker_replay_command(
         "-e",
         "AI_DEVICE=0",
         "-e",
-        "AI_CONFIDENCE=0.35",
-        "-e",
         "AI_IOU=0.70",
-        "-e",
-        "AI_IMAGE_SIZE=640",
         "-e",
         "AI_PHASE3_ENABLED=true",
         "-e",
@@ -391,6 +508,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=float, default=300.0)
     parser.add_argument("--image", default="visionflow-ai-server")
     parser.add_argument(
+        "--s1-controlled-live",
+        action="store_true",
+        help=(
+            "Use the SHA-locked VisDrone S1 presentation-only controlled-live "
+            "model contract."
+        ),
+    )
+    parser.add_argument(
         "--network",
         default="visionflow_visionflow-network",
     )
@@ -435,8 +560,16 @@ def main() -> int:
         print(f"[FAIL] MP4 파일이 없습니다: {video}", file=sys.stderr)
         return 2
 
+    model_config = replay_model_config(args.s1_controlled_live)
+    if args.s1_controlled_live:
+        try:
+            validate_s1_controlled_live_assets(root)
+        except ReplayError as error:
+            print(f"[FAIL] {error}", file=sys.stderr)
+            return 2
+
     run_id = (
-        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         + "-"
         + uuid.uuid4().hex[:8]
     )
@@ -499,7 +632,8 @@ def main() -> int:
 
         print(
             "[STEP] DJI_LIVE MP4 Replay - "
-            f"video={video.name}, maxFrames={args.max_frames}"
+            f"video={video.name}, maxFrames={args.max_frames}, "
+            f"modelMode={model_config.mode}"
         )
         command = docker_replay_command(
             root=root,
@@ -512,6 +646,7 @@ def main() -> int:
             session_id=session_id,
             drone_id=args.drone_id,
             max_frames=args.max_frames,
+            model_config=model_config,
         )
         return_code, log_text = run_replay(
             command,
@@ -574,6 +709,7 @@ def main() -> int:
                 "sessionId": session_id,
                 "sessionCreatedByReplay": created_session,
                 "phase3Summary": summary,
+                "modelContract": model_config.evidence(),
                 "aiInternalAuthentication": True,
                 "log": str(log_path),
                 "completedAt": utc_now(),
@@ -617,6 +753,7 @@ def main() -> int:
             "sessionId": session_id,
             "sessionCreatedByReplay": created_session,
             "phase3Summary": summary,
+            "modelContract": model_config.evidence(),
             "backendEventCount": len(replay_events),
             "backendEventIds": event_ids,
             "backendEventKeys": event_keys,
@@ -662,6 +799,8 @@ def main() -> int:
         print(f"sessionId={session_id}")
         print(f"events={len(replay_events)}")
         print(f"depthEnriched={len(depth_enriched)}")
+        print(f"modelMode={model_config.mode}")
+        print(f"modelProfile={model_config.profile}")
         print(f"evidence={evidence_path}")
         return 0
 
