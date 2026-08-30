@@ -11,6 +11,7 @@ from app.model_contract import (
     CONTRACT_ID,
     FINAL_HELDOUT_SPLIT,
     LABELED_EVALUATION_POLICY_ID,
+    LABELED_EVALUATION_SPLIT_UNITS,
     LABELED_METRIC_PROVENANCE,
     SHOWDOWN_MATCH_IOU_THRESHOLD,
     SHOWDOWN_METRIC_PROVENANCE,
@@ -176,6 +177,9 @@ class ModelProfileRegistryTest(unittest.TestCase):
         labeled = contracts[LABELED_EVALUATION_POLICY_ID]
         assert isinstance(labeled, dict)
         self.assertEqual(labeled["datasetSplit"], FINAL_HELDOUT_SPLIT)
+        self.assertEqual(
+            labeled["splitUnits"], list(LABELED_EVALUATION_SPLIT_UNITS)
+        )
         self.assertEqual(labeled["metricProvenance"], LABELED_METRIC_PROVENANCE)
         self.assertTrue(labeled["runtimeProxyExcluded"])
         self.assertEqual(
@@ -186,6 +190,7 @@ class ModelProfileRegistryTest(unittest.TestCase):
     def test_labeled_evaluation_contract_drift_is_rejected(self) -> None:
         for field, replacement in (
             ("datasetSplit", "VAL"),
+            ("splitUnits", ["VIDEO_SEQUENCE"]),
             ("metricProvenance", SHOWDOWN_METRIC_PROVENANCE),
             ("runtimeProxyExcluded", False),
             ("baselineCanonicalClasses", ["person", "van"]),

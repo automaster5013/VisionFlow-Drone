@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import sys
 import unittest
@@ -18,6 +19,7 @@ from app.labeled_small_object_evaluation import (
     parse_yolo_label_file,
     run_isolated_model,
     summarize_latencies,
+    validate_s1_training_receipt,
     validate_video_split_manifest,
 )
 from app.model_contract import (
@@ -26,6 +28,7 @@ from app.model_contract import (
     LABELED_METRIC_PROVENANCE,
     SMALL_OBJECT_DEFINITION,
     VISDRONE_CLASS_MAPPING,
+    ModelContractError,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -94,6 +97,88 @@ def split_manifest() -> dict[str, object]:
             }
         ],
     }
+
+
+def official_split_manifest() -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "contractId": "visionflow.phase2b4.video-split-manifest",
+        "template": False,
+        "datasetVersion": "visdrone-official-v1",
+        "splitUnit": "OFFICIAL_DATASET_SPLIT",
+        "adjacentFramesAcrossSplits": False,
+        "finalEvaluationExcludedFromTraining": True,
+        "sources": [
+            {
+                "sourceId": "visdrone-test-dev",
+                "sourceArtifactFile": "VisDrone2019-DET-test-dev.zip",
+                "sourceArtifactSha256": "b" * 64,
+                "split": "FINAL_HELDOUT",
+                "imageRoots": ["VisDrone2019-DET-test-dev/images"],
+            }
+        ],
+    }
+
+
+def s1_receipt(candidate: Path, split_sha256: str, data_sha256: str) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "schemaVersion": 1,
+        "contractId": "visionflow.phase2b6e20.s1-training-checkpoint-resume",
+        "status": "TRAINED_AWAITING_EVALUATION",
+        "stage": "VISDRONE_S1",
+        "nextAction": "LABELED_SMALL_OBJECT_EVALUATION_REQUIRED",
+        "runName": "s1-r2",
+        "artifacts": {
+            "bestCheckpoint": {
+                "path": str(candidate),
+                "sha256": hashlib.sha256(candidate.read_bytes()).hexdigest(),
+                "sizeBytes": candidate.stat().st_size,
+            },
+            "canonicalWeight": {
+                "path": str(candidate),
+                "sha256": hashlib.sha256(candidate.read_bytes()).hexdigest(),
+                "sizeBytes": candidate.stat().st_size,
+            },
+        },
+        "evidence": {
+            "dataYamlSha256": data_sha256,
+            "splitManifestSha256": split_sha256,
+            "datasetCombinedFingerprintSha256": "c" * 64,
+        },
+        "resume": {
+            "completedEpochsAfterResume": 88,
+            "earlyStopped": True,
+            "explicitResumeConfirmed": True,
+            "resumeFlag": True,
+            "yoloTrainCalls": 1,
+        },
+        "metrics": {
+            "finalCompletedEpochs": 88,
+            "finalMap50": 0.56,
+            "finalMap50_95": 0.35,
+        },
+        "safeguards": {
+            "automaticRetryPerformed": False,
+            "canonicalWeightPromoted": True,
+            "dockerAccessed": False,
+            "failedR1Preserved": True,
+            "gitMutated": False,
+            "inputsUnchanged": True,
+            "overwritePerformed": False,
+            "staleReceiptArchivePreserved": True,
+            "trainingResumed": True,
+            "yoloTrainCalls": 1,
+        },
+    }
+    payload["executionReceiptSha256"] = hashlib.sha256(
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return payload
 
 
 class LabeledSmallObjectEvaluationTest(unittest.TestCase):
@@ -177,6 +262,53 @@ class LabeledSmallObjectEvaluationTest(unittest.TestCase):
             )
         self.assertEqual(result["splitUnit"], "VIDEO_SEQUENCE")
         self.assertEqual(len(result["manifestSha256"]), 64)
+
+    def test_official_split_manifest_covers_final_heldout(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "VisDrone2019-DET-test-dev/images/frame.jpg"
+            image.parent.mkdir(parents=True)
+            image.write_bytes(b"image")
+            manifest = official_split_manifest()
+            manifest_path = root / "split.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            result = validate_video_split_manifest(
+                manifest,
+                manifest_path=manifest_path,
+                dataset_base=root,
+                images=[image],
+            )
+        self.assertEqual(result["splitUnit"], "OFFICIAL_DATASET_SPLIT")
+        self.assertEqual(len(result["sources"]), 1)
+
+    def test_s1_training_receipt_binds_candidate_data_and_split(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidate = root / "yolo26m-visdrone-s1-best.pt"
+            candidate.write_bytes(b"s1-weight")
+            receipt_path = root / "s1-receipt.json"
+            receipt = s1_receipt(candidate, "d" * 64, "e" * 64)
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            result = validate_s1_training_receipt(
+                receipt,
+                receipt_path=receipt_path,
+                candidate_path=candidate,
+                data_yaml_sha256="e" * 64,
+                split_manifest_sha256="d" * 64,
+            )
+            self.assertEqual(result["proofType"], "S1_TRAINING_EXECUTION_RECEIPT")
+            tampered = copy.deepcopy(receipt)
+            evidence = tampered["evidence"]
+            assert isinstance(evidence, dict)
+            evidence["splitManifestSha256"] = "f" * 64
+            with self.assertRaisesRegex(ModelContractError, "자체 해시"):
+                validate_s1_training_receipt(
+                    tampered,
+                    receipt_path=receipt_path,
+                    candidate_path=candidate,
+                    data_yaml_sha256="e" * 64,
+                    split_manifest_sha256="d" * 64,
+                )
 
     def test_split_manifest_rejects_template_and_uncovered_image(self) -> None:
         with TemporaryDirectory() as directory:
@@ -344,6 +476,11 @@ class LabeledSmallObjectEvaluationTest(unittest.TestCase):
         )
         self.assertEqual(
             split_schema["properties"]["splitUnit"]["enum"],
+            ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"],
+        )
+        self.assertEqual(
+            report_schema["properties"]["dataset"]["properties"]
+            ["splitUnit"]["enum"],
             ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"],
         )
         self.assertEqual(template["splitUnit"], "VIDEO_SEQUENCE")

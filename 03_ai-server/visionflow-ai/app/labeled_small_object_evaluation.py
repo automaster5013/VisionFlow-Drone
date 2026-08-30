@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gc
+import hashlib
 import json
 import math
 import statistics
@@ -40,6 +41,19 @@ VISDRONE_SOURCE_NAMES = tuple(str(item["sourceName"]) for item in VISDRONE_CLASS
 VISDRONE_CANONICAL_BY_ID = {
     int(item["id"]): str(item["canonicalName"]) for item in VISDRONE_CLASS_MAPPING
 }
+LABELED_EVALUATION_SPLIT_UNITS = (
+    "VIDEO_SEQUENCE",
+    "OFFICIAL_DATASET_SPLIT",
+)
+S1_TRAINING_RECEIPT_CONTRACT_ID = (
+    "visionflow.phase2b6e20.s1-training-checkpoint-resume"
+)
+S1_TRAINING_RECEIPT_STATUS = "TRAINED_AWAITING_EVALUATION"
+S1_TRAINING_RECEIPT_STAGE = "VISDRONE_S1"
+S1_TRAINING_RECEIPT_NEXT_ACTION = "LABELED_SMALL_OBJECT_EVALUATION_REQUIRED"
+S1_EVALUATION_READINESS_CONTRACT_ID = (
+    "visionflow.phase2b6e25.s1-labeled-evaluation-readiness"
+)
 
 BBox = tuple[float, float, float, float]
 
@@ -196,6 +210,229 @@ def parse_yolo_label_file(
     return tuple(truths)
 
 
+def _require_object(value: object, field: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise ModelContractError(f"{field}은(는) JSON 객체여야 합니다.")
+    return {str(key): item for key, item in value.items()}
+
+
+def _require_text(value: object, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ModelContractError(f"{field}은(는) 비어 있지 않은 문자열이어야 합니다.")
+    return value.strip()
+
+
+def _require_sha256(value: object, field: str) -> str:
+    normalized = _require_text(value, field).lower()
+    if len(normalized) != 64 or any(
+        character not in "0123456789abcdef" for character in normalized
+    ):
+        raise ModelContractError(f"{field}은(는) 64자리 SHA-256이어야 합니다.")
+    return normalized
+
+
+def _require_integer(value: object, field: str, *, minimum: int = 0) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise ModelContractError(f"{field}은(는) {minimum} 이상의 정수여야 합니다.")
+    return value
+
+
+def _canonical_content_sha256(value: Mapping[str, object], hash_field: str) -> str:
+    payload = dict(value)
+    stored = _require_sha256(payload.pop(hash_field, None), hash_field)
+    calculated = hashlib.sha256(
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    if calculated != stored:
+        raise ModelContractError(f"{hash_field} 자체 해시가 올바르지 않습니다.")
+    return stored
+
+
+def _same_local_file(left: Path, right: Path) -> bool:
+    try:
+        return left.samefile(right)
+    except OSError:
+        return left.resolve() == right.resolve()
+
+
+def resolve_visdrone_candidate_class(class_id: int, source_name: str) -> str:
+    expected_source = (
+        VISDRONE_SOURCE_NAMES[class_id]
+        if 0 <= class_id < len(VISDRONE_SOURCE_NAMES)
+        else None
+    )
+    if expected_source is None or source_name != expected_source:
+        raise ModelContractError(
+            "로드된 S1 모델 클래스가 VisDrone2019-DET 계약과 다릅니다: "
+            f"id={class_id}, expected={expected_source}, actual={source_name}"
+        )
+    return VISDRONE_CANONICAL_BY_ID[class_id]
+
+
+def validate_s1_training_receipt(
+    raw_receipt: Mapping[str, object],
+    *,
+    receipt_path: Path,
+    candidate_path: Path,
+    data_yaml_sha256: str,
+    split_manifest_sha256: str,
+) -> dict[str, object]:
+    receipt = _require_object(raw_receipt, "candidateTrainingReceipt")
+    if receipt.get("schemaVersion") != 1:
+        raise ModelContractError("S1 학습 영수증 schemaVersion은 1이어야 합니다.")
+    if receipt.get("contractId") != S1_TRAINING_RECEIPT_CONTRACT_ID:
+        raise ModelContractError("S1 학습 영수증 contractId가 다릅니다.")
+    if receipt.get("status") != S1_TRAINING_RECEIPT_STATUS:
+        raise ModelContractError("S1 학습 영수증은 평가 대기 상태여야 합니다.")
+    if receipt.get("stage") != S1_TRAINING_RECEIPT_STAGE:
+        raise ModelContractError("S1 학습 영수증 stage는 VISDRONE_S1이어야 합니다.")
+    if receipt.get("nextAction") != S1_TRAINING_RECEIPT_NEXT_ACTION:
+        raise ModelContractError("S1 학습 영수증 nextAction이 평가 계약과 다릅니다.")
+    receipt_content_sha256 = _canonical_content_sha256(
+        receipt, "executionReceiptSha256"
+    )
+    run_name = _require_text(receipt.get("runName"), "receipt.runName")
+
+    artifacts = _require_object(receipt.get("artifacts"), "receipt.artifacts")
+    canonical = _require_object(
+        artifacts.get("canonicalWeight"), "receipt.artifacts.canonicalWeight"
+    )
+    canonical_path = Path(
+        _require_text(canonical.get("path"), "receipt.artifacts.canonicalWeight.path")
+    )
+    canonical_sha256 = _require_sha256(
+        canonical.get("sha256"), "receipt.artifacts.canonicalWeight.sha256"
+    )
+    canonical_size = _require_integer(
+        canonical.get("sizeBytes"),
+        "receipt.artifacts.canonicalWeight.sizeBytes",
+        minimum=1,
+    )
+    if not _same_local_file(canonical_path, candidate_path):
+        raise ModelContractError("S1 영수증 canonicalWeight 경로가 후보 가중치와 다릅니다.")
+    if candidate_path.is_symlink() or not candidate_path.is_file():
+        raise ModelContractError("S1 후보 가중치는 로컬 일반 파일이어야 합니다.")
+    if candidate_path.name != "yolo26m-visdrone-s1-best.pt":
+        raise ModelContractError("S1 후보 가중치 파일명이 표준 계약과 다릅니다.")
+    if candidate_path.stat().st_size != canonical_size:
+        raise ModelContractError("S1 후보 가중치 크기가 영수증과 다릅니다.")
+    if sha256_file(candidate_path) != canonical_sha256:
+        raise ModelContractError("S1 후보 가중치 SHA-256이 영수증과 다릅니다.")
+    best = _require_object(
+        artifacts.get("bestCheckpoint"), "receipt.artifacts.bestCheckpoint"
+    )
+    if (
+        _require_sha256(
+            best.get("sha256"), "receipt.artifacts.bestCheckpoint.sha256"
+        )
+        != canonical_sha256
+    ):
+        raise ModelContractError("S1 best checkpoint와 canonical weight SHA-256이 다릅니다.")
+
+    evidence = _require_object(receipt.get("evidence"), "receipt.evidence")
+    if (
+        _require_sha256(
+            evidence.get("dataYamlSha256"), "receipt.evidence.dataYamlSha256"
+        )
+        != data_yaml_sha256
+    ):
+        raise ModelContractError("S1 영수증과 평가 data.yaml SHA-256이 다릅니다.")
+    if _require_sha256(
+        evidence.get("splitManifestSha256"),
+        "receipt.evidence.splitManifestSha256",
+    ) != split_manifest_sha256:
+        raise ModelContractError("S1 영수증과 FINAL_HELDOUT split manifest SHA-256이 다릅니다.")
+    dataset_fingerprint = _require_sha256(
+        evidence.get("datasetCombinedFingerprintSha256"),
+        "receipt.evidence.datasetCombinedFingerprintSha256",
+    )
+
+    resume = _require_object(receipt.get("resume"), "receipt.resume")
+    if resume.get("explicitResumeConfirmed") is not True or resume.get("resumeFlag") is not True:
+        raise ModelContractError("S1 체크포인트 재개가 명시적으로 승인되지 않았습니다.")
+    if resume.get("yoloTrainCalls") != 1:
+        raise ModelContractError("S1 재개 학습의 YOLO train 호출 횟수는 1이어야 합니다.")
+    completed_epochs = _require_integer(
+        resume.get("completedEpochsAfterResume"),
+        "receipt.resume.completedEpochsAfterResume",
+        minimum=1,
+    )
+    metrics = _require_object(receipt.get("metrics"), "receipt.metrics")
+    if metrics.get("finalCompletedEpochs") != completed_epochs:
+        raise ModelContractError("S1 영수증의 완료 epoch 증거가 서로 다릅니다.")
+    final_map50 = metrics.get("finalMap50")
+    final_map50_95 = metrics.get("finalMap50_95")
+    for field, value in (
+        ("finalMap50", final_map50),
+        ("finalMap50_95", final_map50_95),
+    ):
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not 0.0 <= float(value) <= 1.0
+        ):
+            raise ModelContractError(f"receipt.metrics.{field} 값이 올바르지 않습니다.")
+
+    safeguards = _require_object(receipt.get("safeguards"), "receipt.safeguards")
+    expected_safeguards = {
+        "automaticRetryPerformed": False,
+        "canonicalWeightPromoted": True,
+        "dockerAccessed": False,
+        "failedR1Preserved": True,
+        "gitMutated": False,
+        "inputsUnchanged": True,
+        "overwritePerformed": False,
+        "staleReceiptArchivePreserved": True,
+        "trainingResumed": True,
+        "yoloTrainCalls": 1,
+    }
+    for field, expected in expected_safeguards.items():
+        if safeguards.get(field) != expected:
+            raise ModelContractError(f"receipt.safeguards.{field} 값이 계약과 다릅니다.")
+    return {
+        "proofType": "S1_TRAINING_EXECUTION_RECEIPT",
+        "receiptFileSha256": sha256_file(receipt_path),
+        "receiptContentSha256": receipt_content_sha256,
+        "runName": run_name,
+        "trainingStage": S1_TRAINING_RECEIPT_STAGE,
+        "status": S1_TRAINING_RECEIPT_STATUS,
+        "candidateSha256": canonical_sha256,
+        "candidateSizeBytes": canonical_size,
+        "trainingDatasetFingerprintSha256": dataset_fingerprint,
+        "finalCompletedEpochs": completed_epochs,
+        "earlyStopped": resume.get("earlyStopped") is True,
+        "finalMap50": float(final_map50),
+        "finalMap50_95": float(final_map50_95),
+    }
+
+
+def validate_s1_candidate_loaded_status(
+    status: Mapping[str, object], proof: Mapping[str, object]
+) -> None:
+    if status.get("profile") != ModelProfile.AERIAL_SMALL_OBJECT_LIVE.value:
+        raise ModelContractError("로드된 S1 후보 모델 profile이 다릅니다.")
+    if status.get("task") != "detect":
+        raise ModelContractError("로드된 S1 후보 모델 task는 detect여야 합니다.")
+    if status.get("sha256") != proof.get("candidateSha256"):
+        raise ModelContractError("로드된 S1 후보 모델 SHA-256이 영수증과 다릅니다.")
+    if status.get("sizeBytes") != proof.get("candidateSizeBytes"):
+        raise ModelContractError("로드된 S1 후보 모델 크기가 영수증과 다릅니다.")
+    expected_classes = [
+        {"id": index, "name": source_name}
+        for index, source_name in enumerate(VISDRONE_SOURCE_NAMES)
+    ]
+    if (
+        status.get("classCount") != len(expected_classes)
+        or status.get("classes") != expected_classes
+    ):
+        raise ModelContractError("로드된 S1 후보 모델 클래스가 VisDrone 계약과 다릅니다.")
+
+
 def validate_video_split_manifest(
     raw_manifest: Mapping[str, object],
     *,
@@ -209,8 +446,9 @@ def validate_video_split_manifest(
         raise ValueError("split manifest contractId가 Phase 2B-4 계약과 다릅니다.")
     if raw_manifest.get("template") is True:
         raise ValueError("split manifest 템플릿은 실제 평가에 사용할 수 없습니다.")
-    if raw_manifest.get("splitUnit") != "VIDEO_SEQUENCE":
-        raise ValueError("split 단위는 VIDEO_SEQUENCE여야 합니다.")
+    split_unit = raw_manifest.get("splitUnit")
+    if split_unit not in LABELED_EVALUATION_SPLIT_UNITS:
+        raise ValueError("split 단위가 라벨 평가 계약과 다릅니다.")
     if raw_manifest.get("adjacentFramesAcrossSplits") is not False:
         raise ValueError("인접 프레임을 서로 다른 split에 섞을 수 없습니다.")
     if raw_manifest.get("finalEvaluationExcludedFromTraining") is not True:
@@ -218,41 +456,59 @@ def validate_video_split_manifest(
     dataset_version = raw_manifest.get("datasetVersion")
     if not isinstance(dataset_version, str) or not dataset_version.strip():
         raise ValueError("split manifest datasetVersion이 필요합니다.")
-    sequences = raw_manifest.get("sequences")
-    if not isinstance(sequences, list) or not sequences:
-        raise ValueError("split manifest sequences가 비어 있습니다.")
+
+    if split_unit == "VIDEO_SEQUENCE":
+        collection_name = "sequences"
+        identifier_name = "sequenceId"
+        artifact_file_name = "sourceVideoFile"
+        artifact_sha_name = "sourceVideoSha256"
+    else:
+        collection_name = "sources"
+        identifier_name = "sourceId"
+        artifact_file_name = "sourceArtifactFile"
+        artifact_sha_name = "sourceArtifactSha256"
+    raw_items = raw_manifest.get(collection_name)
+    if not isinstance(raw_items, list) or not raw_items:
+        raise ValueError(f"split manifest {collection_name}가 비어 있습니다.")
 
     seen_ids: set[str] = set()
-    source_splits: dict[str, str] = {}
+    seen_hashes: set[str] = set()
     held_out_roots: list[Path] = []
     other_roots: list[Path] = []
-    normalized_sequences: list[dict[str, object]] = []
-    for index, raw_sequence in enumerate(sequences):
-        if not isinstance(raw_sequence, Mapping):
-            raise ValueError(f"sequences[{index}]는 객체여야 합니다.")
-        sequence_id = str(raw_sequence.get("sequenceId", "")).strip()
-        source_file = str(raw_sequence.get("sourceVideoFile", "")).strip()
-        source_sha = str(raw_sequence.get("sourceVideoSha256", "")).strip().lower()
-        split = str(raw_sequence.get("split", "")).strip()
-        roots = raw_sequence.get("imageRoots")
-        if not sequence_id or sequence_id in seen_ids:
-            raise ValueError("sequenceId는 비어 있지 않고 고유해야 합니다.")
-        seen_ids.add(sequence_id)
-        if not source_file:
-            raise ValueError(f"sequences[{index}].sourceVideoFile이 필요합니다.")
-        if len(source_sha) != 64 or any(char not in "0123456789abcdef" for char in source_sha):
-            raise ValueError(f"sequences[{index}].sourceVideoSha256가 올바르지 않습니다.")
+    normalized_items: list[dict[str, object]] = []
+    for index, raw_item in enumerate(raw_items):
+        if not isinstance(raw_item, Mapping):
+            raise ValueError(f"{collection_name}[{index}]는 객체여야 합니다.")
+        identifier = str(raw_item.get(identifier_name, "")).strip()
+        artifact_file = str(raw_item.get(artifact_file_name, "")).strip()
+        artifact_sha = str(raw_item.get(artifact_sha_name, "")).strip().lower()
+        split = str(raw_item.get("split", "")).strip()
+        roots = raw_item.get("imageRoots")
+        if not identifier or identifier in seen_ids:
+            raise ValueError(f"{identifier_name}는 비어 있지 않고 고유해야 합니다.")
+        seen_ids.add(identifier)
+        if not artifact_file:
+            raise ValueError(f"{collection_name}[{index}].{artifact_file_name}이 필요합니다.")
+        if len(artifact_sha) != 64 or any(char not in "0123456789abcdef" for char in artifact_sha):
+            raise ValueError(f"{collection_name}[{index}].{artifact_sha_name}가 올바르지 않습니다.")
+        if artifact_sha in seen_hashes:
+            raise ValueError(f"{artifact_sha_name}는 전체 source에서 고유해야 합니다.")
+        seen_hashes.add(artifact_sha)
         if split not in {"TRAIN", "VAL", "TEST", FINAL_HELDOUT_SPLIT}:
-            raise ValueError(f"sequences[{index}].split 값이 올바르지 않습니다.")
-        if source_sha in source_splits:
-            raise ValueError("sourceVideoSha256는 sequence 전체에서 고유해야 합니다.")
-        source_splits[source_sha] = split
-        if not isinstance(roots, list) or not roots or len(set(map(str, roots))) != len(roots):
-            raise ValueError(f"sequences[{index}].imageRoots는 고유한 경로 목록이어야 합니다.")
+            raise ValueError(f"{collection_name}[{index}].split 값이 올바르지 않습니다.")
+        if (
+            not isinstance(roots, list)
+            or not roots
+            or len(set(map(str, roots))) != len(roots)
+        ):
+            raise ValueError(
+                f"{collection_name}[{index}].imageRoots는 "
+                "고유한 경로 목록이어야 합니다."
+            )
         resolved_roots: list[Path] = []
         for raw_root in roots:
             if not isinstance(raw_root, str) or not raw_root.strip():
-                raise ValueError(f"sequences[{index}].imageRoots 경로가 올바르지 않습니다.")
+                raise ValueError(f"{collection_name}[{index}].imageRoots 경로가 올바르지 않습니다.")
             root = Path(raw_root)
             if root.is_absolute():
                 raise ValueError("split manifest imageRoots에는 상대 경로만 허용됩니다.")
@@ -263,20 +519,19 @@ def validate_video_split_manifest(
                 raise ValueError("split manifest imageRoot가 데이터셋 밖을 가리킵니다.") from error
             resolved_roots.append(resolved)
             (held_out_roots if split == FINAL_HELDOUT_SPLIT else other_roots).append(resolved)
-        normalized_sequences.append(
+        normalized_items.append(
             {
-                "sequenceId": sequence_id,
-                "sourceVideoFile": source_file,
-                "sourceVideoSha256": source_sha,
+                identifier_name: identifier,
+                artifact_file_name: artifact_file,
+                artifact_sha_name: artifact_sha,
                 "split": split,
                 "imageRoots": [
-                    root.relative_to(dataset_base).as_posix()
-                    for root in resolved_roots
+                    root.relative_to(dataset_base).as_posix() for root in resolved_roots
                 ],
             }
         )
     if not held_out_roots:
-        raise ValueError("split manifest에 FINAL_HELDOUT 영상이 없습니다.")
+        raise ValueError("split manifest에 FINAL_HELDOUT source가 없습니다.")
 
     def belongs(image: Path, root: Path) -> bool:
         try:
@@ -297,10 +552,10 @@ def validate_video_split_manifest(
         "schemaVersion": 1,
         "contractId": SPLIT_CONTRACT_ID,
         "datasetVersion": dataset_version.strip(),
-        "splitUnit": "VIDEO_SEQUENCE",
+        "splitUnit": split_unit,
         "manifestPath": str(manifest_path.resolve()),
         "manifestSha256": sha256_file(manifest_path),
-        "sequences": normalized_sequences,
+        collection_name: normalized_items,
     }
 
 
@@ -681,17 +936,23 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, object]]) -> None:
         writer.writerows(rows)
 
 
-def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, object]]:
+def _prepare_evaluation_inputs(args: argparse.Namespace) -> dict[str, object]:
     baseline_path = Path(args.baseline_model).resolve()
     candidate_path = Path(args.candidate_model).resolve()
-    candidate_manifest_path = Path(args.candidate_manifest).resolve()
     profiles_path = Path(args.profiles).resolve()
     data_yaml = Path(args.data).resolve()
     split_manifest_path = Path(args.split_manifest).resolve()
+    manifest_value = str(getattr(args, "candidate_manifest", "") or "").strip()
+    receipt_value = str(getattr(args, "candidate_training_receipt", "") or "").strip()
+    if bool(manifest_value) == bool(receipt_value):
+        raise ValueError(
+            "--candidate-manifest와 --candidate-training-receipt 중 정확히 하나가 필요합니다."
+        )
+    proof_path = Path(manifest_value or receipt_value).resolve()
     for required in (
         baseline_path,
         candidate_path,
-        candidate_manifest_path,
+        proof_path,
         profiles_path,
         data_yaml,
         split_manifest_path,
@@ -701,12 +962,6 @@ def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, object]]:
     if args.split != "test":
         raise ValueError("Phase 2B-4 data.yaml split은 test로 고정됩니다.")
 
-    selection = create_runtime_model_comparison_selection(
-        baseline_model_path=str(baseline_path),
-        candidate_model_path=str(candidate_path),
-        candidate_manifest_path=str(candidate_manifest_path),
-        profiles_path=str(profiles_path),
-    )
     registry = validate_profile_registry(load_json_object(profiles_path))
     raw_contracts = registry.get("evaluationContracts")
     if not isinstance(raw_contracts, Mapping):
@@ -723,22 +978,136 @@ def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, object]]:
         dataset_base=Path(str(dataset["basePath"])),
         images=images,
     )
-    candidate_manifest = load_json_object(candidate_manifest_path)
-    manifest_data = candidate_manifest.get("data")
-    manifest_split = (
-        manifest_data.get("splitPolicy")
-        if isinstance(manifest_data, Mapping)
-        else None
-    )
-    manifest_split_sha = (
-        manifest_split.get("splitManifestSha256")
-        if isinstance(manifest_split, Mapping)
-        else None
-    )
-    if manifest_split_sha != split_manifest["manifestSha256"]:
-        raise ModelContractError(
-            "후보 가중치 매니페스트와 FINAL_HELDOUT split manifest SHA-256이 다릅니다."
+    allowed_split_units = contract.get("splitUnits")
+    if (
+        not isinstance(allowed_split_units, list)
+        or split_manifest["splitUnit"] not in allowed_split_units
+    ):
+        raise ModelContractError("평가 splitUnit이 프로필 평가 계약에 허용되지 않습니다.")
+
+    selection = None
+    if manifest_value:
+        selection = create_runtime_model_comparison_selection(
+            baseline_model_path=str(baseline_path),
+            candidate_model_path=str(candidate_path),
+            candidate_manifest_path=str(proof_path),
+            profiles_path=str(profiles_path),
         )
+        candidate_manifest = load_json_object(proof_path)
+        manifest_data = candidate_manifest.get("data")
+        manifest_split = (
+            manifest_data.get("splitPolicy")
+            if isinstance(manifest_data, Mapping)
+            else None
+        )
+        manifest_split_sha = (
+            manifest_split.get("splitManifestSha256")
+            if isinstance(manifest_split, Mapping)
+            else None
+        )
+        if manifest_split_sha != split_manifest["manifestSha256"]:
+            raise ModelContractError(
+                "후보 가중치 매니페스트와 FINAL_HELDOUT split manifest SHA-256이 다릅니다."
+            )
+        proof = {
+            "proofType": "S2_WEIGHT_MANIFEST",
+            "manifestSha256": sha256_file(proof_path),
+        }
+        def resolver(class_id: int, name: str) -> str:
+            return selection.candidate.resolve_class(class_id, name).canonical_name
+    else:
+        proof = validate_s1_training_receipt(
+            load_json_object(proof_path),
+            receipt_path=proof_path,
+            candidate_path=candidate_path,
+            data_yaml_sha256=sha256_file(data_yaml),
+            split_manifest_sha256=str(split_manifest["manifestSha256"]),
+        )
+        resolver = resolve_visdrone_candidate_class
+    return {
+        "baselinePath": baseline_path,
+        "candidatePath": candidate_path,
+        "proofPath": proof_path,
+        "profilesPath": profiles_path,
+        "dataYaml": data_yaml,
+        "splitManifestPath": split_manifest_path,
+        "contract": dict(contract),
+        "dataset": dataset,
+        "images": images,
+        "splitManifest": split_manifest,
+        "selection": selection,
+        "candidateProof": proof,
+        "candidateResolver": resolver,
+    }
+
+
+def build_evaluation_readiness_report(args: argparse.Namespace) -> dict[str, object]:
+    prepared = _prepare_evaluation_inputs(args)
+    dataset = prepared["dataset"]
+    split_manifest = prepared["splitManifest"]
+    proof = prepared["candidateProof"]
+    baseline_path = prepared["baselinePath"]
+    candidate_path = prepared["candidatePath"]
+    assert isinstance(dataset, Mapping)
+    assert isinstance(split_manifest, Mapping)
+    assert isinstance(proof, Mapping)
+    assert isinstance(baseline_path, Path)
+    assert isinstance(candidate_path, Path)
+    return {
+        "schemaVersion": 1,
+        "contractId": S1_EVALUATION_READINESS_CONTRACT_ID,
+        "status": "READY_FOR_EXPLICIT_GPU_LABELED_EVALUATION",
+        "nextAction": "EXPLICIT_GPU_LABELED_EVALUATION_REQUIRED",
+        "dataset": {
+            "split": FINAL_HELDOUT_SPLIT,
+            "splitUnit": split_manifest["splitUnit"],
+            "splitManifestSha256": split_manifest["manifestSha256"],
+            "imageCount": dataset["imageCount"],
+            "labelFileCount": dataset["labelFileCount"],
+            "missingLabelFileCount": dataset["missingLabelFileCount"],
+            "fingerprintSha256": dataset["fingerprintSha256"],
+        },
+        "baseline": {
+            "fileName": baseline_path.name,
+            "sha256": sha256_file(baseline_path),
+        },
+        "candidate": {
+            "fileName": candidate_path.name,
+            "sha256": sha256_file(candidate_path),
+            **dict(proof),
+        },
+        "safeguards": {
+            "gpuAccessed": False,
+            "inferenceExecuted": False,
+            "trainingExecuted": False,
+            "torchImported": False,
+            "ultralyticsImported": False,
+            "modelLoaded": False,
+            "outputCreated": False,
+        },
+    }
+
+
+def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, object]]:
+    prepared = _prepare_evaluation_inputs(args)
+    baseline_path = prepared["baselinePath"]
+    candidate_path = prepared["candidatePath"]
+    dataset = prepared["dataset"]
+    images = prepared["images"]
+    split_manifest = prepared["splitManifest"]
+    contract = prepared["contract"]
+    selection = prepared["selection"]
+    candidate_proof = prepared["candidateProof"]
+    candidate_resolver = prepared["candidateResolver"]
+    assert isinstance(baseline_path, Path)
+    assert isinstance(candidate_path, Path)
+    assert isinstance(dataset, Mapping)
+    assert isinstance(images, Sequence)
+    assert isinstance(split_manifest, Mapping)
+    assert isinstance(contract, Mapping)
+    assert isinstance(candidate_proof, Mapping)
+    if not callable(candidate_resolver):
+        raise RuntimeError("후보 모델 클래스 resolver가 올바르지 않습니다.")
     truths_by_image = _read_ground_truth(dataset, images)
 
     baseline_classes = set(COCO_VISDRONE_CANONICAL_CLASSES)
@@ -762,14 +1131,15 @@ def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, object]]:
         confidence=args.conf,
         nms_iou=args.iou,
         warmup=args.warmup,
-        canonical_resolver=lambda class_id, name: selection.candidate.resolve_class(
-            class_id, name
-        ).canonical_name,
+        canonical_resolver=candidate_resolver,
     )
-    selection.validate_loaded_status(
-        baseline_status=baseline_status,
-        candidate_status=candidate_status,
-    )
+    if selection is not None:
+        selection.validate_loaded_status(
+            baseline_status=baseline_status,
+            candidate_status=candidate_status,
+        )
+    else:
+        validate_s1_candidate_loaded_status(candidate_status, candidate_proof)
     metrics, evidence_rows = compare_records(
         truths_by_image,
         baseline_predictions,
@@ -816,7 +1186,7 @@ def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, object]]:
                 "fileName": candidate_path.name,
                 "sha256": sha256_file(candidate_path),
                 "profile": ModelProfile.AERIAL_SMALL_OBJECT_LIVE.value,
-                "manifestSha256": sha256_file(candidate_manifest_path),
+                **dict(candidate_proof),
             },
             "metrics": candidate_metrics,
             "performance": candidate_performance,
@@ -826,6 +1196,7 @@ def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, object]]:
             "recallClaimEligible": True,
             "runtimeProxyExcluded": True,
             "runtimeProxyProvenance": "MODEL_DIFFERENCE_PROXY",
+            "candidateProofType": candidate_proof["proofType"],
             "missedObjectsCsv": evidence_path.name,
             "missedOrRecoveredSmallObjectCount": len(evidence_rows),
         },
@@ -842,7 +1213,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--baseline-model", required=True)
     parser.add_argument("--candidate-model", required=True)
-    parser.add_argument("--candidate-manifest", required=True)
+    candidate_proof = parser.add_mutually_exclusive_group(required=True)
+    candidate_proof.add_argument("--candidate-manifest")
+    candidate_proof.add_argument("--candidate-training-receipt")
     parser.add_argument("--profiles", default="config/model-profiles-v1.json")
     parser.add_argument("--data", required=True)
     parser.add_argument("--split-manifest", required=True)
@@ -855,6 +1228,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--dataset-hash-mode", choices=("labels", "full"), default="full")
     parser.add_argument("--output", default="artifacts/labeled-small-object-evaluation")
+    parser.add_argument("--check-only", action="store_true")
+    parser.add_argument("--confirm-gpu-evaluation", action="store_true")
     return parser
 
 
@@ -866,6 +1241,15 @@ def main() -> int:
         raise ValueError("imgsz는 양수이고 warmup은 0 이상이어야 합니다.")
     if not 0.0 <= args.conf <= 1.0 or not 0.0 <= args.iou <= 1.0:
         raise ValueError("conf와 iou는 0~1 사이여야 합니다.")
+    if args.check_only:
+        if args.confirm_gpu_evaluation:
+            raise ValueError("--check-only에서는 GPU 평가 승인을 함께 사용할 수 없습니다.")
+        report = build_evaluation_readiness_report(args)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        print("VISIONFLOW_LABELED_SMALL_OBJECT_EVALUATION_READINESS=PASS")
+        return 0
+    if not args.confirm_gpu_evaluation:
+        raise ValueError("실제 GPU 평가는 --confirm-gpu-evaluation 명시적 승인이 필요합니다.")
     run_directory, report = run_evaluation(args)
     print("VISIONFLOW_LABELED_SMALL_OBJECT_EVALUATION=PASS")
     print(f"REPORT={run_directory / 'evaluation-report.json'}")

@@ -36,5 +36,18 @@ class VisionFlowLabeledSmallObjectEvaluationScriptTest(unittest.TestCase):
         self.assertNotIn("import torch", prefix)
 
 
+    def test_evaluator_supports_s1_receipt_official_split_and_explicit_gpu_gate(self) -> None:
+        source = (
+            AI_ROOT / "app/labeled_small_object_evaluation.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("--candidate-training-receipt", source)
+        self.assertIn("--candidate-manifest", source)
+        self.assertIn("--check-only", source)
+        self.assertIn("--confirm-gpu-evaluation", source)
+        self.assertIn("OFFICIAL_DATASET_SPLIT", source)
+        self.assertIn("S1_TRAINING_EXECUTION_RECEIPT", source)
+        self.assertIn("READY_FOR_EXPLICIT_GPU_LABELED_EVALUATION", source)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -34,7 +34,9 @@
       ],
       "properties": {
         "split": { "const": "FINAL_HELDOUT" },
-        "splitUnit": { "const": "VIDEO_SEQUENCE" },
+        "splitUnit": {
+          "enum": ["VIDEO_SEQUENCE", "OFFICIAL_DATASET_SPLIT"]
+        },
         "fingerprintSha256": { "$ref": "#/$defs/sha256" },
         "splitManifestSha256": { "$ref": "#/$defs/sha256" },
         "imageCount": { "type": "integer", "minimum": 1 },

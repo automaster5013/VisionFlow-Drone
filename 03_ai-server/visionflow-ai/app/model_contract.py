@@ -20,6 +20,10 @@ LABELED_EVALUATION_CONTRACT_ID = (
 )
 LABELED_METRIC_PROVENANCE = "LABELED_HELD_OUT_GROUND_TRUTH"
 FINAL_HELDOUT_SPLIT = "FINAL_HELDOUT"
+LABELED_EVALUATION_SPLIT_UNITS = (
+    "VIDEO_SEQUENCE",
+    "OFFICIAL_DATASET_SPLIT",
+)
 COCO_VISDRONE_CANONICAL_CLASSES = (
     "person",
     "bicycle",
@@ -311,7 +315,7 @@ def _validate_labeled_evaluation_contract(raw_contracts: object) -> None:
         "baselineProfile": ModelProfile.GENERAL_LIVE.value,
         "candidateProfile": ModelProfile.AERIAL_SMALL_OBJECT_LIVE.value,
         "datasetSplit": FINAL_HELDOUT_SPLIT,
-        "splitUnit": "VIDEO_SEQUENCE",
+        "splitUnits": list(LABELED_EVALUATION_SPLIT_UNITS),
         "sameDatasetFingerprint": True,
         "matchIouThreshold": SHOWDOWN_MATCH_IOU_THRESHOLD,
         "smallObjectDefinition": SMALL_OBJECT_DEFINITION,

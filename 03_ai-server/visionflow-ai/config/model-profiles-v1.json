@@ -117,7 +117,10 @@
       "baselineProfile": "GENERAL_LIVE",
       "candidateProfile": "AERIAL_SMALL_OBJECT_LIVE",
       "datasetSplit": "FINAL_HELDOUT",
-      "splitUnit": "VIDEO_SEQUENCE",
+      "splitUnits": [
+        "VIDEO_SEQUENCE",
+        "OFFICIAL_DATASET_SPLIT"
+      ],
       "sameDatasetFingerprint": true,
       "matchIouThreshold": 0.5,
       "smallObjectDefinition": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION",
