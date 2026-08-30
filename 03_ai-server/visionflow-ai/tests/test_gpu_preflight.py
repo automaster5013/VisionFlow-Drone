@@ -8,7 +8,7 @@ from pathlib import Path
 from app.gpu_preflight import validate_contract_status, validate_model_status
 from tests.test_model_contract import (
     REGISTRY_PATH,
-    S2_TEMPLATE_PATH,
+    S1_TEMPLATE_PATH,
     materialize_manifest,
     model_status,
 )
@@ -76,13 +76,13 @@ class GpuPreflightContractTest(unittest.TestCase):
         )
         self.assertIsNone(result)
 
-    def test_s2_manifest_and_loaded_status_pass_activation_contract(self) -> None:
+    def test_s1_manifest_and_loaded_status_pass_activation_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
-            weight_path = root / "yolo26m-visdrone-s2-best.pt"
+            weight_path = root / "yolo26m-visdrone-s1-best.pt"
             weight_path.write_bytes(b"gpu-contract-test-weight")
-            manifest = materialize_manifest(S2_TEMPLATE_PATH, weight_path)
-            manifest_path = root / "yolo26m-visdrone-s2-best.manifest.json"
+            manifest = materialize_manifest(S1_TEMPLATE_PATH, weight_path)
+            manifest_path = root / "yolo26m-visdrone-s1-best.manifest.json"
             manifest_path.write_text(
                 json.dumps(manifest, ensure_ascii=False),
                 encoding="utf-8",
@@ -94,7 +94,7 @@ class GpuPreflightContractTest(unittest.TestCase):
                 profiles_path=str(REGISTRY_PATH),
             )
             assert contract is not None
-            self.assertEqual(contract["trainingStage"], "VISIONFLOW_S2")
+            self.assertEqual(contract["trainingStage"], "VISDRONE_S1")
 
 
 if __name__ == "__main__":

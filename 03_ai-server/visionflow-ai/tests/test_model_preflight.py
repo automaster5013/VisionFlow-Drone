@@ -41,10 +41,10 @@ class ModelPreflightTest(unittest.TestCase):
         )
         return manifest_path, weight_path, manifest
 
-    def test_s2_activation_preflight_passes_without_gpu_inference(self) -> None:
+    def test_s1_activation_preflight_passes_without_gpu_inference(self) -> None:
         manifest_path, weight_path, manifest = self._materialize(
-            S2_TEMPLATE_PATH,
-            "yolo26m-visdrone-s2-best.pt",
+            S1_TEMPLATE_PATH,
+            "yolo26m-visdrone-s1-best.pt",
         )
         result = run_preflight(
             root=self.root,
@@ -58,6 +58,7 @@ class ModelPreflightTest(unittest.TestCase):
         self.assertIsInstance(contract, dict)
         assert isinstance(contract, dict)
         self.assertEqual(contract["profile"], "AERIAL_SMALL_OBJECT_LIVE")
+        self.assertEqual(contract["trainingStage"], "VISDRONE_S1")
 
     def test_relative_paths_are_resolved_from_explicit_root(self) -> None:
         manifest_path, weight_path, manifest = self._materialize(
@@ -73,10 +74,10 @@ class ModelPreflightTest(unittest.TestCase):
         )
         self.assertTrue(result["success"])
 
-    def test_s1_activation_preflight_is_rejected(self) -> None:
+    def test_s2_activation_preflight_is_rejected(self) -> None:
         manifest_path, weight_path, manifest = self._materialize(
-            S1_TEMPLATE_PATH,
-            "yolo26m-visdrone-s1-best.pt",
+            S2_TEMPLATE_PATH,
+            "yolo26m-visdrone-s2-best.pt",
         )
         with self.assertRaisesRegex(ModelContractError, "LIVE 활성화"):
             run_preflight(
