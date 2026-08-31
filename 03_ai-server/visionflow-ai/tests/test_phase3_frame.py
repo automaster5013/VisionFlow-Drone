@@ -11,6 +11,8 @@ from app.inference.phase3_frame import (
     Phase3FrameAnalyzer,
     create_phase3_frame_analyzer,
 )
+from app.model_contract import TrackKind
+from app.model_runtime import ResolvedModelClass, RuntimeClassResolver
 
 
 class _Tensor:
@@ -48,10 +50,12 @@ class _Result:
         *,
         boxes,
         names,
+        masks=None,
         plotted_value: int = 9,
     ) -> None:
         self.boxes = boxes
         self.names = names
+        self.masks = masks
         self._plotted_value = plotted_value
 
     def plot(self):
@@ -81,8 +85,15 @@ class _FakeModel:
 class _FakeRuntime:
     sample_stride_frames = 3
     pose_enabled = False
+    segmentation_enabled = False
 
     def should_sample_pose(self, source_frame_index: int) -> bool:
+        return False
+
+    def should_sample_segmentation(
+        self,
+        source_frame_index: int,
+    ) -> bool:
         return False
 
     def __init__(self) -> None:
@@ -91,6 +102,16 @@ class _FakeRuntime:
     def process_sample(self, **kwargs):
         self.calls.append(kwargs)
         return SimpleNamespace(marker="ppe")
+
+
+class _FakeSegmentationRuntime(_FakeRuntime):
+    segmentation_enabled = True
+
+    def should_sample_segmentation(
+        self,
+        source_frame_index: int,
+    ) -> bool:
+        return source_frame_index % 6 == 0
 
 
 def _frame(frame_index: int) -> FramePacket:
@@ -138,6 +159,33 @@ def _ppe_result() -> _Result:
             2: "head",
             3: "person",
         },
+    )
+
+
+def _segmentation_result() -> _Result:
+    return _Result(
+        boxes=_Boxes(
+            xyxy=[[0, 0, 4, 4]],
+            conf=[0.88],
+            cls=[0],
+        ),
+        masks=SimpleNamespace(
+            xy=[[[0, 0], [4, 0], [4, 4], [0, 4]]],
+        ),
+        names={0: "person"},
+    )
+
+
+def _visdrone_resolver() -> RuntimeClassResolver:
+    return RuntimeClassResolver(
+        mapping_id="VISDRONE2019_DET",
+        strict=True,
+        classes=(
+            ResolvedModelClass(0, "pedestrian", "person", TrackKind.HUMAN),
+            ResolvedModelClass(1, "people", "person", TrackKind.HUMAN),
+            ResolvedModelClass(3, "car", "car", TrackKind.VEHICLE),
+            ResolvedModelClass(9, "motor", "motorcycle", TrackKind.CYCLE),
+        ),
     )
 
 
@@ -212,6 +260,61 @@ def test_only_person_class_becomes_phase3_track() -> None:
     assert analysis.tracked_person_count == 1
 
 
+def test_visdrone_mapping_recovers_human_tracks_and_isolates_ppe_classes() -> None:
+    runtime = _FakeRuntime()
+    track_result = _Result(
+        boxes=_Boxes(
+            xyxy=[
+                [0, 0, 2, 4],
+                [2, 0, 4, 4],
+                [4, 0, 5, 4],
+                [5, 0, 6, 4],
+            ],
+            conf=[0.91, 0.89, 0.81, 0.78],
+            cls=[0, 1, 9, 3],
+            ids=[11, 12, 13, 14],
+        ),
+        names={0: "pedestrian", 1: "people", 3: "car", 9: "motor"},
+    )
+    track_model = _FakeModel(track_results=[track_result])
+    ppe_model = _FakeModel(predict_results=[_ppe_result()])
+    factory_paths: list[str] = []
+
+    def model_factory(path: str):
+        factory_paths.append(path)
+        return ppe_model
+
+    resolver = _visdrone_resolver()
+    analyzer = Phase3FrameAnalyzer(
+        runtime=runtime,
+        source_fps=30.0,
+        track_model_path="aerial.pt",
+        ppe_model_path="ppe.pt",
+        confidence=0.35,
+        iou=0.70,
+        image_size=640,
+        device="0",
+        track_model=track_model,
+        class_resolver=resolver.resolve,
+        model_factory=model_factory,
+    )
+
+    analysis = analyzer.analyze(_frame(0))
+
+    assert factory_paths == ["ppe.pt"]
+    assert [item.class_name for item in analysis.inference.detections] == [
+        "person",
+        "person",
+        "motorcycle",
+        "car",
+    ]
+    tracks = runtime.calls[0]["tracks"]
+    assert [track.track_id for track in tracks] == [11, 12]
+    assert analysis.tracked_person_count == 2
+    ppe_detections = runtime.calls[0]["detections"]
+    assert ppe_detections[0].class_name == "head"
+
+
 def test_no_tracked_person_skips_ppe_model_but_advances_sample_clock() -> None:
     runtime = _FakeRuntime()
     track_result = _Result(
@@ -246,6 +349,53 @@ def test_no_tracked_person_skips_ppe_model_but_advances_sample_clock() -> None:
     assert runtime.calls[0]["tracks"] == ()
     assert runtime.calls[0]["detections"] == ()
     assert analysis.ppe_sampled is True
+
+
+def test_segmentation_runs_only_on_its_independent_stride() -> None:
+    runtime = _FakeSegmentationRuntime()
+    track_model = _FakeModel(track_results=[_track_result()])
+    ppe_model = _FakeModel(predict_results=[_ppe_result()])
+    segmentation_model = _FakeModel(
+        predict_results=[_segmentation_result()],
+    )
+    models = iter([track_model, ppe_model, segmentation_model])
+
+    analyzer = Phase3FrameAnalyzer(
+        runtime=runtime,
+        source_fps=30.0,
+        track_model_path="track.pt",
+        ppe_model_path="ppe.pt",
+        segmentation_model_path="seg.pt",
+        confidence=0.35,
+        iou=0.70,
+        image_size=640,
+        device="0",
+        model_factory=lambda path: next(models),
+    )
+
+    first = analyzer.analyze(_frame(0))
+    second = analyzer.analyze(_frame(1))
+    seventh = analyzer.analyze(_frame(6))
+
+    assert len(segmentation_model.predict_calls) == 2
+    assert first.segmentation_sampled is True
+    assert first.segmentation is not None
+    assert first.segmentation.frame_index == 1
+    assert first.segmentation.instance_count == 1
+    assert first.segmentation.instances[0].track_id == 11
+    assert first.segmentation.assigned_count == 1
+    assert first.segmentation.unassigned_count == 0
+    assert not np.all(first.inference.annotated_image == 9)
+    assert (
+        first.segmentation.instances[0].mask_area_pixels
+        == pytest.approx(16.0)
+    )
+    assert second.segmentation_sampled is False
+    assert second.segmentation is None
+    assert np.all(second.inference.annotated_image == 9)
+    assert seventh.segmentation_sampled is True
+    assert seventh.segmentation is not None
+    assert seventh.segmentation.frame_index == 7
 
 
 def test_track_call_uses_phase3_runtime_configuration() -> None:

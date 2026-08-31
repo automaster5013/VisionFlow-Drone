@@ -153,6 +153,8 @@ export function DroneFleetControl({
     null,
   );
 
+  const [fleetPanelCollapsed, setFleetPanelCollapsed] = useState(false);
+
   const replayIsPlaying = replayState?.isPlaying ?? false;
 
   const replayIntervalMs = replayState?.intervalMs ?? 1_000;
@@ -387,56 +389,282 @@ export function DroneFleetControl({
   );
 
   return (
-    <section className="space-y-5">
-      <div
-        className={`rounded-xl border p-4 text-center text-lg font-bold ${
-          connectionStatus === "CONNECTED"
-            ? "border-green-300 bg-green-100 text-green-800"
-            : connectionStatus === "CONNECTING"
-              ? "border-yellow-300 bg-yellow-100 text-yellow-800"
-              : "border-red-300 bg-red-100 text-red-800"
-        }`}
-      >
-        WebSocket 상태: {connectionStatus}
+    <section className="vf-fleet-control space-y-6">
+      <div className="vf-fleet-map-title mb-2 flex flex-wrap items-end justify-between gap-3 px-1">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">
+            Live Operations Map
+          </p>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950">
+            함대 실시간 위치
+          </h1>
+        </div>
+        <p className="text-xs font-medium text-slate-500">
+          기체 선택 · 이동 경로 · 지오펜스 · Incident 포커스
+        </p>
       </div>
 
-      {/* 기존 header와 지도 코드 */}
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            실시간 드론 관제
-          </h1>
-
-          <p className="mt-1 text-sm text-slate-500">
-            전체 {drones.length}대 · 비행 중 {flyingCount}대 · 통신 지연{" "}
-            {staleCount}대 · 지오펜스 {geofences.length}개 · 활성 경보{" "}
-            {activeGeofenceEvents.length}건 · 비행 차단{" "}
-            {fleetClearance?.blockedDrones ?? 0}대 · 점검 주의{" "}
-            {fleetClearance?.attentionDrones ?? 0}대 · 최근 AI 탐지{" "}
-            {aiEvents.length}건
-          </p>
+      <section className="vf-fleet-map-shell relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
+        <div className="pointer-events-none absolute right-4 top-4 z-[500] hidden items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-2.5 py-1.5 text-[11px] font-black text-slate-700 shadow-lg backdrop-blur xl:flex">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+          Live fleet map
         </div>
 
-        <div className="flex flex-col items-end gap-2 text-right">
-          <div className="text-sm font-semibold text-slate-700">
-            {connectionLabel(connectionStatus)}
-          </div>
-
-          <div className="text-xs text-slate-500">
-            마지막 수신:{" "}
-            {lastMessageAt ? lastMessageAt.toLocaleTimeString("ko-KR") : "-"}
-          </div>
-
-          <Link
-            href="/mobile-control"
-            className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-bold text-white hover:bg-sky-700"
+        {fleetPanelCollapsed && (
+          <button
+            type="button"
+            onClick={() => setFleetPanelCollapsed(false)}
+            aria-expanded="false"
+            className="absolute left-16 top-4 z-[520] hidden items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-black text-slate-800 shadow-lg backdrop-blur transition hover:bg-white xl:flex"
           >
-            스마트폰 가상 드론 열기
-          </Link>
+            <span aria-hidden="true">☰</span>
+            함대 {drones.length}대
+          </button>
+        )}
+        {!fleetPanelCollapsed && (
+          <aside className="vf-fleet-roster max-h-[620px] space-y-3 overflow-y-auto border-b border-slate-200 bg-white p-3 shadow-sm xl:absolute xl:left-16 xl:top-4 xl:z-[500] xl:w-[300px] xl:rounded-2xl xl:border xl:bg-white/95 xl:backdrop-blur">
+            <div className="flex items-start justify-between gap-3 px-1 pb-1">
+              <div>
+                <h2 className="text-sm font-black text-slate-950">함대 기체</h2>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  기체를 선택하면 지도와 상세 패널이 동기화됩니다.
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700">
+                  {drones.length}대
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setFleetPanelCollapsed(true)}
+                  aria-label="함대 패널 접기"
+                  aria-expanded="true"
+                  className="hidden rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 xl:inline-flex"
+                >
+                  접기
+                </button>
+              </div>
+            </div>
+
+          {drones.map((drone) => {
+            const selected = drone.id === effectiveSelectedId;
+            const violating = violatingDroneIds.has(drone.id);
+            const clearance = clearanceByDroneId.get(drone.id);
+            const flightBlocked =
+              clearance !== undefined && !clearance.flightAllowed;
+            const flightAttention =
+              clearance?.attentionRequired === true && !flightBlocked;
+
+            return (
+              <div key={drone.id} className="relative">
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrone(drone.id)}
+                  className={`vf-fleet-card w-full rounded-xl border p-4 text-left transition ${
+                    clearance?.workOrderId !== null &&
+                    clearance?.workOrderId !== undefined
+                      ? "pb-14"
+                      : ""
+                  } ${
+                  selected
+                    ? "border-blue-500 bg-blue-50"
+                    : flightBlocked
+                      ? "border-red-500 bg-red-50 hover:border-red-600"
+                    : violating
+                      ? "border-red-400 bg-red-50 hover:border-red-500"
+                      : flightAttention
+                        ? "border-amber-400 bg-amber-50 hover:border-amber-500"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold text-slate-900">
+                      {drone.name}
+                    </div>
+
+                    <div className="text-xs text-slate-500">
+                      {drone.droneCode}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                        drone.isStale
+                          ? "bg-slate-100 text-slate-600"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {drone.isStale ? "STALE" : drone.status}
+                    </span>
+
+                    {violating && (
+                      <span className="rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
+                        GEOFENCE
+                      </span>
+                    )}
+
+                    {clearance && (
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-bold ${
+                          flightBlocked
+                            ? "bg-red-600 text-white"
+                            : flightAttention
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {flightBlocked
+                          ? "비행 차단"
+                          : flightAttention
+                            ? "점검 주의"
+                            : clearance.clearanceStatus === "CLEARED"
+                              ? "재운항 승인"
+                              : "비행 가능"}
+                      </span>
+                    )}
+                  </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-600">
+                    <span>배터리 {drone.batteryLevel ?? 0}%</span>
+
+                    <span>고도 {drone.altitude ?? 0}m</span>
+                  </div>
+                </button>
+                {clearance?.workOrderId !== null &&
+                  clearance?.workOrderId !== undefined && (
+                    <Link
+                      href={maintenanceWorkOrderHref(drone.id, clearance)}
+                      className="absolute bottom-3 left-4 right-4 rounded-lg border border-cyan-300 bg-white px-3 py-2 text-center text-xs font-bold text-cyan-800 shadow-sm hover:bg-cyan-50"
+                    >
+                      점검 작업 #{clearance.workOrderId} 처리
+                    </Link>
+                  )}
+              </div>
+            );
+          })}
+
+            {drones.length === 0 && (
+              <div className="p-8 text-center text-sm text-slate-500">
+                등록된 드론이 없습니다.
+              </div>
+            )}
+          </aside>
+        )}
+
+        <div className="h-[72vh] min-h-[520px] overflow-hidden bg-white lg:h-[calc(100vh-190px)] lg:min-h-[620px] lg:max-h-[820px]">
+          <DroneControlMap
+            drones={drones}
+            tracksByDroneId={displayedTracksByDroneId}
+            geofences={geofences}
+            activeGeofenceIds={activeGeofenceIds}
+            geofenceDraft={geofenceDraft}
+            onPickGeofenceCenter={handlePickGeofenceCenter}
+            replayPoint={replayPoint}
+            incidentFocus={incidentFocus}
+            flightClearanceByDroneId={clearanceByDroneId}
+            selectedDroneId={effectiveSelectedId}
+            onSelectDrone={handleSelectDrone}
+          />
+        </div>
+      </section>
+
+      <header className="vf-fleet-command-header overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-5 p-5 sm:p-6 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-700">
+              Fleet Mission Control
+            </p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+              실시간 드론 관제
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              기체 연결, 비행 허가, 지오펜스와 AI 이벤트를 한 화면에서
+              판단합니다.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <span
+              aria-live="polite"
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-black ${
+                connectionStatus === "CONNECTED"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : connectionStatus === "CONNECTING"
+                    ? "border-amber-200 bg-amber-50 text-amber-800"
+                    : "border-rose-200 bg-rose-50 text-rose-800"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`h-2.5 w-2.5 rounded-full ${
+                  connectionStatus === "CONNECTED"
+                    ? "bg-emerald-500"
+                    : connectionStatus === "CONNECTING"
+                      ? "bg-amber-500"
+                      : "bg-rose-500"
+                }`}
+              />
+              {connectionLabel(connectionStatus)}
+            </span>
+
+            <Link
+              href="/mobile-control"
+              className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white transition hover:bg-slate-800"
+            >
+              스마트폰 가상 드론
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-5">
+          <FleetOverviewMetric
+            label="전체 기체"
+            value={`${drones.length}대`}
+            hint="등록된 관제 대상"
+          />
+          <FleetOverviewMetric
+            label="비행 중"
+            value={`${flyingCount}대`}
+            hint="실시간 ACTIVE"
+            tone="emerald"
+          />
+          <FleetOverviewMetric
+            label="통신 지연"
+            value={`${staleCount}대`}
+            hint="stale telemetry"
+            tone={staleCount > 0 ? "amber" : "slate"}
+          />
+          <FleetOverviewMetric
+            label="활성 경보"
+            value={`${activeGeofenceEvents.length}건`}
+            hint={`지오펜스 ${geofences.length}개`}
+            tone={activeGeofenceEvents.length > 0 ? "rose" : "slate"}
+          />
+          <FleetOverviewMetric
+            label="비행 차단"
+            value={`${fleetClearance?.blockedDrones ?? 0}대`}
+            hint={`점검 주의 ${fleetClearance?.attentionDrones ?? 0} · AI ${aiEvents.length}`}
+            tone={(fleetClearance?.blockedDrones ?? 0) > 0 ? "rose" : "slate"}
+          />
+        </div>
+
+        <div className="vf-fleet-connection-strip flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 text-xs font-medium text-slate-600 sm:px-6">
+          <span>
+            WebSocket · <strong className="text-slate-900">{connectionStatus}</strong>
+          </span>
+          <span>
+            마지막 수신{" "}
+            <strong className="text-slate-900">
+              {lastMessageAt ? lastMessageAt.toLocaleTimeString("ko-KR") : "-"}
+            </strong>
+          </span>
         </div>
       </header>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -598,131 +826,7 @@ export function DroneFleetControl({
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="max-h-[680px] space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3">
-          {drones.map((drone) => {
-            const selected = drone.id === effectiveSelectedId;
-            const violating = violatingDroneIds.has(drone.id);
-            const clearance = clearanceByDroneId.get(drone.id);
-            const flightBlocked =
-              clearance !== undefined && !clearance.flightAllowed;
-            const flightAttention =
-              clearance?.attentionRequired === true && !flightBlocked;
 
-            return (
-              <div key={drone.id} className="relative">
-                <button
-                  type="button"
-                  onClick={() => handleSelectDrone(drone.id)}
-                  className={`w-full rounded-xl border p-4 text-left transition ${
-                    clearance?.workOrderId !== null &&
-                    clearance?.workOrderId !== undefined
-                      ? "pb-14"
-                      : ""
-                  } ${
-                  selected
-                    ? "border-blue-500 bg-blue-50"
-                    : flightBlocked
-                      ? "border-red-500 bg-red-50 hover:border-red-600"
-                    : violating
-                      ? "border-red-400 bg-red-50 hover:border-red-500"
-                      : flightAttention
-                        ? "border-amber-400 bg-amber-50 hover:border-amber-500"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-semibold text-slate-900">
-                      {drone.name}
-                    </div>
-
-                    <div className="text-xs text-slate-500">
-                      {drone.droneCode}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1">
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                        drone.isStale
-                          ? "bg-slate-100 text-slate-600"
-                          : "bg-emerald-100 text-emerald-700"
-                      }`}
-                    >
-                      {drone.isStale ? "STALE" : drone.status}
-                    </span>
-
-                    {violating && (
-                      <span className="rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
-                        GEOFENCE
-                      </span>
-                    )}
-
-                    {clearance && (
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs font-bold ${
-                          flightBlocked
-                            ? "bg-red-600 text-white"
-                            : flightAttention
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-700"
-                        }`}
-                      >
-                        {flightBlocked
-                          ? "비행 차단"
-                          : flightAttention
-                            ? "점검 주의"
-                            : clearance.clearanceStatus === "CLEARED"
-                              ? "재운항 승인"
-                              : "비행 가능"}
-                      </span>
-                    )}
-                  </div>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-600">
-                    <span>배터리 {drone.batteryLevel ?? 0}%</span>
-
-                    <span>고도 {drone.altitude ?? 0}m</span>
-                  </div>
-                </button>
-                {clearance?.workOrderId !== null &&
-                  clearance?.workOrderId !== undefined && (
-                    <Link
-                      href={maintenanceWorkOrderHref(drone.id, clearance)}
-                      className="absolute bottom-3 left-4 right-4 rounded-lg border border-cyan-300 bg-white px-3 py-2 text-center text-xs font-bold text-cyan-800 shadow-sm hover:bg-cyan-50"
-                    >
-                      점검 작업 #{clearance.workOrderId} 처리
-                    </Link>
-                  )}
-              </div>
-            );
-          })}
-
-          {drones.length === 0 && (
-            <div className="p-8 text-center text-sm text-slate-500">
-              등록된 드론이 없습니다.
-            </div>
-          )}
-        </aside>
-
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <DroneControlMap
-            drones={drones}
-            tracksByDroneId={displayedTracksByDroneId}
-            geofences={geofences}
-            activeGeofenceIds={activeGeofenceIds}
-            geofenceDraft={geofenceDraft}
-            onPickGeofenceCenter={handlePickGeofenceCenter}
-            replayPoint={replayPoint}
-            incidentFocus={incidentFocus}
-            flightClearanceByDroneId={clearanceByDroneId}
-            selectedDroneId={effectiveSelectedId}
-            onSelectDrone={handleSelectDrone}
-          />
-        </div>
-      </div>
 
       <AiLiveStreamPanel events={aiEvents} onSelectDrone={handleSelectDrone} />
 
@@ -913,6 +1017,46 @@ export function DroneFleetControl({
         </div>
       )}
     </section>
+  );
+}
+
+function FleetOverviewMetric({
+  label,
+  value,
+  hint,
+  tone = "slate",
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone?: "slate" | "emerald" | "amber" | "rose";
+}) {
+  const toneClassName = {
+    slate: "bg-white",
+    emerald: "bg-emerald-50/70",
+    amber: "bg-amber-50/70",
+    rose: "bg-rose-50/70",
+  }[tone];
+
+  const valueClassName = {
+    slate: "text-slate-950",
+    emerald: "text-emerald-800",
+    amber: "text-amber-800",
+    rose: "text-rose-800",
+  }[tone];
+
+  return (
+    <div className={`vf-fleet-metric min-w-0 border-slate-200 px-5 py-4 lg:border-r lg:last:border-r-0 ${toneClassName}`}>
+      <div className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </div>
+      <div className={`mt-1 text-2xl font-black tracking-tight ${valueClassName}`}>
+        {value}
+      </div>
+      <div className="mt-1 truncate text-xs font-medium text-slate-500">
+        {hint}
+      </div>
+    </div>
   );
 }
 

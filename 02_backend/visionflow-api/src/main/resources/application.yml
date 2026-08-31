@@ -42,6 +42,10 @@ management:
 
 visionflow:
   security:
+    ai-internal:
+      enabled: ${VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED:false}
+      key: ${VISIONFLOW_AI_INTERNAL_KEY:}
+
     operator:
       enabled: ${VISIONFLOW_OPERATOR_SECURITY_ENABLED:false}
       viewer:

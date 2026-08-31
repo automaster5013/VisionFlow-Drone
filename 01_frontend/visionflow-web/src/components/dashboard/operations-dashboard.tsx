@@ -76,8 +76,11 @@ export function OperationsDashboard({
     filterValues,
 }: OperationsDashboardProps) {
     return (
-        <section aria-labelledby="operations-dashboard-title">
-            <div className="flex flex-wrap items-end justify-between gap-3">
+        <section
+            aria-labelledby="operations-dashboard-title"
+            className="vf-operations-dashboard"
+        >
+            <div className="vf-operations-dashboard__hero flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p className="text-sm font-semibold uppercase tracking-wider text-cyan-700">
                         Operations Overview
@@ -105,7 +108,7 @@ export function OperationsDashboard({
 
             <AiPerformancePanel />
 
-            <article className="mt-6 rounded-2xl border border-cyan-200 bg-white p-5 shadow-sm">
+            <article className="vf-command-panel vf-command-panel--accent mt-6 rounded-2xl border border-cyan-200 bg-white p-5 shadow-sm">
                 <div>
                     <h2 className="text-lg font-bold text-slate-900">
                         운영 데이터 필터
@@ -429,7 +432,7 @@ function MetricCard({
     className: string;
 }) {
     return (
-        <article className={`rounded-2xl border p-5 shadow-sm ${className}`}>
+        <article className={`vf-command-metric rounded-2xl border p-5 shadow-sm ${className}`}>
             <div className="text-sm font-semibold text-slate-600">{label}</div>
             <div className="mt-2 text-3xl font-bold text-slate-950">{value}</div>
             <div className="mt-2 text-xs text-slate-500">{description}</div>
@@ -439,7 +442,7 @@ function MetricCard({
 
 function StatusCount({ label, count }: { label: string; count: number }) {
     return (
-        <div className="rounded-xl bg-slate-50 p-3 text-center">
+        <div className="vf-command-counter rounded-xl bg-slate-50 p-3 text-center">
             <div className="text-xs font-semibold text-slate-500">{label}</div>
             <div className="mt-1 text-xl font-bold text-slate-900">{count}</div>
         </div>
@@ -465,7 +468,7 @@ function FlightSessionCard({
         session.status === "COMPLETED" || session.status === "ABORTED";
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="vf-command-record rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="break-words font-bold text-slate-900">
@@ -518,7 +521,7 @@ function FlightSessionCard({
 
 function AiAlertCard({ alert }: { alert: DashboardAiAlertItem }) {
     return (
-        <div className="rounded-xl border border-violet-100 bg-violet-50 p-4">
+        <div className="vf-command-record vf-command-record--ai rounded-xl border border-violet-100 bg-violet-50 p-4">
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <div className="font-bold text-violet-950">
@@ -557,7 +560,7 @@ function FlightGateDecisionCard({
         `&entityId=${decision.droneId}`;
 
     return (
-        <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
+        <div className="vf-command-record vf-command-record--warning rounded-xl border border-amber-100 bg-amber-50 p-4">
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <div className="font-bold text-amber-950">
@@ -590,7 +593,7 @@ function FlightGateDecisionCard({
 
 function EmptyState({ message }: { message: string }) {
     return (
-        <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
+        <div className="vf-command-empty mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
             {message}
         </div>
     );

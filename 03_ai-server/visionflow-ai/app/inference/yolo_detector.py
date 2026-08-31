@@ -11,6 +11,7 @@ import torch
 from ultralytics import YOLO
 
 from app.domain import Detection, FramePacket, InferencePacket
+from app.model_runtime import ClassResolver, resolve_identity_class
 
 
 def _requests_cuda(device: str) -> bool:
@@ -50,7 +51,7 @@ def _sha256(path: Path) -> str:
 def _normalized_classes(names: Any) -> list[dict[str, object]]:
     if isinstance(names, Mapping):
         items = sorted(names.items(), key=lambda item: int(item[0]))
-    elif isinstance(names, (list, tuple)):
+    elif isinstance(names, list | tuple):
         items = enumerate(names)
     else:
         return []
@@ -76,11 +77,13 @@ class YoloDetector:
         iou: float,
         image_size: int,
         device: str,
+        class_resolver: ClassResolver | None = None,
     ) -> None:
         self._model_profile = model_profile
         self._model_path = model_path
         self._device = device
         self._require_cuda = require_cuda
+        self._class_resolver = class_resolver or resolve_identity_class
         self._validate_runtime(require_local_model=require_local_model)
 
         self._model = YOLO(model_path)
@@ -212,6 +215,9 @@ class YoloDetector:
             "classes": [dict(item) for item in self._status["classes"]],
         }
 
+    def track(self, **kwargs: Any) -> Any:
+        return self._model.track(**kwargs)
+
     def infer(self, frame: FramePacket) -> InferencePacket:
         started_at = time.perf_counter()
         results = self._model.predict(
@@ -249,10 +255,12 @@ class YoloDetector:
                 strict=True,
             ):
                 class_id = int(class_id_value)
+                source_name = str(names.get(class_id, class_id))
+                resolved_class = self._class_resolver(class_id, source_name)
                 detections.append(
                     Detection(
                         class_id=class_id,
-                        class_name=str(names.get(class_id, class_id)),
+                        class_name=resolved_class.canonical_name,
                         confidence=float(confidence),
                         x1=float(xyxy[0]),
                         y1=float(xyxy[1]),

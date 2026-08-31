@@ -141,7 +141,7 @@ export function OperatorSessionManagementPanel({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section data-operator-session-panel className="vf-session-command__panel overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
         <div>
           <h2 className="font-bold text-slate-950">활성 세션</h2>

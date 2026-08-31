@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "contractId": "visionflow.phase2b1.visdrone-weight-contract",
+  "profiles": {
+    "GENERAL_LIVE": {
+      "mode": "SINGLE",
+      "modelRole": "GENERAL_DETECTION",
+      "allowedTrainingStages": [
+        "COCO_BASE"
+      ],
+      "activationTrainingStages": [
+        "COCO_BASE"
+      ],
+      "weightFiles": {
+        "COCO_BASE": "yolo26m.pt"
+      },
+      "defaultHeadMode": "END_TO_END"
+    },
+    "AERIAL_SMALL_OBJECT_LIVE": {
+      "mode": "SINGLE",
+      "modelRole": "AERIAL_SMALL_OBJECT_DETECTION",
+      "allowedTrainingStages": [
+        "VISDRONE_S1",
+        "VISIONFLOW_S2"
+      ],
+      "activationTrainingStages": [
+        "VISDRONE_S1"
+      ],
+      "weightFiles": {
+        "VISDRONE_S1": "yolo26m-visdrone-s1-best.pt",
+        "VISIONFLOW_S2": "yolo26m-visdrone-s2-best.pt"
+      },
+      "defaultHeadMode": "END_TO_END"
+    },
+    "DETERMINISTIC_COMPARE": {
+      "mode": "COMPARE",
+      "baselineProfile": "GENERAL_LIVE",
+      "candidateProfile": "AERIAL_SMALL_OBJECT_LIVE",
+      "sameInputFrames": true,
+      "headMode": "END_TO_END",
+      "auxiliaryInference": false,
+      "backendReporting": false,
+      "snapshotEnabled": false,
+      "matchIouThreshold": 0.5,
+      "smallObjectDefinition": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION",
+      "smallObjectMaxAreaPx": 1024,
+      "metricProvenance": "MODEL_DIFFERENCE_PROXY",
+      "recoveredLabel": "RECOVERED SMALL OBJECT"
+    }
+  },
+  "classMappings": {
+    "VISDRONE2019_DET": [
+      {
+        "id": 0,
+        "sourceName": "pedestrian",
+        "canonicalName": "person",
+        "trackKind": "HUMAN"
+      },
+      {
+        "id": 1,
+        "sourceName": "people",
+        "canonicalName": "person",
+        "trackKind": "HUMAN"
+      },
+      {
+        "id": 2,
+        "sourceName": "bicycle",
+        "canonicalName": "bicycle",
+        "trackKind": "CYCLE"
+      },
+      {
+        "id": 3,
+        "sourceName": "car",
+        "canonicalName": "car",
+        "trackKind": "VEHICLE"
+      },
+      {
+        "id": 4,
+        "sourceName": "van",
+        "canonicalName": "van",
+        "trackKind": "VEHICLE"
+      },
+      {
+        "id": 5,
+        "sourceName": "truck",
+        "canonicalName": "truck",
+        "trackKind": "VEHICLE"
+      },
+      {
+        "id": 6,
+        "sourceName": "tricycle",
+        "canonicalName": "tricycle",
+        "trackKind": "VEHICLE"
+      },
+      {
+        "id": 7,
+        "sourceName": "awning-tricycle",
+        "canonicalName": "awning-tricycle",
+        "trackKind": "VEHICLE"
+      },
+      {
+        "id": 8,
+        "sourceName": "bus",
+        "canonicalName": "bus",
+        "trackKind": "VEHICLE"
+      },
+      {
+        "id": 9,
+        "sourceName": "motor",
+        "canonicalName": "motorcycle",
+        "trackKind": "CYCLE"
+      }
+    ]
+  },
+  "evaluationContracts": {
+    "LABELED_SMALL_OBJECT_COMPARE": {
+      "baselineProfile": "GENERAL_LIVE",
+      "candidateProfile": "AERIAL_SMALL_OBJECT_LIVE",
+      "datasetSplit": "FINAL_HELDOUT",
+      "splitUnits": [
+        "VIDEO_SEQUENCE",
+        "OFFICIAL_DATASET_SPLIT"
+      ],
+      "sameDatasetFingerprint": true,
+      "matchIouThreshold": 0.5,
+      "smallObjectDefinition": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION",
+      "smallObjectMaxAreaPx": 1024,
+      "metricProvenance": "LABELED_HELD_OUT_GROUND_TRUTH",
+      "runtimeProxyExcluded": true,
+      "baselineCanonicalClasses": [
+        "person",
+        "bicycle",
+        "car",
+        "truck",
+        "bus",
+        "motorcycle"
+      ]
+    }
+  }
+}

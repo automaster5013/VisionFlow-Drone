@@ -45,11 +45,47 @@ class SystemTraceabilityAiSnapshotConcurrencyTest(unittest.TestCase):
             )
 
         self.assertIn(
-            "missing-token:service:findEventForUpdate(eventId)",
+            "usage:service:attachSnapshot-uses-event-lock",
             drift,
         )
         self.assertIn(
             "ordering:service:attachSnapshot-lock-before-storage-and-write",
+            drift,
+        )
+
+    def test_missing_deletion_lock_usage_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.copy_policy_sources(root)
+            service = (
+                root
+                / "02_backend/visionflow-api/src/main/java"
+                / "com/visionflow/api/ai/service"
+                / "AiInferenceEventService.java"
+            )
+            source = service.read_text(encoding="utf-8")
+            delete_at = source.index(
+                "public SnapshotDeletionResult deleteSnapshot("
+            )
+            prefix = source[:delete_at]
+            suffix = source[delete_at:].replace(
+                "AiInferenceEvent event = findEventForUpdate(eventId);",
+                "AiInferenceEvent event = findEvent(eventId);",
+                1,
+            )
+            service.write_text(prefix + suffix, encoding="utf-8")
+
+            drift = traceability.ai_snapshot_concurrency_policy_drift(
+                root
+            )
+
+        self.assertIn(
+            "usage:service:deleteSnapshot-uses-event-lock",
+            drift,
+        )
+        self.assertIn(
+            "ordering:service:"
+            "deleteSnapshot-lock-before-storage-delete-and-write",
             drift,
         )
 

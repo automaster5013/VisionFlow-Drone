@@ -406,14 +406,14 @@ export function DemoScenarioConsole() {
         !currentFlightClearance.flightAllowed;
 
     return (
-        <main className="min-h-screen bg-slate-950 px-5 py-8 text-slate-100 lg:px-10">
-            <div className="mx-auto max-w-7xl space-y-6">
-                <header className="flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl lg:flex-row lg:items-center lg:justify-between">
+        <main data-demo-scenario-command className="vf-demo-scenario-command min-h-screen bg-slate-950 px-5 py-8 text-slate-100 lg:px-10">
+            <div className="mx-auto max-w-[1500px] space-y-6">
+                <header className="vf-demo-scenario-command__hero flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <p className="text-sm font-semibold tracking-[0.24em] text-cyan-400">
+                        <p className="vf-demo-scenario-command__eyebrow text-sm font-semibold tracking-[0.24em] text-cyan-400">
                             VISIONFLOW PRESENTATION MODE
                         </p>
-                        <h1 className="mt-2 text-3xl font-bold">
+                        <h1 className="vf-demo-scenario-command__title mt-2 text-3xl font-bold">
                             스마트 드론 통합 시연 콘솔
                         </h1>
                         <p className="mt-2 text-sm text-slate-400">

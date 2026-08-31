@@ -19,6 +19,8 @@ def test_phase3_is_disabled_by_default(monkeypatch, tmp_path) -> None:
 
     settings = Settings.from_env()
 
+    assert settings.model_manifest_path == ""
+    assert settings.model_profiles_path == "config/model-profiles-v1.json"
     assert settings.phase3_enabled is False
     assert settings.phase3_ppe_model_path == (
         "/app/models/ppe-yolo26m-best.pt"
@@ -38,6 +40,8 @@ def test_phase3_is_disabled_by_default(monkeypatch, tmp_path) -> None:
 
 def test_phase3_reads_runtime_overrides(monkeypatch, tmp_path) -> None:
     _base_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("AI_MODEL_MANIFEST_PATH", "/models/model.manifest.json")
+    monkeypatch.setenv("AI_MODEL_PROFILES_PATH", "/config/model-profiles.json")
     monkeypatch.setenv("AI_PHASE3_ENABLED", "true")
     monkeypatch.setenv("AI_PHASE3_PPE_MODEL_PATH", "/models/custom-ppe.pt")
     monkeypatch.setenv("AI_PHASE3_PPE_TARGET_FPS", "8.0")
@@ -53,6 +57,8 @@ def test_phase3_reads_runtime_overrides(monkeypatch, tmp_path) -> None:
 
     settings = Settings.from_env()
 
+    assert settings.model_manifest_path == "/models/model.manifest.json"
+    assert settings.model_profiles_path == "/config/model-profiles.json"
     assert settings.phase3_enabled is True
     assert settings.phase3_ppe_model_path == "/models/custom-ppe.pt"
     assert settings.phase3_ppe_target_fps == pytest.approx(8.0)
@@ -110,3 +116,33 @@ def test_disabled_phase3_ignores_dormant_invalid_phase3_values(
     settings = Settings.from_env()
 
     assert settings.phase3_enabled is False
+
+
+def test_aerial_profile_requires_model_manifest_path(monkeypatch, tmp_path) -> None:
+    _base_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("AI_MODEL_PROFILE", "AERIAL_SMALL_OBJECT_LIVE")
+    monkeypatch.setenv("AI_MODEL_PATH", "models/yolo26m-visdrone-s2-best.pt")
+    monkeypatch.setenv("AI_MODEL_MANIFEST_PATH", " ")
+
+    with pytest.raises(ValueError, match="AI_MODEL_MANIFEST_PATH"):
+        Settings.from_env()
+
+
+def test_model_profiles_path_must_not_be_blank(monkeypatch, tmp_path) -> None:
+    _base_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("AI_MODEL_PROFILE", "GENERAL_LIVE")
+    monkeypatch.setenv("AI_MODEL_PATH", "models/yolo26m.pt")
+    monkeypatch.setenv("AI_MODEL_PROFILES_PATH", " ")
+
+    with pytest.raises(ValueError, match="AI_MODEL_PROFILES_PATH"):
+        Settings.from_env()
+
+
+def test_legacy_model_profile_allows_blank_profiles_path(monkeypatch, tmp_path) -> None:
+    _base_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("AI_MODEL_PROFILE", "best-gpu")
+    monkeypatch.setenv("AI_MODEL_PROFILES_PATH", " ")
+
+    settings = Settings.from_env()
+
+    assert settings.model_profile == "best-gpu"

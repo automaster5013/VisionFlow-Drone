@@ -6,7 +6,15 @@ import sys
 from collections.abc import Mapping
 from pathlib import Path
 
+from app.model_contract import (
+    ModelProfile,
+    load_json_object,
+    validate_weight_manifest,
+)
+
 READY_STATUS = "GPU_MODEL_READY"
+DEFAULT_PROFILES_PATH = "/app/config/model-profiles-v1.json"
+MANIFEST_REQUIRED_PROFILES = {ModelProfile.AERIAL_SMALL_OBJECT_LIVE.value}
 
 
 def validate_model_status(
@@ -43,11 +51,42 @@ def validate_model_status(
         )
 
 
+def validate_contract_status(
+    status: Mapping[str, object],
+    *,
+    model_profile: str,
+    manifest_path: str,
+    profiles_path: str = DEFAULT_PROFILES_PATH,
+) -> dict[str, object] | None:
+    normalized_profile = model_profile.strip()
+    normalized_manifest = manifest_path.strip()
+    if normalized_profile in MANIFEST_REQUIRED_PROFILES and not normalized_manifest:
+        raise RuntimeError(
+            f"{normalized_profile} 프로필에는 실가중치 매니페스트가 필요합니다."
+        )
+    if not normalized_manifest:
+        return None
+
+    manifest = load_json_object(Path(normalized_manifest))
+    registry = load_json_object(Path(profiles_path))
+    contract = validate_weight_manifest(
+        manifest,
+        registry,
+        model_status=status,
+        activation=True,
+    )
+    if contract["profile"] != normalized_profile:
+        raise RuntimeError("AI_MODEL_PROFILE이 매니페스트 프로필과 다릅니다.")
+    return contract
+
+
 def main() -> int:
     model_path = os.getenv("AI_MODEL_PATH", "/app/models/yolo26n.pt")
     model_profile = os.getenv("AI_MODEL_PROFILE", "yolo26n-gpu")
     device = os.getenv("AI_DEVICE", "0")
     expected_sha256 = os.getenv("AI_EXPECTED_MODEL_SHA256", "")
+    manifest_path = os.getenv("AI_MODEL_MANIFEST_PATH", "")
+    profiles_path = os.getenv("AI_MODEL_PROFILES_PATH", DEFAULT_PROFILES_PATH)
 
     try:
         from app.inference import YoloDetector
@@ -67,6 +106,12 @@ def main() -> int:
             model_status,
             expected_sha256=expected_sha256,
         )
+        model_contract = validate_contract_status(
+            model_status,
+            model_profile=model_profile,
+            manifest_path=manifest_path,
+            profiles_path=profiles_path,
+        )
     except Exception as error:
         print(
             json.dumps(
@@ -84,17 +129,16 @@ def main() -> int:
         )
         return 1
 
+    output: dict[str, object] = {
+        "success": True,
+        "status": READY_STATUS,
+        "message": "CUDA와 YOLO 모델을 정상적으로 사용할 수 있습니다.",
+        "model": model_status,
+    }
+    if model_contract is not None:
+        output["modelContract"] = model_contract
     print(
-        json.dumps(
-            {
-                "success": True,
-                "status": READY_STATUS,
-                "message": "CUDA와 YOLO 모델을 정상적으로 사용할 수 있습니다.",
-                "model": model_status,
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
+        json.dumps(output, ensure_ascii=False, indent=2),
         flush=True,
     )
     return 0

@@ -8,12 +8,12 @@ import hashlib
 import json
 import platform
 import sys
-from datetime import datetime, timezone
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import yaml
-
 
 IMAGE_EXTENSIONS = {
     ".bmp",
@@ -119,13 +119,18 @@ def _collect_images(source: Any, base: Path) -> list[Path]:
     return sorted(images, key=lambda path: str(path).casefold())
 
 
-def _label_path(image_path: Path) -> Path:
+def label_path(image_path: Path) -> Path:
     parts = list(image_path.parts)
     image_indexes = [index for index, value in enumerate(parts) if value.lower() == "images"]
     if image_indexes:
         parts[image_indexes[-1]] = "labels"
         return Path(*parts).with_suffix(".txt")
     return image_path.with_suffix(".txt")
+
+
+def _label_path(image_path: Path) -> Path:
+    """Backward-compatible alias for callers predating the public helper."""
+    return label_path(image_path)
 
 
 def _portable_path(path: Path, base: Path) -> str:
@@ -156,7 +161,7 @@ def dataset_fingerprint(
         if hash_mode == "full":
             digest.update(bytes.fromhex(sha256_file(image)))
 
-        label = _label_path(image)
+        label = label_path(image)
         digest.update(_portable_path(label, base).encode("utf-8"))
         digest.update(b"\0")
         if label.is_file():
@@ -168,7 +173,11 @@ def dataset_fingerprint(
     return digest.hexdigest(), image_count, label_count
 
 
-def load_dataset_spec(data_yaml: Path, split: str, hash_mode: str) -> dict[str, Any]:
+def load_dataset_inventory(
+    data_yaml: Path,
+    split: str,
+    hash_mode: str,
+) -> tuple[dict[str, Any], tuple[Path, ...]]:
     if not data_yaml.is_file():
         raise FileNotFoundError(f"data.yaml을 찾을 수 없습니다: {data_yaml}")
     config = yaml.safe_load(data_yaml.read_text(encoding="utf-8-sig"))
@@ -190,7 +199,7 @@ def load_dataset_spec(data_yaml: Path, split: str, hash_mode: str) -> dict[str, 
         base,
         hash_mode,
     )
-    return {
+    spec = {
         "yamlPath": str(data_yaml.resolve()),
         "yamlSha256": sha256_file(data_yaml),
         "basePath": str(base),
@@ -202,6 +211,12 @@ def load_dataset_spec(data_yaml: Path, split: str, hash_mode: str) -> dict[str, 
         "fingerprintMode": hash_mode,
         "fingerprintSha256": fingerprint,
     }
+    return spec, tuple(images)
+
+
+def load_dataset_spec(data_yaml: Path, split: str, hash_mode: str) -> dict[str, Any]:
+    spec, _images = load_dataset_inventory(data_yaml, split, hash_mode)
+    return spec
 
 
 def compare_model_and_dataset_names(
@@ -564,7 +579,7 @@ def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
 
     dataset = load_dataset_spec(data_yaml, args.split, args.dataset_hash_mode)
     model_sha = sha256_file(model_path)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     run_directory = Path(args.output).resolve() / f"{model_path.stem}-{timestamp}"
     ultralytics_directory = run_directory / "ultralytics"
     run_directory.mkdir(parents=True, exist_ok=False)
@@ -639,7 +654,7 @@ def run_evaluation(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
 
     report = {
         "schemaVersion": 1,
-        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "generatedAt": datetime.now(UTC).isoformat(),
         "model": {
             "path": str(model_path),
             "fileName": model_path.name,

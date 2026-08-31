@@ -115,6 +115,13 @@ public class AiInferenceEvent {
         this.snapshotCreatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
+    public void clearSnapshot() {
+        this.snapshotFileName = null;
+        this.snapshotContentType = null;
+        this.snapshotSizeBytes = null;
+        this.snapshotCreatedAt = null;
+    }
+
     public Long getId() {
         return id;
     }

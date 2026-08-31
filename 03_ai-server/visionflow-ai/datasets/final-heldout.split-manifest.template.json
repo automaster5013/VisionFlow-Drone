@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "contractId": "visionflow.phase2b4.video-split-manifest",
+  "template": true,
+  "datasetVersion": "REPLACE_WITH_DATASET_VERSION",
+  "splitUnit": "VIDEO_SEQUENCE",
+  "adjacentFramesAcrossSplits": false,
+  "finalEvaluationExcludedFromTraining": true,
+  "sequences": [
+    {
+      "sequenceId": "REPLACE_WITH_SEQUENCE_ID",
+      "sourceVideoFile": "REPLACE_WITH_SOURCE_VIDEO_FILE",
+      "sourceVideoSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "split": "FINAL_HELDOUT",
+      "imageRoots": [
+        "images/final-heldout/REPLACE_WITH_SEQUENCE_ID"
+      ]
+    }
+  ]
+}

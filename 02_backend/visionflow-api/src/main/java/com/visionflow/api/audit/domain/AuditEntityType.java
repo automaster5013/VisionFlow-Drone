@@ -8,6 +8,7 @@ public enum AuditEntityType {
     GEOFENCE,
     INCIDENT,
     DEMO_SCENARIO,
+    AI_INFERENCE_EVENT,
     OPERATOR_SESSION,
     AUDIT_LOG
 }

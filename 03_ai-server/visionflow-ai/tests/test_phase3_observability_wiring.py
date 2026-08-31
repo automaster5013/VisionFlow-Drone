@@ -9,6 +9,7 @@ import app.main as app_main
 from app.domain import (
     FramePacket,
     InferencePacket,
+    SnapshotPolicy,
     VideoSourceType,
 )
 from app.pipeline import InferencePipeline
@@ -184,7 +185,7 @@ def test_pipeline_records_phase3_analysis_before_downstream_use() -> None:
         max_frames=1,
         reporter=None,
         frame_hub=None,
-        snapshot_enabled=False,
+        snapshot_policy=SnapshotPolicy.OFF,
         snapshot_jpeg_quality=85,
         event_min_consecutive_frames=1,
         event_cooldown_seconds=0.0,

@@ -115,16 +115,16 @@ export function CspReportMonitor() {
   const hasReports = (data?.totalReports ?? 0) > 0;
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="vf-security-command__panel rounded-2xl border p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-violet-700">
+          <p className="vf-security-command__eyebrow text-sm font-semibold">
             CSP REPORT-ONLY OBSERVABILITY
           </p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">
+          <h2 className="vf-security-command__section-title mt-1 text-xl font-black">
             CSP 위반 관찰 현황
           </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className="vf-security-command__detail mt-2 max-w-3xl text-sm leading-6">
             브라우저 요청은 차단하지 않습니다. 쿼리 문자열을 제거한 정제 보고서만
             프로세스 메모리에 최대 50건 보관하며 서버 재시작 시 초기화됩니다.
           </p>
@@ -133,12 +133,12 @@ export function CspReportMonitor() {
           <span
             className={`rounded-full border px-3 py-1 text-xs font-bold ${
               state.phase === "loading"
-                ? "border-slate-200 bg-slate-50 text-slate-600"
+                ? "vf-security-command__badge--loading"
                 : state.phase === "error"
-                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  ? "vf-security-command__badge--danger"
                   : hasReports
-                    ? "border-amber-200 bg-amber-50 text-amber-800"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    ? "vf-security-command__badge--warning"
+                    : "vf-security-command__badge--good"
             }`}
           >
             {state.phase === "loading"
@@ -155,7 +155,7 @@ export function CspReportMonitor() {
               setState({ phase: "loading", data: null, error: null });
               void load();
             }}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            className="vf-security-command__button rounded-lg border px-3 py-2 text-xs font-bold"
           >
             새로고침
           </button>
@@ -163,7 +163,7 @@ export function CspReportMonitor() {
       </div>
 
       {state.error ? (
-        <p className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <p className="vf-security-command__notice vf-security-command__notice--danger mt-5 rounded-xl border p-4 text-sm">
           {state.error}
         </p>
       ) : null}
@@ -171,21 +171,21 @@ export function CspReportMonitor() {
       {data ? (
         <>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold text-slate-500">전체 수신</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">
+            <article className="vf-security-command__metric rounded-xl border p-4">
+              <p className="vf-security-command__label text-xs font-bold">전체 수신</p>
+              <p className="vf-security-command__value mt-1 text-2xl font-black">
                 {data.totalReports}건
               </p>
             </article>
-            <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold text-slate-500">현재 보관</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">
+            <article className="vf-security-command__metric rounded-xl border p-4">
+              <p className="vf-security-command__label text-xs font-bold">현재 보관</p>
+              <p className="vf-security-command__value mt-1 text-2xl font-black">
                 {data.retainedReports}/{data.maxRetainedReports}건
               </p>
             </article>
-            <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold text-slate-500">마지막 수신</p>
-              <p className="mt-1 text-sm font-black text-slate-950">
+            <article className="vf-security-command__metric rounded-xl border p-4">
+              <p className="vf-security-command__label text-xs font-bold">마지막 수신</p>
+              <p className="vf-security-command__value mt-1 text-sm font-black">
                 {formatTimestamp(data.lastReceivedAt)}
               </p>
             </article>
@@ -193,7 +193,7 @@ export function CspReportMonitor() {
 
           <div className="mt-5 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <h3 className="text-sm font-black text-slate-950">
+              <h3 className="vf-security-command__section-title text-sm font-black">
                 지시문별 보관 건수
               </h3>
               {data.byDirective.length > 0 ? (
@@ -201,24 +201,24 @@ export function CspReportMonitor() {
                   {data.byDirective.map((item) => (
                     <li
                       key={item.directive}
-                      className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="vf-security-command__directive flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
                     >
-                      <code className="text-slate-700">{item.directive}</code>
-                      <span className="font-black text-slate-950">
+                      <code className="vf-security-command__detail">{item.directive}</code>
+                      <span className="vf-security-command__value font-black">
                         {item.count}건
                       </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">
+                <p className="vf-security-command__notice vf-security-command__notice--good mt-3 rounded-lg border p-4 text-sm">
                   현재까지 수신된 CSP 위반이 없습니다.
                 </p>
               )}
             </div>
 
             <div>
-              <h3 className="text-sm font-black text-slate-950">
+              <h3 className="vf-security-command__section-title text-sm font-black">
                 최근 위반 내역
               </h3>
               {data.reports.length > 0 ? (
@@ -226,27 +226,27 @@ export function CspReportMonitor() {
                   {data.reports.map((report, index) => (
                     <li
                       key={`${report.receivedAt}-${index}`}
-                      className="rounded-xl border border-amber-200 bg-amber-50/60 p-4"
+                      className="vf-security-command__report rounded-xl border p-4"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <code className="text-xs font-bold text-amber-900">
+                        <code className="vf-security-command__report-code text-xs font-bold">
                           {report.effectiveDirective ?? "unknown"}
                         </code>
-                        <span className="text-xs text-slate-500">
+                        <span className="vf-security-command__label text-xs">
                           {formatTimestamp(report.receivedAt)}
                         </span>
                       </div>
-                      <p className="mt-2 break-all text-xs text-slate-700">
+                      <p className="vf-security-command__detail mt-2 break-all text-xs">
                         차단 후보: {report.blockedUri ?? "정보 없음"}
                       </p>
-                      <p className="mt-1 break-all text-xs text-slate-500">
+                      <p className="vf-security-command__label mt-1 break-all text-xs">
                         위치: {locationLabel(report)}
                       </p>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <p className="vf-security-command__notice mt-3 rounded-lg border p-4 text-sm">
                   최근 위반 내역이 없습니다.
                 </p>
               )}

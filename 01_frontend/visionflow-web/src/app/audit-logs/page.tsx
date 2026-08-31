@@ -85,6 +85,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
     OPERATOR_LOGOUT: "운영자 로그아웃",
     OPERATOR_SESSION_REVOKED: "운영자 세션 강제 종료",
     OPERATOR_SESSIONS_BULK_REVOKED: "운영자 다른 세션 일괄 종료",
+    PRIVACY_SNAPSHOT_DELETED: "개인영상 스냅샷 삭제",
     AUDIT_LOG_EXPORTED: "감사 로그 CSV 내보내기",
     AUDIT_LOG_RETENTION_EXECUTED: "감사 로그 보존 정리",
 };
@@ -97,6 +98,7 @@ const ENTITY_LABELS: Record<AuditEntityType, string> = {
     GEOFENCE: "지오펜스",
     INCIDENT: "Incident",
     DEMO_SCENARIO: "시연 시나리오",
+    AI_INFERENCE_EVENT: "AI 추론 이벤트",
     OPERATOR_SESSION: "운영자 세션",
     AUDIT_LOG: "감사 로그",
 };
@@ -273,19 +275,23 @@ export default async function AuditLogsPage({
     const data = result.data;
 
     return (
-        <div className="space-y-6">
-            <header>
-                <p className="text-sm font-semibold text-sky-700">OPERATION AUDIT</p>
-                <h1 className="mt-1 text-3xl font-bold text-slate-950">
+        <div data-audit-command-center className="vf-audit-command space-y-6">
+            <header className="vf-audit-command__hero">
+                <p className="vf-command-eyebrow">EVIDENCE &amp; COMPLIANCE</p>
+                <h1 className="vf-audit-command__title mt-1 text-3xl font-bold text-slate-950">
                     운영자 행위 감사 로그
                 </h1>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="vf-audit-command__lede mt-2 text-sm text-slate-600">
                     비행 세션, 지오펜스, Incident, 발표 시연과 운영자 인증 이력을
                     시간순으로 확인합니다.
                 </p>
+                <div className="vf-audit-command__hero-status" aria-label="감사 증적 상태">
+                    <span>CHAIN OF CUSTODY</span>
+                    <span>READ ONLY</span>
+                </div>
             </header>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="vf-audit-command__retention rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <p className="text-sm font-semibold text-slate-900">
@@ -321,7 +327,7 @@ export default async function AuditLogsPage({
                     ) : null}
                 </div>
                 {retention.data ? (
-                    <div className="mt-4 grid gap-3 text-xs text-slate-500 md:grid-cols-3">
+                    <div className="vf-audit-command__retention-metrics mt-4 grid gap-3 text-xs text-slate-500 md:grid-cols-3">
                         <p>
                             기준 시각: {formatKoreanDateTime(retention.data.cutoff)}
                         </p>
@@ -336,20 +342,20 @@ export default async function AuditLogsPage({
                     </div>
                 ) : null}
                 {retention.error ? (
-                    <p className="mt-3 text-sm text-red-700">{retention.error}</p>
+                    <p className="vf-audit-command__warning mt-3 text-sm text-red-700">{retention.error}</p>
                 ) : null}
             </section>
 
             <form
                 action="/audit-logs"
-                className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-4"
+                className="vf-audit-command__filters grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-4"
             >
                 <label className="text-sm font-medium text-slate-700">
                     작업
                     <select
                         name="action"
                         defaultValue={parsed.values.action}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="vf-audit-command__input mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
                         <option value="">전체 작업</option>
                         {AUDIT_ACTIONS.map((action) => (
@@ -365,7 +371,7 @@ export default async function AuditLogsPage({
                     <select
                         name="entityType"
                         defaultValue={parsed.values.entityType}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="vf-audit-command__input mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
                         <option value="">전체 대상</option>
                         {AUDIT_ENTITY_TYPES.map((entityType) => (
@@ -382,7 +388,7 @@ export default async function AuditLogsPage({
                         name="entityId"
                         defaultValue={parsed.values.entityId}
                         maxLength={100}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="vf-audit-command__input mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     />
                 </label>
 
@@ -393,7 +399,7 @@ export default async function AuditLogsPage({
                         defaultValue={parsed.values.actor}
                         maxLength={100}
                         placeholder="local-operator"
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="vf-audit-command__input mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     />
                 </label>
 
@@ -403,7 +409,7 @@ export default async function AuditLogsPage({
                         type="date"
                         name="from"
                         defaultValue={parsed.values.from}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="vf-audit-command__input mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     />
                 </label>
 
@@ -413,7 +419,7 @@ export default async function AuditLogsPage({
                         type="date"
                         name="to"
                         defaultValue={parsed.values.to}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="vf-audit-command__input mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     />
                 </label>
 
@@ -422,7 +428,7 @@ export default async function AuditLogsPage({
                     <select
                         name="size"
                         defaultValue={parsed.values.size}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="vf-audit-command__input mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
                         {[20, 30, 50, 100].map((size) => (
                             <option key={size} value={size}>
@@ -432,16 +438,16 @@ export default async function AuditLogsPage({
                     </select>
                 </label>
 
-                <div className="flex items-end gap-2">
+                <div className="vf-audit-command__filter-actions flex items-end gap-2">
                     <button
                         type="submit"
-                        className="rounded-lg bg-slate-950 px-5 py-2 font-semibold text-white hover:bg-slate-800"
+                        className="vf-audit-command__submit rounded-lg bg-slate-950 px-5 py-2 font-semibold text-white hover:bg-slate-800"
                     >
                         조회
                     </button>
                     <Link
                         href="/audit-logs"
-                        className="rounded-lg border border-slate-300 px-5 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                        className="vf-audit-command__reset rounded-lg border border-slate-300 px-5 py-2 font-semibold text-slate-700 hover:bg-slate-50"
                     >
                         초기화
                     </Link>
@@ -450,13 +456,13 @@ export default async function AuditLogsPage({
             </form>
 
             {result.error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                <div className="vf-audit-command__error rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
                     {result.error}
                 </div>
             ) : null}
 
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <section className="vf-audit-command__records overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="vf-audit-command__records-header flex items-center justify-between border-b border-slate-200 px-5 py-4">
                     <h2 className="font-bold text-slate-900">감사 기록</h2>
                     <p className="text-sm text-slate-500">
                         총 {data?.totalElements ?? 0}건
@@ -464,8 +470,8 @@ export default async function AuditLogsPage({
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm">
-                        <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <table className="vf-audit-command__table min-w-full divide-y divide-slate-200 text-sm">
+                        <thead className="vf-audit-command__table-head bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                             <tr>
                                 <th className="px-4 py-3">시각</th>
                                 <th className="px-4 py-3">처리자</th>
@@ -477,7 +483,7 @@ export default async function AuditLogsPage({
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {data?.content.map((item) => (
-                                <tr key={item.id} className="align-top hover:bg-slate-50">
+                                <tr key={item.id} className="vf-audit-command__row align-top hover:bg-slate-50">
                                     <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                                         {formatKoreanDateTime(item.occurredAt)}
                                     </td>
@@ -485,7 +491,7 @@ export default async function AuditLogsPage({
                                         {item.actor}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-800">
+                                        <span className="vf-audit-command__action rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-800">
                                             {ACTION_LABELS[item.action]}
                                         </span>
                                     </td>
@@ -520,7 +526,7 @@ export default async function AuditLogsPage({
                 </div>
 
                 {data ? (
-                    <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+                    <div className="vf-audit-command__pagination flex items-center justify-between border-t border-slate-200 px-5 py-4">
                         <p className="text-sm text-slate-500">
                             {data.totalPages === 0 ? 0 : data.page + 1} / {data.totalPages} 페이지
                         </p>
@@ -528,7 +534,7 @@ export default async function AuditLogsPage({
                             {!data.first ? (
                                 <Link
                                     href={pageHref(parsed.values, data.page - 1)}
-                                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                    className="vf-audit-command__page-link rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                                 >
                                     이전
                                 </Link>
@@ -536,7 +542,7 @@ export default async function AuditLogsPage({
                             {!data.last ? (
                                 <Link
                                     href={pageHref(parsed.values, data.page + 1)}
-                                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                    className="vf-audit-command__page-link rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                                 >
                                     다음
                                 </Link>

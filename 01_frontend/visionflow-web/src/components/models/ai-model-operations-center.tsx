@@ -105,7 +105,7 @@ function formatBytes(value: number | null): string {
 
 function MetricCard({ label, value, detail, accent }: { label: string; value: string; detail: string; accent: string }) {
   return (
-    <article className={`rounded-2xl border p-5 ${accent}`}>
+    <article className={`vf-model-command__metric rounded-2xl border p-5 ${accent}`}>
       <p className="text-xs font-bold uppercase tracking-[0.16em] opacity-70">{label}</p>
       <p className="mt-3 break-words text-3xl font-black tabular-nums">{value}</p>
       <p className="mt-2 text-sm opacity-75">{detail}</p>
@@ -115,19 +115,19 @@ function MetricCard({ label, value, detail, accent }: { label: string; value: st
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <dt className="text-xs font-bold text-slate-500">{label}</dt>
-      <dd className="mt-2 break-words font-bold text-slate-950">{value}</dd>
+    <div className="vf-model-command__detail rounded-xl border p-4">
+      <dt className="vf-model-command__detail-label text-xs font-bold">{label}</dt>
+      <dd className="vf-model-command__detail-value mt-2 break-words font-bold">{value}</dd>
     </div>
   );
 }
 
 function Panel({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-black text-slate-950">{title}</h2>
-      <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
-      <div className="mt-6">{children}</div>
+    <section className="vf-model-command__panel rounded-3xl border p-6">
+      <h2 className="vf-model-command__panel-title text-xl font-black">{title}</h2>
+      <p className="vf-model-command__panel-description mt-1 text-sm leading-6">{description}</p>
+      <div className="vf-model-command__panel-body mt-6">{children}</div>
     </section>
   );
 }
@@ -223,38 +223,38 @@ export function AiModelOperationsCenter() {
 
   const healthStatus = metrics?.health.status ?? (metrics?.running ? "NORMAL" : "WAITING_INPUT");
   const healthTone = healthStatus === "CRITICAL" || healthStatus === "STOPPED"
-    ? "border-rose-400/30 bg-rose-500/15 text-rose-100"
+    ? "vf-model-command__health--critical"
     : healthStatus === "WARNING"
-      ? "border-amber-400/30 bg-amber-500/15 text-amber-100"
-      : "border-emerald-400/30 bg-emerald-500/15 text-emerald-100";
+      ? "vf-model-command__health--warning"
+      : "vf-model-command__health--normal";
   const sourceFailureCount = Object.keys(sourceErrors).length;
 
   return (
-    <div data-ai-model-operations-center className="mx-auto max-w-[1580px] space-y-7">
-      <header className="flex flex-wrap items-end justify-between gap-5">
+    <div data-ai-model-operations-center data-ai-model-command-center className="vf-model-command mx-auto max-w-[1580px] space-y-7">
+      <header className="vf-model-command__hero flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-700">AI Operations Intelligence</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">AI 모델 운영 센터</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">현재 적재 모델의 출처·GPU 런타임·추론 성능·입력 큐·분석 스트림과 최근 경보를 인증된 읽기 데이터로 통합합니다.</p>
+          <p className="vf-model-command__eyebrow text-xs font-black uppercase tracking-[0.24em]">AI Operations Intelligence</p>
+          <h1 className="vf-model-command__title mt-2 text-3xl font-black tracking-tight sm:text-4xl">AI 모델 운영 센터</h1>
+          <p className="vf-model-command__lede mt-3 max-w-3xl text-sm leading-6">현재 적재 모델의 출처·GPU 런타임·추론 성능·입력 큐·분석 스트림과 최근 경보를 인증된 읽기 데이터로 통합합니다.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+        <div className="vf-model-command__hero-actions flex items-center gap-3">
+          <label className="vf-model-command__auto-refresh flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold">
             <input type="checkbox" checked={autoRefresh} onChange={(event) => setAutoRefresh(event.target.checked)} />
             30초 자동 갱신
           </label>
-          <button type="button" onClick={() => void refresh()} disabled={refreshing} className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">
+          <button type="button" onClick={() => void refresh()} disabled={refreshing} className="vf-model-command__refresh rounded-xl px-5 py-3 text-sm font-bold disabled:opacity-50">
             {refreshing ? "갱신 중" : "지금 갱신"}
           </button>
         </div>
       </header>
 
-      <section className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-950 to-indigo-950 p-6 text-white shadow-xl sm:p-8">
+      <section className="vf-model-command__summary rounded-[2rem] p-6 text-white sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Active Model Summary</p>
             <h2 className="mt-2 text-2xl font-black">현재 AI 런타임</h2>
           </div>
-          <span className={`rounded-full border px-4 py-2 text-sm font-bold ${healthTone}`}>{HEALTH_LABELS[healthStatus] ?? healthStatus}</span>
+          <span className={`vf-model-command__health rounded-full border px-4 py-2 text-sm font-bold ${healthTone}`}>{HEALTH_LABELS[healthStatus] ?? healthStatus}</span>
         </div>
         <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Active Model" value={model?.profile ?? metrics?.modelName ?? "—"} detail={model?.localFile ? "검증된 로컬 모델" : "모델 상태 확인 필요"} accent="border-cyan-400/25 bg-cyan-500/10" />
@@ -264,17 +264,17 @@ export function AiModelOperationsCenter() {
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-2" aria-live="polite">
           {(Object.keys(SOURCE_LABELS) as SourceKey[]).map((key) => (
-            <span key={key} title={sourceErrors[key]} className={`rounded-full border px-3 py-1.5 text-xs font-bold ${sourceErrors[key] ? "border-amber-400/30 bg-amber-500/10 text-amber-100" : "border-emerald-400/30 bg-emerald-500/10 text-emerald-100"}`}>
+            <span key={key} title={sourceErrors[key]} className={`vf-model-command__source-chip rounded-full border px-3 py-1.5 text-xs font-bold ${sourceErrors[key] ? "vf-model-command__source-chip--degraded" : "vf-model-command__source-chip--healthy"}`}>
               {SOURCE_LABELS[key]} · {sourceErrors[key] ? "이전 정상값" : "정상"}
             </span>
           ))}
-          <span className="ml-auto text-xs text-slate-300">{formatDateTime(lastUpdatedAt)} 갱신</span>
+          <span className="vf-model-command__timestamp ml-auto text-xs">{formatDateTime(lastUpdatedAt)} 갱신</span>
         </div>
-        <p className="mt-4 text-sm text-slate-300">{sourceFailureCount > 0 ? `${sourceFailureCount}개 소스에 부분 장애가 있어 마지막 정상 데이터를 유지합니다.` : "다섯 개 소스가 모두 정상이며 최신 검증 데이터를 표시합니다."}</p>
+        <p className="vf-model-command__summary-message mt-4 text-sm">{sourceFailureCount > 0 ? `${sourceFailureCount}개 소스에 부분 장애가 있어 마지막 정상 데이터를 유지합니다.` : "다섯 개 소스가 모두 정상이며 최신 검증 데이터를 표시합니다."}</p>
       </section>
 
       {loading && !model && !metrics ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center font-semibold text-slate-500">AI 모델 운영 데이터를 불러오고 있습니다.</div>
+        <div className="vf-model-command__loading rounded-3xl border p-10 text-center font-semibold">AI 모델 운영 데이터를 불러오고 있습니다.</div>
       ) : (
         <div className="grid gap-7 xl:grid-cols-2">
           <Panel title="모델 신원과 판정 설정" description="민감한 호스트 경로는 제외하고 모델 해시·크기·클래스와 추론 임계값만 표시합니다.">
@@ -287,7 +287,7 @@ export function AiModelOperationsCenter() {
               <Detail label="IOU · 입력 크기" value={`${formatNumber(model?.iou, 2)} · ${formatNumber(model?.imageSize)}px`} />
             </dl>
             <div className="mt-4 flex flex-wrap gap-2">
-              {model?.classes.map((item) => <span key={item.id} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">{item.id} · {item.name}</span>)}
+              {model?.classes.map((item) => <span key={item.id} className="vf-model-command__class-chip rounded-full px-3 py-1.5 text-xs font-bold">{item.id} · {item.name}</span>)}
               {model && model.classes.length === 0 ? <span className="text-sm text-slate-500">등록된 클래스가 없습니다.</span> : null}
             </div>
           </Panel>
@@ -314,7 +314,7 @@ export function AiModelOperationsCenter() {
               <Detail label="P95 · 최대" value={metrics ? `${formatNumber(metrics.p95InferenceMs, 1)} · ${formatNumber(metrics.maximumInferenceMs, 1)}ms` : "—"} />
               <Detail label="롤링 표본" value={metrics ? `${metrics.rollingSampleCount}개 · ${formatNumber(metrics.rollingWindowSeconds)}초` : "—"} />
             </dl>
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="vf-model-command__runtime-note mt-4 rounded-xl border p-4 text-sm">
               <p className="font-bold">{metrics?.health.reasonCodes.map((code) => REASON_LABELS[code] ?? code).join(" · ") || "성능 이상 징후 없음"}</p>
               <p className="mt-1 text-slate-500">마지막 처리 {formatDateTime(metrics?.lastProcessedAt ?? null)}</p>
             </div>
@@ -346,9 +346,9 @@ export function AiModelOperationsCenter() {
 
           <Panel title="연결된 운영 화면" description="모델 상태를 실제 프레임·통합 이벤트·카메라 운영 문맥에서 이어서 확인합니다.">
             <div className="grid gap-3 sm:grid-cols-3">
-              <Link href="/ai-preview" className="rounded-xl bg-slate-950 px-4 py-4 text-center font-bold text-white">AI 미리보기</Link>
-              <Link href="/events" className="rounded-xl border border-slate-300 px-4 py-4 text-center font-bold text-slate-800">이벤트 관제</Link>
-              <Link href="/cameras" className="rounded-xl border border-slate-300 px-4 py-4 text-center font-bold text-slate-800">카메라 운영</Link>
+              <Link href="/ai-preview" className="vf-model-command__link vf-model-command__link--primary rounded-xl px-4 py-4 text-center font-bold">AI 미리보기</Link>
+              <Link href="/events" className="vf-model-command__link rounded-xl border px-4 py-4 text-center font-bold">이벤트 관제</Link>
+              <Link href="/cameras" className="vf-model-command__link rounded-xl border px-4 py-4 text-center font-bold">카메라 운영</Link>
             </div>
           </Panel>
         </div>

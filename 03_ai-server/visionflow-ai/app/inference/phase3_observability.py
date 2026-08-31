@@ -9,6 +9,9 @@ from app.domain import InferencePacket
 from app.inference.phase3_depth_enrichment import DepthEnrichmentResult
 from app.inference.phase3_pose import Phase3PoseFrameResult
 from app.inference.phase3_ppe_depth import PpeDepthFrameResult
+from app.inference.phase3_segmentation import (
+    Phase3SegmentationFrameResult,
+)
 from app.phase3_reporting import Phase3EventReporterLike
 
 
@@ -18,6 +21,8 @@ class Phase3AnalysisLike(Protocol):
     ppe_sampled: bool
     pose: Phase3PoseFrameResult | None
     pose_sampled: bool
+    segmentation: Phase3SegmentationFrameResult | None
+    segmentation_sampled: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +32,11 @@ class Phase3ObservabilitySnapshot:
     pose_samples: int
     pose_assigned: int
     pose_unassigned: int
+    segmentation_samples: int
+    segmentation_instances: int
+    segmentation_assigned: int
+    segmentation_unassigned: int
+    segmentation_mask_area_pixels: float
     depth_trigger_attempts: int
     depth_triggers_accepted: int
     depth_triggers_rejected: int
@@ -49,6 +59,11 @@ class Phase3ConsoleObserver:
         self._pose_samples = 0
         self._pose_assigned = 0
         self._pose_unassigned = 0
+        self._segmentation_samples = 0
+        self._segmentation_instances = 0
+        self._segmentation_assigned = 0
+        self._segmentation_unassigned = 0
+        self._segmentation_mask_area_pixels = 0.0
         self._depth_trigger_attempts = 0
         self._depth_triggers_accepted = 0
         self._depth_triggers_rejected = 0
@@ -71,6 +86,28 @@ class Phase3ConsoleObserver:
                 if pose is not None:
                     self._pose_assigned += pose.assigned_count
                     self._pose_unassigned += pose.unassigned_count
+
+            segmentation_sampled = bool(
+                getattr(analysis, "segmentation_sampled", False)
+            )
+            segmentation = getattr(analysis, "segmentation", None)
+
+            if segmentation_sampled:
+                self._segmentation_samples += 1
+
+                if segmentation is not None:
+                    self._segmentation_instances += (
+                        segmentation.instance_count
+                    )
+                    self._segmentation_assigned += (
+                        segmentation.assigned_count
+                    )
+                    self._segmentation_unassigned += (
+                        segmentation.unassigned_count
+                    )
+                    self._segmentation_mask_area_pixels += (
+                        segmentation.total_mask_area_pixels
+                    )
 
             if analysis.ppe is None:
                 return
@@ -157,6 +194,15 @@ class Phase3ConsoleObserver:
                 pose_samples=self._pose_samples,
                 pose_assigned=self._pose_assigned,
                 pose_unassigned=self._pose_unassigned,
+                segmentation_samples=self._segmentation_samples,
+                segmentation_instances=self._segmentation_instances,
+                segmentation_assigned=self._segmentation_assigned,
+                segmentation_unassigned=(
+                    self._segmentation_unassigned
+                ),
+                segmentation_mask_area_pixels=(
+                    self._segmentation_mask_area_pixels
+                ),
                 depth_trigger_attempts=self._depth_trigger_attempts,
                 depth_triggers_accepted=self._depth_triggers_accepted,
                 depth_triggers_rejected=self._depth_triggers_rejected,
@@ -173,6 +219,13 @@ class Phase3ConsoleObserver:
                 f"POSE_SAMPLES={snapshot.pose_samples} "
                 f"POSE_ASSIGNED={snapshot.pose_assigned} "
                 f"POSE_UNASSIGNED={snapshot.pose_unassigned} "
+                f"SEGMENTATION_SAMPLES={snapshot.segmentation_samples} "
+                f"SEGMENTATION_INSTANCES={snapshot.segmentation_instances} "
+                f"SEGMENTATION_ASSIGNED={snapshot.segmentation_assigned} "
+                "SEGMENTATION_UNASSIGNED="
+                f"{snapshot.segmentation_unassigned} "
+                "SEGMENTATION_MASK_AREA_PX="
+                f"{snapshot.segmentation_mask_area_pixels:.3f} "
                 f"DEPTH_TRIGGER_ATTEMPTS={snapshot.depth_trigger_attempts} "
                 f"DEPTH_TRIGGERS_ACCEPTED={snapshot.depth_triggers_accepted} "
                 f"DEPTH_TRIGGERS_REJECTED={snapshot.depth_triggers_rejected} "

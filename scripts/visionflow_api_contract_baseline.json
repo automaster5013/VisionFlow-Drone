@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "project": "visionflow",
-  "baselineCommit": "083e386a4b9e12b1da4893695763ec254730e22d",
+  "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 79,
-    "frontend": 79,
-    "ai": 9
+    "backend": 81,
+    "frontend": 83,
+    "ai": 11
   },
   "frontendLocalOperations": [
     {
@@ -22,6 +22,11 @@
       "method": "POST",
       "path": "/api/security/csp-report",
       "reason": "브라우저 CSP report 수집"
+    },
+    {
+      "method": "GET",
+      "path": "/api/mobile/runtime-network",
+      "reason": "Next.js 로컬 모바일 HTTPS 런타임 네트워크·인증 상태"
     }
   ],
   "frontendSpecialMappings": [
@@ -264,6 +269,17 @@
           "path": "/api/security/pairings/{}/exchange"
         }
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/password",
+      "targets": [
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/security/password"
+        }
+      ]
     }
   ],
   "expectedBackendOnlyOperations": [
@@ -276,11 +292,6 @@
       "method": "POST",
       "path": "/api/ai/events",
       "reason": "AI 서버의 내부 이벤트 저장 입력"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/ai/events/{}/snapshot",
-      "reason": "AI 서버의 내부 스냅숏 업로드"
     },
     {
       "method": "POST",
@@ -309,6 +320,16 @@
       "method": "GET",
       "path": "/api/streams/latest.jpg",
       "reason": "직접 단일 프레임 점검용"
+    },
+    {
+      "method": "GET",
+      "path": "/api/ingest/dji/status",
+      "reason": "DJI Android Bridge 전용 ingest 상태 점검 API"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ingest/dji/stream",
+      "reason": "DJI Android Bridge H.264/H.265 encoded stream 직접 수집 API"
     }
   ],
   "advisoryAiOnlyOperations": [],

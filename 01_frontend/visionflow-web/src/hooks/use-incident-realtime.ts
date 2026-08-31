@@ -72,7 +72,7 @@ export function useIncidentRealtime(
 
             onWebSocketError: (event) => {
                 if (!active) return;
-                console.error("Incident WebSocket 오류:", event);
+                console.warn("Incident WebSocket 연결 대기:", event);
                 setConnectionStatus("ERROR");
             },
 

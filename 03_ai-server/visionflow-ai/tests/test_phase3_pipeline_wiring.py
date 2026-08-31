@@ -10,6 +10,7 @@ from app.domain import (
     Detection,
     FramePacket,
     InferencePacket,
+    SnapshotPolicy,
     VideoSourceType,
 )
 from app.pipeline import InferencePipeline
@@ -145,7 +146,7 @@ def _pipeline(
         max_frames=1,
         reporter=reporter,
         frame_hub=frame_hub,
-        snapshot_enabled=False,
+        snapshot_policy=SnapshotPolicy.OFF,
         snapshot_jpeg_quality=85,
         event_min_consecutive_frames=1,
         event_cooldown_seconds=0.0,

@@ -6,6 +6,8 @@ on:
       - API contract, security, and system traceability audit
     types:
       - completed
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -290,3 +292,80 @@ jobs:
             echo "- Tag: \`${{ steps.image.outputs.ref }}\`"
             echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify AI image runtime contract
+        if: matrix.component == 'ai'
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}
+          SOURCE_SHA: ${{ needs.prepare.outputs.full_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull "${IMAGE_REF}" >/dev/null
+
+          REVISION="$(
+            docker image inspect \
+              --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
+              "${IMAGE_REF}"
+          )"
+          if [[ "${REVISION}" != "${SOURCE_SHA}" ]]; then
+            echo "::error::AI image revision label mismatch: expected=${SOURCE_SHA} actual=${REVISION}"
+            exit 1
+          fi
+
+          docker run --rm --entrypoint python "${IMAGE_REF}" -c "import pathlib, shutil, torch; from app.sources import create_dji_live_source; from app.sources.dji_android_bridge import DjiAndroidBridgeSource; assert torch.__version__ == '2.12.1+cu130', torch.__version__; assert torch.version.cuda == '13.0', torch.version.cuda; assert shutil.which('ffmpeg'), 'ffmpeg missing'; assert callable(create_dji_live_source); assert DjiAndroidBridgeSource.__name__ == 'DjiAndroidBridgeSource'; assert not list(pathlib.Path('/app/models').glob('*.pt')), 'model weights must remain external'; print('AI_IMAGE_RUNTIME_CONTRACT=PASS')"
+
+          {
+            echo
+            echo "### AI runtime contract"
+            echo
+            echo "- Revision label: \`${REVISION}\`"
+            echo "- PyTorch: \`2.12.1+cu130\`"
+            echo "- CUDA wheel metadata: \`13.0\`"
+            echo "- FFmpeg: present"
+            echo "- DJI Android Bridge source: present"
+            echo "- Model weights: external"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+
+  verify-release-set:
+    name: Verify immutable release set
+    needs:
+      - prepare
+      - publish
+    if: needs.prepare.outputs.release_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Verify all component SHA tags exist
+        env:
+          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
+          FULL_SHA: ${{ needs.prepare.outputs.full_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${{ vars.DOCKERHUB_USERNAME }}/${DOCKERHUB_REPOSITORY}"
+
+          {
+            echo "### Immutable Docker Hub release set"
+            echo
+            echo "- Source commit: \`${FULL_SHA}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          for component in frontend backend ai; do
+            REF="${IMAGE}:${component}-sha-${SHORT_SHA}"
+            docker buildx imagetools inspect "${REF}" >/dev/null
+            echo "- ${component}: \`${REF}\`" >> "${GITHUB_STEP_SUMMARY}"
+          done
+
+          echo "RELEASE_SET=PASS"

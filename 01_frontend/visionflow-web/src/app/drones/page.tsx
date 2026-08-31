@@ -216,15 +216,15 @@ export default async function DronesPage({ searchParams }: DronesPageProps) {
   ].join(":");
 
   return (
-      <main className="p-6">
-        <DroneFleetControl
-          key={controlKey}
-          initialDrones={drones}
-          initialSelectedDroneId={initialSelectedDroneId}
-          initialReplaySessionId={initialReplaySessionId}
-          initialIncidentFocus={initialIncidentFocus}
-          initialFleetClearance={initialFleetClearance}
-        />
-      </main>
+    <div className="mx-auto w-full max-w-[1800px]">
+      <DroneFleetControl
+        key={controlKey}
+        initialDrones={drones}
+        initialSelectedDroneId={initialSelectedDroneId}
+        initialReplaySessionId={initialReplaySessionId}
+        initialIncidentFocus={initialIncidentFocus}
+        initialFleetClearance={initialFleetClearance}
+      />
+    </div>
   );
 }

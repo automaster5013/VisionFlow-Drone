@@ -25,6 +25,7 @@ def _report_settings(*, enabled: bool = True, report: bool = True):
         report_timeout_seconds=2.5,
         report_max_retries=2,
         report_queue_capacity=32,
+        ai_internal_key="stage2-test-ai-internal-key-0123456789abcdef",
     )
 
 
@@ -62,6 +63,7 @@ def test_optional_phase3_reporter_uses_runtime_reporting_settings(
         "timeout_seconds": 2.5,
         "max_retries": 2,
         "queue_capacity": 32,
+        "internal_api_key": "stage2-test-ai-internal-key-0123456789abcdef",
     }
 
 

@@ -13,6 +13,8 @@ from app.model_evaluation import (
     extract_confusion_matrix,
     extract_image_metrics,
     extract_per_class_metrics,
+    label_path,
+    load_dataset_inventory,
     load_dataset_spec,
     normalize_names,
     validate_mapping,
@@ -111,6 +113,31 @@ class ModelEvaluationTest(unittest.TestCase):
             self.assertEqual(first["imageCount"], 1)
             self.assertEqual(first["labelFileCount"], 1)
             self.assertNotEqual(first["fingerprintSha256"], second["fingerprintSha256"])
+
+    def test_dataset_inventory_exposes_same_sorted_images_as_spec(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            image_dir = root / "images" / "test"
+            label_dir = root / "labels" / "test"
+            image_dir.mkdir(parents=True)
+            label_dir.mkdir(parents=True)
+            for name in ("b.jpg", "a.jpg"):
+                (image_dir / name).write_bytes(b"image")
+                (label_dir / Path(name).with_suffix(".txt")).write_text(
+                    "0 0.5 0.5 0.2 0.2\n", encoding="utf-8"
+                )
+            data_yaml = root / "data.yaml"
+            data_yaml.write_text(
+                "path: .\ntest: images/test\nnames:\n  0: person\n",
+                encoding="utf-8",
+            )
+
+            inventory, images = load_dataset_inventory(data_yaml, "test", "labels")
+            legacy = load_dataset_spec(data_yaml, "test", "labels")
+
+            self.assertEqual(inventory, legacy)
+            self.assertEqual([path.name for path in images], ["a.jpg", "b.jpg"])
+            self.assertEqual(label_path(images[0]), label_dir / "a.txt")
 
     def test_model_and_dataset_names_must_match_exactly(self) -> None:
         compare_model_and_dataset_names({0: "person"}, {0: "person"})

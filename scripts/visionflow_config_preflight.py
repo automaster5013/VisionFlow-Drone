@@ -12,6 +12,9 @@ REQUIRED_SECRET_NAMES = (
     "VISIONFLOW_ADMIN_KEY",
     "VISIONFLOW_AI_INTERNAL_KEY",
 )
+OPTIONAL_SECRET_NAMES = (
+    "VISIONFLOW_DJI_BRIDGE_KEY",
+)
 PLACEHOLDER_MARKERS = (
     "change_me",
     "changeme",
@@ -110,6 +113,36 @@ def validate_security_configuration(
 
         validated[name] = value
 
+    for name in OPTIONAL_SECRET_NAMES:
+        lines = occurrences.get(name, [])
+        if len(lines) > 1:
+            failures.append(
+                f"{name}: 중복 선언되었습니다. lines={','.join(map(str, lines))}"
+            )
+            continue
+        if not lines:
+            continue
+
+        value = values.get(name, "")
+        if not value:
+            continue
+        if any(character.isspace() for character in value):
+            failures.append(f"{name}: 공백 문자를 포함할 수 없습니다.")
+            continue
+        if len(value) < MIN_SECRET_LENGTH:
+            failures.append(
+                f"{name}: 최소 {MIN_SECRET_LENGTH}자 이상이어야 합니다. "
+                f"actual={len(value)}"
+            )
+            continue
+
+        normalized = value.casefold()
+        if any(marker in normalized for marker in PLACEHOLDER_MARKERS):
+            failures.append(f"{name}: 예시·placeholder 값을 사용할 수 없습니다.")
+            continue
+
+        validated[name] = value
+
     reverse_index: dict[str, list[str]] = {}
     for name, value in validated.items():
         reverse_index.setdefault(value, []).append(name)
@@ -180,7 +213,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Environment file: {env_path}")
     for name in REQUIRED_SECRET_NAMES:
         print(f"[PASS] {name}: present; length={len(values[name])}")
-    print("[PASS] secret-uniqueness: all required keys are distinct")
+    for name in OPTIONAL_SECRET_NAMES:
+        value = values.get(name, "")
+        if value:
+            print(f"[PASS] {name}: present; length={len(value)}")
+        else:
+            print(f"[SKIP] {name}: not configured")
+    print("[PASS] secret-uniqueness: all configured keys are distinct")
     print("Safety: secret values were not printed or written.")
     return 0
 

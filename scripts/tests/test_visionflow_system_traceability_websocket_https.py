@@ -40,6 +40,33 @@ class SystemTraceabilityWebSocketHttpsTest(unittest.TestCase):
                 self.assertNotIn("ws://localhost:8080/ws", source)
                 self.assertNotIn("NEXT_PUBLIC_WEBSOCKET_URL", source)
 
+    def test_reconnectable_transport_failures_do_not_raise_dev_overlay(self) -> None:
+        contracts = {
+            "01_frontend/visionflow-web/src/hooks/use-ai-alert-realtime.ts": (
+                'console.warn("AI 경보 WebSocket 연결 대기:", event)',
+                'console.error("AI 경보 WebSocket 오류:", event)',
+            ),
+            "01_frontend/visionflow-web/src/hooks/use-incident-realtime.ts": (
+                'console.warn("Incident WebSocket 연결 대기:", event)',
+                'console.error("Incident WebSocket 오류:", event)',
+            ),
+            "01_frontend/visionflow-web/src/hooks/use-drone-fleet-telemetry.ts": (
+                'console.warn("WebSocket 연결 대기:", event)',
+                'console.error("WebSocket 오류:", event)',
+            ),
+            "01_frontend/visionflow-web/src/hooks/use-drone-telemetry.ts": (
+                'console.warn(\n                "WebSocket connection pending:",',
+                'console.error(\n                "WebSocket connection error:",',
+            ),
+        }
+
+        for relative_path, (warning_contract, error_contract) in contracts.items():
+            with self.subTest(path=relative_path):
+                source = self.read(relative_path)
+                self.assertIn(warning_contract, source)
+                self.assertNotIn(error_contract, source)
+                self.assertIn('setConnectionStatus("ERROR")', source)
+
     def test_caddy_routes_health_and_websocket_before_frontend(self) -> None:
         caddy = self.read("infrastructure/mobile-https/Caddyfile")
 

@@ -133,16 +133,16 @@ export function OperatorConsoleSettingsCenter() {
       : "로그인 필요";
 
   return (
-    <div data-operator-console-settings-center className="mx-auto max-w-[1450px] space-y-7">
-      <header className="flex flex-wrap items-end justify-between gap-5">
+    <div data-operator-console-settings-center data-settings-command className="vf-settings-command mx-auto max-w-[1500px] space-y-7">
+      <header className="vf-settings-command__hero flex flex-wrap items-center justify-between gap-5">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-700">
+          <p className="vf-settings-command__eyebrow text-xs font-black uppercase tracking-[0.24em] text-cyan-700">
             Operator console preferences
           </p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+          <h1 className="vf-settings-command__title mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
             운영 설정 센터
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className="vf-settings-command__lede mt-3 max-w-3xl text-sm leading-6 text-slate-600">
             이벤트·통계·AI 모델 관제 화면의 시작 기본값을 현재 브라우저에만 안전하게 저장합니다.
           </p>
         </div>
@@ -150,14 +150,14 @@ export function OperatorConsoleSettingsCenter() {
           <button
             type="button"
             onClick={reset}
-            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+            className="vf-settings-command__action rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
           >
             기본값 복원
           </button>
           <button
             type="button"
             onClick={save}
-            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800"
+            className="vf-settings-command__action vf-settings-command__action--primary rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800"
           >
             설정 저장
           </button>

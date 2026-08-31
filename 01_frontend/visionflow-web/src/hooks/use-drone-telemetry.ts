@@ -89,8 +89,8 @@ export function useDroneTelemetry(
         };
 
         client.onWebSocketError = (event) => {
-            console.error(
-                "WebSocket connection error:",
+            console.warn(
+                "WebSocket connection pending:",
                 event,
             );
 

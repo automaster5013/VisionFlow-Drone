@@ -1,0 +1,2 @@
+rootProject.name = 'visionflow-dji-bridge'
+include ':app'

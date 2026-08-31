@@ -1,5 +1,7 @@
 package com.visionflow.api.common.config;
 
+import com.visionflow.api.common.security.AiInternalAuthenticationFilter;
+import com.visionflow.api.common.security.AiInternalCredentialRegistry;
 import com.visionflow.api.common.security.OperatorAuthenticationFilter;
 import com.visionflow.api.common.security.OperatorCredentialRegistry;
 import com.visionflow.api.common.security.OperatorSecurityErrorWriter;
@@ -19,6 +21,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
+            AiInternalCredentialRegistry aiInternalCredentialRegistry,
             OperatorCredentialRegistry credentialRegistry,
             OperatorSessionRegistry sessionRegistry,
             OperatorSecurityErrorWriter errorWriter
@@ -74,6 +77,11 @@ public class SecurityConfig {
                                     "/api/security/pairings/*/exchange"
                             )
                             .permitAll()
+                            .requestMatchers(
+                                    HttpMethod.POST,
+                                    "/api/security/password"
+                            )
+                            .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
                             .requestMatchers(
                                     HttpMethod.POST,
                                     "/api/security/pairings",
@@ -141,22 +149,27 @@ public class SecurityConfig {
                             )
                             .permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/ai/events")
-                            .permitAll()
+                            .hasRole("AI_INTERNAL")
                             .requestMatchers(
                                     HttpMethod.PUT,
                                     "/api/ai/events/*/snapshot"
                             )
-                           .permitAll()
-                           .requestMatchers(
+                            .hasAnyRole("AI_INTERNAL", "OPERATOR", "ADMIN")
+                            .requestMatchers(
                                     HttpMethod.POST,
                                     "/api/ai/phase3/events"
-                           )
-                          .permitAll()
-                          .requestMatchers(
+                            )
+                            .hasRole("AI_INTERNAL")
+                            .requestMatchers(
                                     HttpMethod.PUT,
                                     "/api/ai/phase3/events/*/depth"
-                           )
-                           .permitAll()
+                            )
+                            .hasRole("AI_INTERNAL")
+                           .requestMatchers(
+                                    HttpMethod.DELETE,
+                                    "/api/ai/events/*/snapshot"
+                            )
+                            .hasAnyRole("OPERATOR", "ADMIN")
                            .requestMatchers(
                                     HttpMethod.DELETE,
                                     "/api/drones/*"
@@ -225,6 +238,13 @@ public class SecurityConfig {
                                 errorWriter
                         ),
                         AnonymousAuthenticationFilter.class
+                )
+                .addFilterAfter(
+                        new AiInternalAuthenticationFilter(
+                                aiInternalCredentialRegistry,
+                                errorWriter
+                        ),
+                        OperatorAuthenticationFilter.class
                 )
 
                 .httpBasic(httpBasic ->

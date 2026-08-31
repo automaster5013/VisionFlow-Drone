@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "contractId": "visionflow.phase2b1.visdrone-weight-contract",
+  "manifestVersion": 1,
+  "template": true,
+  "model": {
+    "profile": "AERIAL_SMALL_OBJECT_LIVE",
+    "role": "AERIAL_SMALL_OBJECT_DETECTION",
+    "family": "YOLO26",
+    "scale": "m",
+    "task": "detect",
+    "trainingStage": "VISIONFLOW_S2",
+    "activationEligible": true,
+    "weight": {
+      "fileName": "yolo26m-visdrone-s2-best.pt",
+      "sizeBytes": 0,
+      "sha256": "REPLACE_WITH_WEIGHT_SHA256"
+    },
+    "lineage": {
+      "parentFileName": "yolo26m-visdrone-s1-best.pt",
+      "parentSha256": "REPLACE_WITH_PARENT_WEIGHT_SHA256"
+    }
+  },
+  "classes": [
+    { "id": 0, "sourceName": "pedestrian", "canonicalName": "person", "trackKind": "HUMAN" },
+    { "id": 1, "sourceName": "people", "canonicalName": "person", "trackKind": "HUMAN" },
+    { "id": 2, "sourceName": "bicycle", "canonicalName": "bicycle", "trackKind": "CYCLE" },
+    { "id": 3, "sourceName": "car", "canonicalName": "car", "trackKind": "VEHICLE" },
+    { "id": 4, "sourceName": "van", "canonicalName": "van", "trackKind": "VEHICLE" },
+    { "id": 5, "sourceName": "truck", "canonicalName": "truck", "trackKind": "VEHICLE" },
+    { "id": 6, "sourceName": "tricycle", "canonicalName": "tricycle", "trackKind": "VEHICLE" },
+    { "id": 7, "sourceName": "awning-tricycle", "canonicalName": "awning-tricycle", "trackKind": "VEHICLE" },
+    { "id": 8, "sourceName": "bus", "canonicalName": "bus", "trackKind": "VEHICLE" },
+    { "id": 9, "sourceName": "motor", "canonicalName": "motorcycle", "trackKind": "CYCLE" }
+  ],
+  "data": {
+    "datasetName": "VisDrone2019-DET+VisionFlow-Presentation",
+    "datasetVersion": "REPLACE_WITH_DATASET_VERSION",
+    "datasetFingerprintSha256": "REPLACE_WITH_DATASET_FINGERPRINT_SHA256",
+    "splitPolicy": {
+      "unit": "VIDEO_SEQUENCE",
+      "adjacentFramesAcrossSplits": false,
+      "finalEvaluationExcludedFromTraining": true,
+      "splitManifestSha256": "REPLACE_WITH_SPLIT_MANIFEST_SHA256"
+    }
+  },
+  "training": {
+    "imageSize": 0,
+    "epochs": 0,
+    "batch": 0,
+    "seed": 0
+  },
+  "runtime": {
+    "python": "REPLACE_WITH_VERSION",
+    "ultralytics": "REPLACE_WITH_VERSION",
+    "torch": "REPLACE_WITH_VERSION",
+    "cuda": "REPLACE_WITH_VERSION"
+  },
+  "inference": {
+    "defaultHeadMode": "END_TO_END",
+    "supportedHeadModes": [
+      "END_TO_END",
+      "ONE_TO_MANY_NMS"
+    ]
+  },
+  "evaluation": {
+    "status": "REPLACE_WITH_MEASURED",
+    "precision": 0,
+    "recall": 0,
+    "map50": 0,
+    "map50_95": 0,
+    "smallObject": {
+      "definition": "COCO_AREA_LT_32_SQUARED_PX_AT_ORIGINAL_RESOLUTION",
+      "recall": 0,
+      "missRate": 1
+    },
+    "perClass": [
+      { "sourceName": "pedestrian", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "people", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "bicycle", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "car", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "van", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "truck", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "tricycle", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "awning-tricycle", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "bus", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 },
+      { "sourceName": "motor", "precision": 0, "recall": 0, "map50": 0, "map50_95": 0 }
+    ]
+  }
+}

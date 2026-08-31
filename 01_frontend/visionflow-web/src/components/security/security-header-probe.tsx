@@ -117,14 +117,16 @@ export function SecurityHeaderProbe() {
     state.phase === "ready" && passedCount === state.checks.length;
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="vf-security-command__panel rounded-2xl border p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-sky-700">BROWSER HARDENING</p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">
+          <p className="vf-security-command__eyebrow text-sm font-semibold">
+            BROWSER HARDENING
+          </p>
+          <h2 className="vf-security-command__section-title mt-1 text-xl font-black">
             프런트엔드 보안 응답 헤더
           </h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="vf-security-command__detail mt-2 text-sm">
             현재 브라우저가 받은 실제 대시보드 응답을 검사합니다.
           </p>
         </div>
@@ -132,10 +134,10 @@ export function SecurityHeaderProbe() {
           <span
             className={`rounded-full border px-3 py-1 text-xs font-bold ${
               state.phase === "loading"
-                ? "border-slate-200 bg-slate-50 text-slate-600"
+                ? "vf-security-command__badge--loading"
                 : allPassed
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-rose-200 bg-rose-50 text-rose-700"
+                  ? "vf-security-command__badge--good"
+                  : "vf-security-command__badge--danger"
             }`}
           >
             {state.phase === "loading"
@@ -150,7 +152,7 @@ export function SecurityHeaderProbe() {
               setState({ phase: "loading", checks: [], error: null });
               void probe();
             }}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            className="vf-security-command__button rounded-lg border px-3 py-2 text-xs font-bold"
           >
             다시 검사
           </button>
@@ -158,7 +160,7 @@ export function SecurityHeaderProbe() {
       </div>
 
       {state.error ? (
-        <p className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <p className="vf-security-command__notice vf-security-command__notice--danger mt-5 rounded-xl border p-4 text-sm">
           {state.error}
         </p>
       ) : null}
@@ -169,21 +171,25 @@ export function SecurityHeaderProbe() {
             key={check.name}
             className={`rounded-xl border p-4 ${
               check.passed
-                ? "border-emerald-200 bg-emerald-50/60"
-                : "border-rose-200 bg-rose-50/60"
+                ? "vf-security-command__check--good"
+                : "vf-security-command__check--danger"
             }`}
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-bold text-slate-900">{check.name}</p>
+              <p className="vf-security-command__check-name text-sm font-bold">
+                {check.name}
+              </p>
               <span
                 className={`text-xs font-black ${
-                  check.passed ? "text-emerald-700" : "text-rose-700"
+                  check.passed
+                    ? "vf-security-command__result--good"
+                    : "vf-security-command__result--danger"
                 }`}
               >
                 {check.passed ? "PASS" : "FAIL"}
               </span>
             </div>
-            <p className="mt-2 break-all text-xs text-slate-600">
+            <p className="vf-security-command__detail mt-2 break-all text-xs">
               실제값:{" "}
               {check.actual.length > 220
                 ? `${check.actual.slice(0, 220)}…`

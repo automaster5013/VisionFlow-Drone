@@ -1,93 +1,116 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
-    getVisibleNavigationItems,
-    isNavigationItemActive,
+  getVisibleNavigationItems,
+  isNavigationItemActive,
 } from "@/components/layout/navigation-items";
 import type { OperatorSecurityStatus } from "@/types/operator-security";
 
 interface AppSidebarProps {
-    operatorSecurity: OperatorSecurityStatus | null;
+  operatorSecurity: OperatorSecurityStatus | null;
 }
 
 function resolveDesktopLinkClassName(
-    active: boolean,
-    presentation: boolean,
+  active: boolean,
+  presentation: boolean,
 ) {
-    if (presentation) {
-        return [
-            "flex items-center gap-3 rounded-xl border px-4 py-3 font-semibold transition",
-            active
-                ? "border-violet-300 bg-violet-400/25 text-violet-100"
-                : "border-violet-400/40 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20",
-        ].join(" ");
-    }
-
-    return [
-        "block rounded-lg border-l-2 px-4 py-3 text-sm font-medium transition-colors",
-        active
-            ? "border-sky-400 bg-slate-800 text-white"
-            : "border-transparent text-slate-300 hover:bg-slate-800 hover:text-white",
-    ].join(" ");
+  return [
+    "vf-sidebar-link",
+    presentation ? "vf-sidebar-link--presentation" : "",
+    active ? "is-active" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function AppSidebar({ operatorSecurity }: AppSidebarProps) {
-    const pathname = usePathname();
-    const visibleItems = getVisibleNavigationItems(operatorSecurity);
+  const pathname = usePathname();
+  const visibleItems = getVisibleNavigationItems(operatorSecurity);
 
-    return (
-        <aside className="hidden w-64 shrink-0 border-r border-slate-800 bg-slate-950 lg:block">
-            <div className="sticky top-0 flex h-screen flex-col overflow-y-auto p-5">
-                <div className="mb-8">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
-                        VisionFlow
-                    </p>
-
-                    <p className="mt-2 text-lg font-bold text-white">Drone Control</p>
-                </div>
-
-                <nav aria-label="주요 메뉴">
-                    <ul className="space-y-2">
-                        {visibleItems.map((item) => {
-                            const active = isNavigationItemActive(
-                                pathname,
-                                item.href,
-                                item.activeAliases,
-                            );
-                            const presentation = item.presentation === true;
-
-                            return (
-                                <li key={item.href} className={presentation ? "pt-2" : undefined}>
-                                    <Link
-                                        href={item.href}
-                                        aria-current={active ? "page" : undefined}
-                                        className={resolveDesktopLinkClassName(
-                                            active,
-                                            presentation,
-                                        )}
-                                    >
-                                        {presentation ? (
-                                            <span aria-hidden="true">🎬</span>
-                                        ) : null}
-                                        <span>{item.label}</span>
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </nav>
-
-                <footer className="mt-auto border-t border-slate-800 pt-5">
-                    <p className="text-xs font-semibold leading-5 text-slate-400">
-                        © 2026 Team PyvaOps.
-                        <br />
-                        All rights reserved.
-                    </p>
-                </footer>
+  return (
+    <aside className="vf-command-sidebar hidden w-60 shrink-0 lg:block">
+      <div className="vf-command-sidebar__inner">
+        <div className="vf-command-brand">
+          <div className="vf-command-brand__row">
+            <span aria-hidden="true" className="vf-command-brand__mark">
+              VF
+            </span>
+            <div>
+              <p className="vf-command-brand__kicker">VisionFlow</p>
+              <p className="vf-command-brand__title">Command Center</p>
             </div>
-        </aside>
-    );
+          </div>
+          <p className="vf-command-brand__description">
+            Intelligent Drone Operations
+            <br />
+            &amp; Safety Monitoring
+          </p>
+        </div>
+
+        <nav aria-label="주요 메뉴">
+          <p className="vf-sidebar-section-label">Mission navigation</p>
+          <ul className="vf-sidebar-list">
+            {visibleItems.map((item) => {
+              const active = isNavigationItemActive(
+                pathname,
+                item.href,
+                item.activeAliases,
+              );
+              const presentation = item.presentation === true;
+
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={resolveDesktopLinkClassName(
+                      active,
+                      presentation,
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="vf-sidebar-link__indicator"
+                    />
+                    {presentation ? (
+                      <span aria-hidden="true">▶</span>
+                    ) : null}
+                    <span>{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+        <div className="vf-sidebar-emblem">
+          <div className="vf-sidebar-emblem__frame">
+            <Image
+                src="/branding/emblem.png"
+                alt="PyvaOps Team Emblem"
+                width={2048}
+                height={1117}
+                sizes="196px"
+                className="vf-sidebar-emblem__image"
+                draggable={false}
+            />
+          </div>
+        </div>
+        <footer className="vf-sidebar-runtime">
+          <p className="vf-sidebar-runtime__label">Runtime profile</p>
+          <p className="vf-sidebar-runtime__value">
+            Phase 3 · Edge Operations
+          </p>
+          <p className="vf-sidebar-runtime__meta">
+            Team PyvaOps
+            <br />
+            Command UI Foundation 1A
+          </p>
+        </footer>
+      </div>
+    </aside>
+  );
 }

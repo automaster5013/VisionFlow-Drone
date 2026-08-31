@@ -55,7 +55,36 @@ AI 내부 인증에 재사용하지 않습니다.
 - Backend의 `OperatorCredentialRegistry` 초기화 실패와 재시작 루프
 - Frontend의 AI 내부 키 누락으로 인한 반복 `502 Bad Gateway`
 - AI 서버와 Frontend 사이의 내부 키 불일치
+- AI 서버와 Backend 이벤트 수집 API 사이의 내부 키 불일치
+- 인증되지 않은 `/api/ai/events` 및 Phase 3 수집 쓰기 요청
 - 역할별 키 재사용으로 인한 권한 경계 혼동
+
+## AI 내부 서비스 인증 경계
+
+`VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED=true`이면 AI 서버가 Backend로 보내는
+다음 쓰기 요청은 `X-VisionFlow-AI-Key` 헤더가 필요합니다.
+
+- `POST /api/ai/events`
+- `PUT /api/ai/events/{id}/snapshot`
+- `POST /api/ai/phase3/events`
+- `PUT /api/ai/phase3/events/{eventKey}/depth`
+
+스냅숏 PUT은 명시적 수동 개인정보 저장을 위해 인증된 OPERATOR/ADMIN 경로도
+허용하며, VIEWER는 저장 권한을 갖지 않습니다.
+
+## 수동 개인정보 스냅샷 저장
+
+이벤트 관제의 수동 스냅샷 저장은 자동 캡처 기능이 아닙니다. `SnapshotPolicy=OFF`를
+유지한 상태에서 OPERATOR 또는 ADMIN이 로컬 JPEG 파일을 직접 선택하고 확인한 뒤
+저장 버튼을 눌렀을 때만 기존 `PUT /api/ai/events/{id}/snapshot` 경로로 전송합니다.
+
+- 입력 파일은 JPEG이며 최대 10MB입니다.
+- Frontend BFF는 교차 출처 mutation을 차단하고 운영자 인증을 Backend로 전달합니다.
+- Backend 저장 계층이 JPEG 바이트 형식과 크기를 다시 검증합니다.
+- 성공한 저장은 `PRIVACY_SNAPSHOT_STORED` 감사 이벤트로 남깁니다.
+- 감사 상세에는 이벤트·드론·프레임·소스·크기·저장 모드만 기록하며 JPEG 바이트나 파일 경로는 기록하지 않습니다.
+- 기존 스냅샷 교체도 사용자가 새 JPEG를 다시 선택하고 확인한 뒤 저장해야 합니다.
+- VIEWER는 저장 UI를 볼 수 없고 Backend에서도 저장 권한이 없습니다.
 
 ## 안전한 운영 원칙
 

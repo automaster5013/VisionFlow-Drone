@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import {
     useCallback,
     useEffect,
@@ -80,6 +81,97 @@ export function MobileNavigation({ operatorSecurity }: MobileNavigationProps) {
         };
     }, [closeMenu, open]);
 
+    const menuOverlay = open
+        ? createPortal(
+            <div className="vf-mobile-navigation-overlay fixed inset-0 z-[1000] lg:hidden">
+                <button
+                    type="button"
+                    aria-label="주요 메뉴 닫기"
+                    onClick={() => closeMenu(true)}
+                    className="absolute inset-0 bg-slate-950/70"
+                />
+
+                <aside
+                    ref={panelRef}
+                    id={panelId}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="모바일 주요 메뉴"
+                    className="relative flex h-full w-[min(20rem,88vw)] flex-col overflow-y-auto border-r border-slate-800 bg-slate-950 p-5 shadow-2xl"
+                >
+                    <div className="mb-7 flex items-start justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
+                                VisionFlow
+                            </p>
+                            <p className="mt-2 text-lg font-bold text-white">
+                                Drone Control
+                            </p>
+                        </div>
+
+                        <button
+                            ref={closeButtonRef}
+                            type="button"
+                            aria-label="주요 메뉴 닫기"
+                            onClick={() => closeMenu(true)}
+                            className="min-h-10 rounded-lg border border-slate-700 px-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+                        >
+                            닫기
+                        </button>
+                    </div>
+
+                    <nav aria-label="모바일 주요 메뉴">
+                        <ul className="space-y-2">
+                            {visibleItems.map((item) => {
+                                const active = isNavigationItemActive(
+                                    pathname,
+                                    item.href,
+                                    item.activeAliases,
+                                );
+                                const presentation = item.presentation === true;
+
+                                return (
+                                    <li
+                                        key={item.href}
+                                        className={presentation ? "pt-2" : undefined}
+                                    >
+                                        <Link
+                                            href={item.href}
+                                            aria-current={active ? "page" : undefined}
+                                            onClick={() => closeMenu(false)}
+                                            className={[
+                                                "flex min-h-11 items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-colors",
+                                                presentation
+                                                    ? active
+                                                        ? "border-violet-300 bg-violet-400/25 text-violet-100"
+                                                        : "border-violet-400/40 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20"
+                                                    : active
+                                                        ? "border-sky-400 bg-slate-800 text-white"
+                                                        : "border-transparent text-slate-300 hover:bg-slate-800 hover:text-white",
+                                            ].join(" ")}
+                                        >
+                                            {presentation ? (
+                                                <span aria-hidden="true">🎬</span>
+                                            ) : null}
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </nav>
+
+                    <p className="mt-auto border-t border-slate-800 pt-5 text-xs font-semibold leading-5 text-slate-400">
+                        © 2026 Team PyvaOps.
+                        <br />
+                        All rights reserved.
+                    </p>
+                </aside>
+            </div>,
+            document.body,
+        )
+        : null;
+
     return (
         <div className="lg:hidden">
             <button
@@ -94,93 +186,7 @@ export function MobileNavigation({ operatorSecurity }: MobileNavigationProps) {
                 메뉴
             </button>
 
-            {open ? (
-                <div className="fixed inset-0 z-50 lg:hidden">
-                    <button
-                        type="button"
-                        aria-label="주요 메뉴 닫기"
-                        onClick={() => closeMenu(true)}
-                        className="absolute inset-0 bg-slate-950/70"
-                    />
-
-                    <aside
-                        ref={panelRef}
-                        id={panelId}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="모바일 주요 메뉴"
-                        className="relative flex h-full w-[min(20rem,88vw)] flex-col overflow-y-auto border-r border-slate-800 bg-slate-950 p-5 shadow-2xl"
-                    >
-                        <div className="mb-7 flex items-start justify-between gap-4">
-                            <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
-                                    VisionFlow
-                                </p>
-                                <p className="mt-2 text-lg font-bold text-white">
-                                    Drone Control
-                                </p>
-                            </div>
-
-                            <button
-                                ref={closeButtonRef}
-                                type="button"
-                                aria-label="주요 메뉴 닫기"
-                                onClick={() => closeMenu(true)}
-                                className="min-h-10 rounded-lg border border-slate-700 px-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
-                            >
-                                닫기
-                            </button>
-                        </div>
-
-                        <nav aria-label="모바일 주요 메뉴">
-                            <ul className="space-y-2">
-                                {visibleItems.map((item) => {
-                                    const active = isNavigationItemActive(
-                                        pathname,
-                                        item.href,
-                                        item.activeAliases,
-                                    );
-                                    const presentation = item.presentation === true;
-
-                                    return (
-                                        <li
-                                            key={item.href}
-                                            className={presentation ? "pt-2" : undefined}
-                                        >
-                                            <Link
-                                                href={item.href}
-                                                aria-current={active ? "page" : undefined}
-                                                onClick={() => closeMenu(false)}
-                                                className={[
-                                                    "flex min-h-11 items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-colors",
-                                                    presentation
-                                                        ? active
-                                                            ? "border-violet-300 bg-violet-400/25 text-violet-100"
-                                                            : "border-violet-400/40 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20"
-                                                        : active
-                                                            ? "border-sky-400 bg-slate-800 text-white"
-                                                            : "border-transparent text-slate-300 hover:bg-slate-800 hover:text-white",
-                                                ].join(" ")}
-                                            >
-                                                {presentation ? (
-                                                    <span aria-hidden="true">🎬</span>
-                                                ) : null}
-                                                <span>{item.label}</span>
-                                            </Link>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </nav>
-
-                        <p className="mt-auto border-t border-slate-800 pt-5 text-xs font-semibold leading-5 text-slate-400">
-                            © 2026 Team PyvaOps.
-                            <br />
-                            All rights reserved.
-                        </p>
-                    </aside>
-                </div>
-            ) : null}
+            {menuOverlay}
         </div>
     );
 }

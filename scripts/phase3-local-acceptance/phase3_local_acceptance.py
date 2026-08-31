@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import getpass
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def utc_now():
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def run_id():
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def run_stream(
+    label,
+    command,
+    cwd,
+    log_path=None,
+    interactive=False,
+    success_status="PASS",
+):
+    print(f"\n=== {label} ===")
+    print("[CMD] " + subprocess.list2cmdline(command))
+    if interactive:
+        code = subprocess.run(command, cwd=cwd).returncode
+        status = success_status if code == 0 else "FAIL"
+        print(f"[{status}] {label} - exit={code}")
+        return code
+
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("w", encoding="utf-8", newline="\n") as log:
+        p = subprocess.Popen(
+            command,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert p.stdout is not None
+        for line in p.stdout:
+            print(line, end="")
+            log.write(line)
+        code = p.wait()
+    status = success_status if code == 0 else "FAIL"
+    print(f"[{status}] {label} - exit={code}")
+    return code
+
+
+def docker_health():
+    names = [
+        "visionflow-frontend",
+        "visionflow-backend",
+        "visionflow-ai",
+        "visionflow-mobile-https",
+        "visionflow-mysql",
+    ]
+    result = subprocess.run(
+        ["docker", "inspect", *names],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    payload = json.loads(result.stdout)
+    summary = {}
+    for item in payload:
+        name = str(item.get("Name", "")).lstrip("/")
+        state = item.get("State") or {}
+        status = str(state.get("Status", ""))
+        health = str((state.get("Health") or {}).get("Status", ""))
+        if status != "running":
+            raise RuntimeError(f"{name}: status={status}")
+        if health and health != "healthy":
+            raise RuntimeError(f"{name}: health={health}")
+        summary[name] = {"status": status, "health": health or None}
+        print(f"[PASS] {name} - status={status} health={health or 'n/a'}")
+    return summary
+
+
+def cmd(*parts):
+    if os.name == "nt":
+        return ["cmd.exe", "/d", "/c", *parts]
+    return list(parts)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo-root", default=".")
+    parser.add_argument("--skip-backend-tests", action="store_true")
+    parser.add_argument("--skip-frontend-build", action="store_true")
+    parser.add_argument("--skip-android-build", action="store_true")
+    parser.add_argument("--skip-auth-gate", action="store_true")
+    parser.add_argument("--skip-dji-software-gate", action="store_true")
+    parser.add_argument("--skip-dji-android-bridge-gate", action="store_true")
+    parser.add_argument(
+        "--skip-dji-provisioning-device-gate",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--skip-dji-android-bridge-robustness",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--reuse-dji-android-bridge-image",
+        action="store_true",
+        help=(
+            "Reuse visionflow-ai-server:phase3-android-bridge-v1 "
+            "instead of rebuilding it."
+        ),
+    )
+    args = parser.parse_args()
+
+    root = Path(args.repo_root).resolve()
+    backend = root / "02_backend" / "visionflow-api"
+    frontend = root / "01_frontend" / "visionflow-web"
+    android = root / "04_android" / "visionflow-dji-bridge"
+    auth = root / "scripts" / "phase3-auth-e2e" / "phase3_auth_e2e.py"
+    software = root / "scripts" / "phase3-dji-simulator" / "phase3_software_gate.py"
+    dji_bridge = (
+        root
+        / "scripts"
+        / "phase3-dji-simulator"
+        / "phase3_dji_android_bridge_gate.py"
+    )
+    dji_bridge_robustness = (
+        root
+        / "scripts"
+        / "phase3-dji-simulator"
+        / "phase3_dji_android_bridge_robustness.py"
+    )
+    dji_provisioning_device = (
+        root
+        / "scripts"
+        / "phase3-dji-simulator"
+        / "phase3_dji_provisioning_device_gate.py"
+    )
+
+    required = [
+        backend / "gradlew.bat",
+        frontend / "package.json",
+        android / "gradlew.bat",
+        auth,
+        software,
+        dji_bridge,
+        dji_bridge_robustness,
+        dji_provisioning_device,
+    ]
+    missing = [str(p) for p in required if not p.exists()]
+    if missing:
+        print("[FAIL] Missing prerequisites: " + ", ".join(missing), file=sys.stderr)
+        return 2
+
+    print("=== VISIONFLOW PHASE 3 LOCAL ACCEPTANCE ===")
+    print(f"root={root}")
+    print("physicalDJI=SKIPPED")
+    print("aws=SKIPPED")
+    print("\n=== Docker 5-service baseline ===")
+    try:
+        docker_state = docker_health()
+    except Exception as exc:
+        print(f"[FAIL] Docker baseline: {exc}", file=sys.stderr)
+        return 2
+
+    run_dir = root / "artifacts" / "phase3-local-acceptance" / run_id()
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    dji_bridge_command = [
+        sys.executable,
+        str(dji_bridge),
+        "--repo-root",
+        str(root),
+    ]
+    if args.reuse_dji_android_bridge_image:
+        dji_bridge_command.append("--skip-build")
+
+    steps = [
+        ("Git whitespace check", ["git", "-C", str(root), "diff", "--check"], root, False, "PASS"),
+        ("Backend test suite", None if args.skip_backend_tests else cmd("gradlew.bat", "test"), backend, False, "PASS"),
+        ("Frontend lint", cmd("npm", "run", "lint"), frontend, False, "PASS"),
+        ("Frontend production build", None if args.skip_frontend_build else cmd("npm", "run", "build"), frontend, False, "PASS"),
+        (
+            "Android DJI Bridge unit tests + assembleDebug",
+            None
+            if args.skip_android_build
+            else cmd(
+                "gradlew.bat",
+                ":app:testDebugUnitTest",
+                ":app:assembleDebug",
+            ),
+            android,
+            False,
+            "PASS",
+        ),
+        (
+            "Android provisioning / Keystore device readiness",
+            None
+            if args.skip_dji_provisioning_device_gate
+            else [
+                sys.executable,
+                str(dji_provisioning_device),
+                "--repo-root",
+                str(root),
+                "--skip-build",
+            ],
+            root,
+            False,
+            "WAIT",
+        ),
+        ("Auth / RBAC runtime E2E", None if args.skip_auth_gate else [sys.executable, str(auth)], root, True, "PASS"),
+        ("DJI software-only integration gate", None if args.skip_dji_software_gate else [sys.executable, str(software), "--repo-root", str(root)], root, False, "PASS"),
+        (
+            "DJI Android Bridge encoded ingress gate",
+            None
+            if args.skip_dji_android_bridge_gate
+            else dji_bridge_command,
+            root,
+            False,
+            "PASS",
+        ),
+        (
+            "DJI Android Bridge robustness gate",
+            None
+            if args.skip_dji_android_bridge_robustness
+            else [
+                sys.executable,
+                str(dji_bridge_robustness),
+                "--repo-root",
+                str(root),
+            ],
+            root,
+            False,
+            "PASS",
+        ),
+    ]
+
+    results = []
+    failed = False
+    for index, (
+        label,
+        command,
+        cwd,
+        interactive,
+        success_status,
+    ) in enumerate(steps, start=1):
+        if command is None or failed:
+            results.append({"name": label, "status": "SKIPPED"})
+            continue
+        log_path = run_dir / f"{index:02d}.log"
+        code = run_stream(
+            label,
+            command,
+            cwd,
+            log_path,
+            interactive,
+            success_status,
+        )
+        status = success_status if code == 0 else "FAIL"
+        results.append({"name": label, "status": status, "exitCode": code, "log": None if interactive else str(log_path)})
+        if code != 0:
+            failed = True
+
+    overall = "FAIL" if failed else "PASS"
+    summary = {
+        "gate": "phase3-local-acceptance",
+        "status": overall,
+        "completedAt": utc_now(),
+        "physicalDjiRuntime": "SKIPPED",
+        "aws": "SKIPPED",
+        "dockerBaseline": docker_state,
+        "steps": results,
+    }
+    summary_path = run_dir / "summary.json"
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    print("\n=== PHASE 3 LOCAL ACCEPTANCE RESULT ===")
+    for item in results:
+        print(f"{item['status']:7} {item['name']}")
+    print(f"evidence={summary_path}")
+    print(f"RESULT={overall}")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -91,7 +91,29 @@ public class OperatorAuthenticationFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority(principal.role().authority()))
                 );
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (
+                principal.passwordChangeRequired()
+                        && !isPasswordChangeAllowedRequest(request)
+        ) {
+            errorWriter.write(
+                    response,
+                    HttpStatus.FORBIDDEN.value(),
+                    "OPERATOR_PASSWORD_CHANGE_REQUIRED",
+                    "초기 비밀번호를 변경한 후 VisionFlow 기능을 사용할 수 있습니다."
+            );
+            return;
+        }
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isPasswordChangeAllowedRequest(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return (HttpMethod.POST.matches(request.getMethod())
+                        && "/api/security/password".equals(path))
+                || (HttpMethod.GET.matches(request.getMethod())
+                        && "/api/security/me".equals(path))
+                || (HttpMethod.DELETE.matches(request.getMethod())
+                        && "/api/security/sessions/current".equals(path));
     }
 
     private boolean isSessionCreationRequest(HttpServletRequest request) {

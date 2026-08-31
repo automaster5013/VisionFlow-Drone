@@ -9,6 +9,8 @@ from urllib.parse import quote
 
 import httpx
 
+AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
+
 
 class Phase3EventReporterLike(Protocol):
     def start(self) -> None: ...
@@ -50,6 +52,7 @@ class Phase3EventReporter:
         timeout_seconds: float,
         max_retries: int,
         queue_capacity: int,
+        internal_api_key: str = "",
         transport: httpx.BaseTransport | None = None,
     ) -> None:
         self._event_url = event_url.rstrip("/")
@@ -57,8 +60,14 @@ class Phase3EventReporter:
         self._queue: queue.Queue[_Report | None] = queue.Queue(
             maxsize=queue_capacity
         )
+        headers = {}
+        normalized_key = internal_api_key.strip()
+        if normalized_key:
+            headers[AI_INTERNAL_KEY_HEADER] = normalized_key
+
         self._client = httpx.Client(
             timeout=timeout_seconds,
+            headers=headers,
             transport=transport,
         )
         self._thread: threading.Thread | None = None

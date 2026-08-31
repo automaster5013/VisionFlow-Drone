@@ -178,7 +178,13 @@ function matchesSearch(event: EventOperationsItem, query: string): boolean {
   ].some((value) => value.toLocaleLowerCase("ko-KR").includes(normalized));
 }
 
-export function EventOperationsCenter() {
+interface EventOperationsCenterProps {
+  canManageSnapshots?: boolean;
+}
+
+export function EventOperationsCenter({
+  canManageSnapshots = false,
+}: EventOperationsCenterProps) {
   const [consolePreferences] = useState(() => readOperatorConsolePreferences());
   const [sources, setSources] = useState<EventOperationsSources>(EMPTY_SOURCES);
   const [sourceErrors, setSourceErrors] = useState<Partial<Record<SourceHealthKey, string>>>({});
@@ -398,8 +404,8 @@ export function EventOperationsCenter() {
   const closeDetail = useCallback(() => setSelectedEvent(null), []);
 
   return (
-    <div data-event-operations-center className="mx-auto max-w-[1500px] space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <div data-event-operations-center className="vf-event-command mx-auto max-w-[1500px] space-y-6">
+      <header className="vf-event-command__hero flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-700">
             Event Operations Center
@@ -414,7 +420,7 @@ export function EventOperationsCenter() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600">
+          <label className="vf-event-command__auto-refresh flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -427,14 +433,14 @@ export function EventOperationsCenter() {
             type="button"
             onClick={() => void refresh()}
             disabled={refreshing}
-            className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
+            className="vf-event-command__refresh rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
           >
             {refreshing ? "갱신 중" : "지금 갱신"}
           </button>
         </div>
       </header>
 
-      <section className="overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#031b2a_0%,#050b1d_55%,#17123b_100%)] p-5 text-white shadow-xl shadow-slate-300/40 sm:p-7">
+      <section className="vf-event-command__summary overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#031b2a_0%,#050b1d_55%,#17123b_100%)] p-5 text-white shadow-xl shadow-slate-300/40 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
@@ -481,7 +487,7 @@ export function EventOperationsCenter() {
       </section>
 
       {sourceErrorCount > 0 && (
-        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4" aria-live="polite">
+        <section className="vf-event-command__error rounded-2xl border border-amber-300 bg-amber-50 p-4" aria-live="polite">
           <h2 className="text-sm font-black text-amber-950">일부 이벤트 소스를 갱신하지 못했습니다.</h2>
           <ul className="mt-2 space-y-1 text-sm text-amber-900">
             {(Object.entries(sourceErrors) as Array<[SourceHealthKey, string]>).map(([key, message]) => (
@@ -492,7 +498,7 @@ export function EventOperationsCenter() {
         </section>
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="vf-event-command__filters rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-black text-slate-950">관제 필터</h2>
@@ -553,13 +559,13 @@ export function EventOperationsCenter() {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="제목·기체·ID"
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+              className="vf-event-command__input mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
             />
           </label>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="vf-event-command__timeline rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">Unified Event Timeline</p>
@@ -599,7 +605,7 @@ export function EventOperationsCenter() {
                     {source.shortLabel}
                   </span>
 
-                  <article className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-cyan-300 hover:shadow-md sm:p-5">
+                  <article className="vf-event-command__event rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-cyan-300 hover:shadow-md sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -613,7 +619,7 @@ export function EventOperationsCenter() {
                       <button
                         type="button"
                         onClick={(clickEvent) => openDetail(event, clickEvent.currentTarget)}
-                        className="shrink-0 rounded-xl border border-slate-300 px-3 py-2 text-xs font-black text-slate-700 transition hover:border-cyan-500 hover:text-cyan-800 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                        className="vf-event-command__event-action shrink-0 rounded-xl border border-slate-300 px-3 py-2 text-xs font-black text-slate-700 transition hover:border-cyan-500 hover:text-cyan-800 focus:outline-none focus:ring-2 focus:ring-cyan-200"
                       >
                         관제 상세
                       </button>
@@ -641,8 +647,11 @@ export function EventOperationsCenter() {
 
       {selectedEvent && (
         <EventDetailDrawer
+          key={selectedEvent.key}
           event={selectedEvent}
           returnFocusElement={returnFocusElement}
+          canManageSnapshots={canManageSnapshots}
+          onSnapshotStored={() => void refresh(true)}
           onClose={closeDetail}
         />
       )}
@@ -695,7 +704,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
+        className="vf-event-command__input mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
       >
         {children}
       </select>

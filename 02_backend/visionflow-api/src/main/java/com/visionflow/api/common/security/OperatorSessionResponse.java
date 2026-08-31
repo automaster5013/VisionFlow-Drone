@@ -8,6 +8,7 @@ public record OperatorSessionResponse(
         UUID sessionId,
         String username,
         String role,
+        boolean passwordChangeRequired,
         Instant issuedAt,
         Instant expiresAt
 ) {
@@ -17,6 +18,7 @@ public record OperatorSessionResponse(
                 session.sessionId(),
                 session.principal().username(),
                 session.principal().role().name(),
+                session.principal().passwordChangeRequired(),
                 session.issuedAt(),
                 session.expiresAt()
         );

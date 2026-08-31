@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from dotenv import load_dotenv
 
-from app.domain import SmartphoneInputMode, VideoSourceType
+from app.domain import SmartphoneInputMode, SnapshotPolicy, VideoSourceType
 
 
 def _read_bool(name: str, default: bool) -> bool:
@@ -59,6 +59,11 @@ class Settings:
     browser_upload_max_payload_bytes: int
     model_profile: str
     model_path: str
+    model_manifest_path: str
+    model_profiles_path: str
+    compare_baseline_model_path: str
+    compare_candidate_model_path: str
+    compare_candidate_manifest_path: str
     require_cuda: bool
     require_local_model: bool
     confidence: float
@@ -71,6 +76,9 @@ class Settings:
     phase3_pose_enabled: bool
     phase3_pose_model_path: str
     phase3_pose_target_fps: float
+    phase3_segmentation_enabled: bool
+    phase3_segmentation_model_path: str
+    phase3_segmentation_target_fps: float
     phase3_depth_enabled: bool
     phase3_depth_model_path: str
     phase3_depth_image_size: int
@@ -88,7 +96,7 @@ class Settings:
     report_queue_capacity: int
     event_min_consecutive_frames: int
     event_cooldown_seconds: float
-    snapshot_enabled: bool
+    snapshot_policy: SnapshotPolicy
     snapshot_jpeg_quality: int
     stream_enabled: bool
     stream_host: str
@@ -97,6 +105,7 @@ class Settings:
     stream_allowed_origins: tuple[str, ...]
     ai_internal_security_enabled: bool
     ai_internal_key: str
+    dji_bridge_key: str
     performance_warning_p95_ms: float
     performance_critical_p95_ms: float
     performance_warning_processing_ratio: float
@@ -159,6 +168,23 @@ class Settings:
             ),
             model_profile=os.getenv("AI_MODEL_PROFILE", "yolo26n-cpu"),
             model_path=os.getenv("AI_MODEL_PATH", "yolo26n.pt"),
+            model_manifest_path=os.getenv("AI_MODEL_MANIFEST_PATH", ""),
+            model_profiles_path=os.getenv(
+                "AI_MODEL_PROFILES_PATH",
+                "config/model-profiles-v1.json",
+            ),
+            compare_baseline_model_path=os.getenv(
+                "AI_COMPARE_BASELINE_MODEL_PATH",
+                "models/yolo26m.pt",
+            ),
+            compare_candidate_model_path=os.getenv(
+                "AI_COMPARE_CANDIDATE_MODEL_PATH",
+                "models/yolo26m-visdrone-s2-best.pt",
+            ),
+            compare_candidate_manifest_path=os.getenv(
+                "AI_COMPARE_CANDIDATE_MANIFEST_PATH",
+                "models/manifests/yolo26m-visdrone-s2-best.manifest.json",
+            ),
             require_cuda=_read_bool("AI_REQUIRE_CUDA", False),
             require_local_model=_read_bool("AI_REQUIRE_LOCAL_MODEL", False),
             confidence=_read_float("AI_CONFIDENCE", 0.35),
@@ -184,6 +210,18 @@ class Settings:
             ),
             phase3_pose_target_fps=_read_float(
                 "AI_PHASE3_POSE_TARGET_FPS",
+                5.0,
+            ),
+            phase3_segmentation_enabled=_read_bool(
+                "AI_PHASE3_SEGMENTATION_ENABLED",
+                False,
+            ),
+            phase3_segmentation_model_path=os.getenv(
+                "AI_PHASE3_SEGMENTATION_MODEL_PATH",
+                "/app/models/yolo26m-seg.pt",
+            ),
+            phase3_segmentation_target_fps=_read_float(
+                "AI_PHASE3_SEGMENTATION_TARGET_FPS",
                 5.0,
             ),
             phase3_depth_enabled=_read_bool(
@@ -236,7 +274,12 @@ class Settings:
                 "AI_EVENT_COOLDOWN_SECONDS",
                 10.0,
             ),
-            snapshot_enabled=_read_bool("AI_SNAPSHOT_ENABLED", True),
+            snapshot_policy=SnapshotPolicy(
+                os.getenv(
+                    "AI_SNAPSHOT_POLICY",
+                    SnapshotPolicy.OFF.value,
+                ).strip().upper()
+            ),
             snapshot_jpeg_quality=_read_int(
                 "AI_SNAPSHOT_JPEG_QUALITY",
                 85,
@@ -254,6 +297,9 @@ class Settings:
                 True,
             ),
             ai_internal_key=os.getenv("VISIONFLOW_AI_INTERNAL_KEY", "").strip(),
+            dji_bridge_key=os.getenv(
+                "VISIONFLOW_DJI_BRIDGE_KEY", ""
+            ).strip(),
             performance_warning_p95_ms=_read_float(
                 "AI_PERFORMANCE_WARNING_P95_MS",
                 250.0,
@@ -315,8 +361,58 @@ class Settings:
         if not self.model_profile.strip():
             raise ValueError("AI_MODEL_PROFILE은 비어 있을 수 없습니다.")
 
-        if not self.model_path.strip():
+        is_compare = self.model_profile.strip() == "DETERMINISTIC_COMPARE"
+
+        if not is_compare and not self.model_path.strip():
             raise ValueError("AI_MODEL_PATH는 비어 있을 수 없습니다.")
+
+        standard_profiles = {
+            "GENERAL_LIVE",
+            "AERIAL_SMALL_OBJECT_LIVE",
+            "DETERMINISTIC_COMPARE",
+        }
+        if (
+            self.model_profile.strip() in standard_profiles
+            and not self.model_profiles_path.strip()
+        ):
+            raise ValueError("AI_MODEL_PROFILES_PATH는 비어 있을 수 없습니다.")
+
+        if (
+            self.model_profile.strip() == "AERIAL_SMALL_OBJECT_LIVE"
+            and not self.model_manifest_path.strip()
+        ):
+            raise ValueError(
+                "AERIAL_SMALL_OBJECT_LIVE에는 AI_MODEL_MANIFEST_PATH가 필요합니다."
+            )
+
+        if is_compare:
+            compare_paths = {
+                "AI_COMPARE_BASELINE_MODEL_PATH": self.compare_baseline_model_path,
+                "AI_COMPARE_CANDIDATE_MODEL_PATH": self.compare_candidate_model_path,
+                "AI_COMPARE_CANDIDATE_MANIFEST_PATH": (
+                    self.compare_candidate_manifest_path
+                ),
+            }
+            for name, path in compare_paths.items():
+                if not path.strip():
+                    raise ValueError(f"{name}는 비어 있을 수 없습니다.")
+
+            if self.source_type is not VideoSourceType.DUMMY_VIDEO:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE는 AI_SOURCE_TYPE=DUMMY_VIDEO만 허용합니다."
+                )
+            if self.phase3_enabled:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE에서는 AI_PHASE3_ENABLED=false여야 합니다."
+                )
+            if self.report_events:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE에서는 AI_REPORT_EVENTS=false여야 합니다."
+                )
+            if self.snapshot_policy is not SnapshotPolicy.OFF:
+                raise ValueError(
+                    "DETERMINISTIC_COMPARE에서는 AI_SNAPSHOT_POLICY=OFF여야 합니다."
+                )
 
         if self.require_cuda and self.device.strip().lower() in {"", "cpu", "mps"}:
             raise ValueError(
@@ -345,6 +441,18 @@ class Settings:
                     raise ValueError(
                         "AI_PHASE3_POSE_TARGET_FPS must be positive."
                     )
+
+            if self.phase3_segmentation_enabled:
+                if not self.phase3_segmentation_model_path.strip():
+                    raise ValueError(
+                        "AI_PHASE3_SEGMENTATION_MODEL_PATH must not be blank."
+                    )
+
+                if self.phase3_segmentation_target_fps <= 0:
+                    raise ValueError(
+                        "AI_PHASE3_SEGMENTATION_TARGET_FPS must be positive."
+                    )
+
             if self.phase3_depth_enabled:
                 if not self.phase3_depth_model_path.strip():
                     raise ValueError(
@@ -405,6 +513,21 @@ class Settings:
             raise ValueError(
                 "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED=true이면 "
                 "VISIONFLOW_AI_INTERNAL_KEY를 32자 이상으로 설정해야 합니다."
+            )
+
+        if self.dji_bridge_key and len(self.dji_bridge_key) < 32:
+            raise ValueError(
+                "VISIONFLOW_DJI_BRIDGE_KEY는 설정할 경우 "
+                "32자 이상이어야 합니다."
+            )
+
+        if (
+            self.dji_bridge_key
+            and self.ai_internal_key
+            and self.dji_bridge_key == self.ai_internal_key
+        ):
+            raise ValueError(
+                "VISIONFLOW_DJI_BRIDGE_KEY와 VISIONFLOW_AI_INTERNAL_KEY는 서로 달라야 합니다."
             )
 
         if not (

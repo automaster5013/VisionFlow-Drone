@@ -64,6 +64,7 @@ HTTP_METHOD_PATTERN = re.compile(
 )
 QUOTED_PATTERN = re.compile(r'"([^"]+)"')
 AI_INTERNAL_ACCESS = "AI_INTERNAL_KEY"
+DJI_BRIDGE_ACCESS = "DJI_BRIDGE_KEY"
 FRONTEND_HANDLER_DECLARATION = re.compile(
     r"export\s+(?:async\s+)?function\s+"
     r"(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s*\("
@@ -439,6 +440,34 @@ def imported_auth_helpers(
     return sorted(set(matched))
 
 
+
+def forwards_operator_session_cookie(handler_context: str) -> bool:
+    # Recognize the session-only password proxy without weakening auth checks.
+    token_match = re.search(
+        r"\b(?:const|let)\s+(?P<token>[A-Za-z_$][\w$]*)\s*=\s*"
+        r"(?P<store>[A-Za-z_$][\w$]*)\.get\(\s*OPERATOR_SESSION_COOKIE\s*\)"
+        r"\?\.value\.trim\(\)\s*;",
+        handler_context,
+    )
+    if token_match is None:
+        return False
+
+    store = re.escape(token_match.group("store"))
+    token = re.escape(token_match.group("token"))
+    cookie_store_assignment = re.search(
+        rf"\b(?:const|let)\s+{store}\s*=\s*await\s+cookies\(\)\s*;",
+        handler_context,
+    )
+    forwarded_header = re.search(
+        rf"\[\s*OPERATOR_SESSION_HEADER\s*\]\s*:\s*{token}\b",
+        handler_context,
+    )
+    return (
+        cookie_store_assignment is not None
+        and forwarded_header is not None
+    )
+
+
 def route_auth_mechanism(
     operation: Operation,
     text: str,
@@ -446,7 +475,10 @@ def route_auth_mechanism(
 ) -> str:
     handler_context = route_handler_context(operation, text)
     mechanisms: list[str] = []
-    if "withBackendOperatorAuth" in handler_context:
+    if (
+        "withBackendOperatorAuth" in handler_context
+        or forwards_operator_session_cookie(handler_context)
+    ):
         mechanisms.append("OPERATOR_AUTH")
     if "withAiInternalAuth" in handler_context:
         mechanisms.append("AI_INTERNAL_AUTH")
@@ -609,6 +641,8 @@ def ai_route_access(text: str, operation: Operation) -> str:
         return "UNKNOWN"
     if "Depends(require_ai_internal_key)" in match.group("options"):
         return AI_INTERNAL_ACCESS
+    if "Depends(require_dji_bridge_key)" in match.group("options"):
+        return DJI_BRIDGE_ACCESS
     return PUBLIC_ACCESS
 
 
@@ -643,7 +677,15 @@ def analyze_ai(
             1 for row in rows if row["access"] == PUBLIC_ACCESS
         ),
         "protectedOperationCount": sum(
+            1
+            for row in rows
+            if row["access"] in {AI_INTERNAL_ACCESS, DJI_BRIDGE_ACCESS}
+        ),
+        "internalKeyOperationCount": sum(
             1 for row in rows if row["access"] == AI_INTERNAL_ACCESS
+        ),
+        "djiBridgeKeyOperationCount": sum(
+            1 for row in rows if row["access"] == DJI_BRIDGE_ACCESS
         ),
         "unknownOperationCount": sum(
             1 for row in rows if row["access"] == "UNKNOWN"
@@ -989,7 +1031,10 @@ def audit(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
             (
                 f"인증 없이 노출되는 민감 AI API가 {len(ai_exposures)}개입니다."
                 if ai_exposures
-                else "AI 민감 API 8개가 내부 서비스 키로 보호되고 /health만 공개됩니다."
+                else (
+                    f"AI 민감 API {ai_summary['protectedOperationCount']}개가 "
+                    "서비스 키로 보호되고 /health만 공개됩니다."
+                )
             ),
             findings=ai_exposures,
             unknownOperationCount=ai_summary["unknownOperationCount"],
