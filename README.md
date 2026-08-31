@@ -34,7 +34,7 @@
 [![Project](https://img.shields.io/badge/Project-VisionFlow--Drone-0A66C2?style=for-the-badge&logo=github&logoColor=white)](#)
 [![Team](https://img.shields.io/badge/Team-PyvaOps-6A5ACD?style=for-the-badge)](#)
 [![Phase](https://img.shields.io/badge/Phase%202-Completed-success?style=for-the-badge)](#)
-[![Status](https://img.shields.io/badge/Phase%203-Kickoff%2008.19-0A66C2?style=for-the-badge)](Daily_Schedule/PHASE3_SCHEDULE.md)
+[![Status](https://img.shields.io/badge/Phase%203-Final%20Presentation%2009.09-0A66C2?style=for-the-badge)](Daily_Schedule/PHASE3_SCHEDULE.md)
 
 </div>
 
@@ -51,7 +51,7 @@
 
 2차 프로젝트에서는 **스마트폰·브라우저·더미 영상 기반 가상 드론**으로 전체 관제 파이프라인을 구현하고, 실제 스마트폰 센서·후면 카메라·YOLO 통합 E2E와 보안·CI/CD·자동 Rollback까지 검증했습니다.
 
-3차 프로젝트(2026.08.19 ~ 2026.09.11)에서는 이 기준선을 유지하면서 **DJI Mini 4 Pro + RC-N2 + Android DJI MSDK Bridge 실기체 연계**, encoded camera stream, Edge GPU Vision AI, 실제/준실제 텔레메트리 연결 및 현장형 관제 시연으로 확장합니다. AWS는 핵심 기능을 대체하지 않으며, **Core P0 일정에 영향을 주지 않는 범위에서만 Edge–Cloud 선택 확장**으로 적용합니다.
+3차 프로젝트(2026.08.19 ~ 2026.09.09)에서는 이 기준선을 유지하면서 **DJI Mini 4 Pro + RC-N2 + Android DJI MSDK Bridge 실기체 연계**, encoded camera stream, Edge GPU Vision AI, 실제/준실제 텔레메트리 연결 및 현장형 관제 시연으로 확장합니다. AWS는 AI 추론을 대체하지 않고, **로컬 Edge AI + AWS EC2 Frontend/Backend/MySQL** 하이브리드 배치로 확장해 SSH 터널 기반 서비스·이벤트 저장 경로를 검증했습니다.
 
 > **핵심 방향**<br>
 > 특정 드론 기체나 단일 AI 모델에 종속되지 않고, 영상 입력원과 탐지 모델을 교체해도 재사용할 수 있는 **표준화된 Vision AI 관제 파이프라인**을 구축합니다.
@@ -60,7 +60,8 @@
 
 ## 📅 Phase 3 Work Schedule
 
-> **3차 프로젝트 공식 기간: 2026.08.19 ~ 2026.09.11**
+> **3차 프로젝트 공식 기간: 2026.08.19 ~ 2026.09.09**<br>
+> **일정 변경:** 최종 발표일이 2026.09.11에서 **2026.09.09로 이틀 앞당겨져**, 09.07 Feature Freeze → 09.08 최종 리허설·산출물 고정 → 09.09 발표 순으로 일정을 압축했습니다.<br>
 > 강사·멘토가 진행 상황을 바로 확인할 수 있도록 3차 프로젝트 상세 일정표를 별도 문서로 관리합니다.
 
 ### 👉 [3차 프로젝트 상세 작업 일정표 바로가기](Daily_Schedule/PHASE3_SCHEDULE.md)
@@ -75,7 +76,7 @@
 6. **개인 계정 로그인·RBAC·세션·QR Pairing·Audit 회귀 검증**
 7. **Next.js 관제 대시보드 End-to-End 시연**
 8. **CI/CD·Health Check·Automatic Rollback 회귀 검증**
-9. **AWS는 Core P0 완료 후 선택 확장**
+9. **로컬 AI + AWS Frontend/Backend/MySQL Hybrid E2E 검증 완료**
 
 ### ✅ Phase 3 Pre-Kickoff Baseline — 2026.08.18
 
@@ -123,10 +124,31 @@
 - AI Event·Snapshot·Telemetry·비행 이력을 MySQL과 관제 화면에서 통합 추적
 - **AI 영상 추론 고도화:** `yolo26m.pt` Detection + Tracking + `yolo26m-pose.pt` Pose + `yolo26m-seg.pt` Segmentation 단계형 통합, `best.pt` 퀄리티 개선, VisDrone 기반 원거리·소형 객체 대응
 - 기존 HTTPS·RBAC·QR Pairing·CI/CD·Automatic Rollback의 3차 E2E 회귀 검증
-- AWS는 4~6시간 Time-boxed Go / No-Go Spike 통과 시 Event/Telemetry 중심 Edge–Cloud 확장만 최소 적용
+- AWS Edge–Cloud Spike는 GO로 판정했으며, 로컬 AI의 통제 Phase 3 Event를 AWS Backend·MySQL에 저장하고 AWS Frontend에서 조회하는 최소 Hybrid E2E를 검증
 - 최종 발표·현장 시연을 위한 정상/대체 시나리오와 복구 Runbook 고정
 
 > DJI Mini 4 Pro의 실제 영상·비행 데이터 연계 범위는 RC-N2 + Android DJI MSDK에서 확인되는 camera stream·key-value interface와 네트워크 환경을 기준으로 확정합니다. AWS GPU/EKS/SageMaker는 3차 핵심 성공 조건이 아닙니다.
+
+---
+
+## ☁️ Validated AWS Hybrid Deployment — 2026.08.31
+
+AI 추론은 로컬 PC에 유지하고, AWS EC2에는 Frontend·Backend·MySQL을 배치한 하이브리드 서비스 경로를 통제 검증했습니다.
+
+| 영역 | 검증된 배치·역할 |
+|---|---|
+| 로컬 PC | FastAPI AI 서버, 영상 스트림, AI Event 생성 |
+| AWS EC2 | Next.js Frontend + Spring Boot Backend + MySQL |
+| 연결 | Frontend와 Backend를 loopback에 바인딩하고 SSH 터널로 접근 |
+| 운영 | Elastic IP와 EBS를 유지하고 미사용 시 EC2를 정상 중지 |
+
+- Frontend → Backend → MySQL `/api/drones` HTTP 200 및 JSON 응답 확인
+- 로컬 AI 컨테이너 → AWS Phase 3 Event HTTP 201 확인
+- AWS MySQL에 발표 증거 Event 정확히 1행 저장 및 AWS Frontend 표시 확인
+- Frontend 3000과 MySQL 3306을 Security Group에 공개하지 않는 접근 경계 유지
+- 최종 presentation readiness에서 Frontend·Backend·AI health와 DB 증거를 읽기 전용으로 재검증
+
+> 이 검증은 하이브리드 서비스와 Event 전달 경로의 Evidence입니다. DJI 실기체 영상 입력과 Edge GPU 실제 추론 완료를 의미하지 않으며, 두 항목은 남은 Core P0 일정에서 별도로 검증합니다.
 
 ---
 
@@ -296,6 +318,7 @@ flowchart LR
 | 🛡️ 안전 탐지 | Helmet / PPE Detection | 🟡 모델 고도화 중 | 작업자와 안전모·보호구 착용 여부 분석 |
 | 🧍 위험 행동 | Human Pose Estimation | 🔵 Phase 3 확장 | 쓰러짐 등 위험 행동 탐지 로직 연구 및 적용 |
 | 📶 실기체 연계 | Android DJI MSDK Bridge | 🟡 실기체 검증 준비 | Debug APK 빌드 완료, camera availability/encoded stream 및 DJI telemetry 실장비 검증 대기 |
+| ☁️ 하이브리드 배포 | Local AI + AWS Frontend/Backend/MySQL | ✅ 최소 E2E 검증 | SSH 터널 기반 서비스, Phase 3 Event 저장, MySQL 1행 및 Frontend 표시 확인 |
 | 🔐 운영 보안 | Account Login / RBAC / Session / QR Pairing / Audit | ✅ 3차 선행 개선 | 개인 계정 로그인, 서버 Role 자동 적용, 초기 비밀번호 자동 생성·최초 변경 강제, HttpOnly 세션, 모바일 QR 페어링, 감사 로그 |
 
 > 상태 표기: ✅ 구현 · 🟡 구현/검증 중 · 🔵 후속 확장
@@ -420,7 +443,7 @@ scripts\run-visionflow-backup.bat --consistent
 - [x] 스마트폰 HTTPS 실센서·후면 카메라·YOLO 통합 E2E 회귀 검증
 - [ ] AI 탐지 바운딩박스·스냅숏 표시 회귀 검증
 
-### 🚀 Phase 3 실행 계획 — 2026.08.19 ~ 2026.09.11
+### 🚀 Phase 3 실행 계획 — 2026.08.19 ~ 2026.09.09
 
 > 상세 일정 및 진행 상태: **[Phase 3 작업 일정표](Daily_Schedule/PHASE3_SCHEDULE.md)**
 
@@ -434,7 +457,7 @@ scripts\run-visionflow-backup.bat --consistent
 - [x] 개인 계정 로그인, DB Role 기반 RBAC, 자동 초기 비밀번호·최초 변경 강제, HttpOnly 세션, 보안 QR 페어링 및 감사 로그 강화
 - [x] Caddy HTTPS 진입점 및 Docker Compose Release 배포 구성
 - [x] GitHub Actions CI + Private CD + Docker Hub immutable SHA + 자동 Rollback 검증
-- [ ] AWS Edge–Cloud Spike 최종 GO / NO-GO 판정 및 선택 확장
+- [x] AWS Edge–Cloud Spike GO 판정 및 Local AI → AWS Backend/MySQL → Frontend 최소 Hybrid E2E 검증
 - [ ] 최종 발표용 실기체 통합 시연·복구 시나리오 완성
 
 ---
