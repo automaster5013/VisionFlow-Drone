@@ -8,11 +8,11 @@
 | 팀원 | **이명휘** |
 | 프로젝트명 | **VisionFlow-Drone** |
 | 주제 | **무선 영상·텔레메트리 기반 지능형 드론 관제 및 Vision AI 표준 파이프라인** |
-| 3차 프로젝트 기간 | **2026.08.19 ~ 2026.09.11** |
+| 3차 프로젝트 기간 | **2026.08.19 ~ 2026.09.09** |
 | GitHub | `automaster5013/VisionFlow-Drone` |
 
-> **일정 운영 원칙:** 3차 프로젝트의 핵심은 `DJI Mini 4 Pro → Edge GPU Vision AI → 텔레메트리/이벤트 → 관제 대시보드`의 실제 End-to-End 검증입니다.
-> AWS는 핵심 기능을 대체하지 않으며, **4~6시간 Time-boxed Go / No-Go Spike**를 통과한 경우에만 Edge–Cloud 확장 항목으로 진행합니다.
+> **일정 변경 확정(2026.08.31):** 최종 발표일이 2026.09.11에서 **2026.09.09로 이틀 앞당겨졌습니다.**<br>
+> **운영 원칙:** 남은 기간에는 `DJI Mini 4 Pro → Local Edge AI → 텔레메트리/이벤트 → 관제 대시보드`의 정상 시나리오와 대체 시나리오를 우선 고정합니다. AWS Spike는 GO로 종료했으며, 검증된 Hybrid 기준선은 변경하지 않고 발표 Evidence가 필요할 때만 재가동합니다.
 
 ---
 
@@ -21,7 +21,8 @@
 | 표기 | 의미 |
 |:---:|---|
 | ✅ **선행 완료** | 3차 착수 전에 이미 구현·검증된 기반 기능 |
-| 🟡 **사전 검증** | 공식 착수 전 기술 타당성·환경 검증 중 |
+| 🟡 **진행/부분 완료** | 일부 Evidence를 확보했으나 남은 검증 또는 보완이 있음 |
+| 🟢 **검증 완료** | 현재 Phase 3에서 실행·검증까지 완료한 항목 |
 | 🔵 **예정** | 3차 프로젝트 기간에 수행할 작업 |
 | 🟠 **선택 확장** | 핵심 일정에 영향이 없을 때만 수행 |
 | 🔴 **차단 이슈** | 핵심 E2E 진행을 막는 문제로 우선 해결 필요 |
@@ -30,27 +31,28 @@
 
 ## 🎯 Phase 3 성공 기준
 
-### P0 — 반드시 완료
+### P0 — 09.09 발표 전 반드시 완료
 
-- [ ] DJI Mini 4 Pro / RC-N2 / Android DJI MSDK Bridge 기반 실제 장치 연결 및 encoded camera stream 검증
-- [ ] MSDK encoded stream을 Edge AI 서버가 수신할 수 있는 Adapter/Receiver 경로 확정
-- [ ] DJI FlightController/Product/RemoteController Key 기반 실제/준실제 텔레메트리 연계 검증
-- [ ] RTX Edge GPU에서 **YOLO26m 기반 Detection을 기본 추론 모델**로 전환하고 성능 기준선 확보
-- [ ] `best.pt` PPE/안전 탐지 모델의 데이터·라벨·학습 설정·검증 지표를 재점검하고 퀄리티 고도화
-- [ ] `yolo26m-pose.pt` 기반 Pose Estimation과 `yolo26m-seg.pt` 기반 Instance Segmentation을 선택적/단계적 추론 파이프라인으로 통합
-- [ ] Detection/Pose/Segmentation 결과에 BoT-SORT 또는 ByteTrack 기반 Tracking을 결합해 객체 ID·궤적 유지
-- [ ] VisDrone 기반 항공 시점 학습·벤치마크와 고해상도/타일 추론 실험으로 원거리·소형 객체 탐지 보완
-- [ ] 실제/준실제 텔레메트리와 비행 세션을 동일 세션으로 연결
-- [ ] AI 이벤트·텔레메트리·비행 이력을 MySQL에 저장
-- [ ] Next.js 관제 대시보드에서 실시간 상태·AI 결과·경로 확인
-- [ ] 현장 시연용 End-to-End 시나리오와 복구 절차 검증
+- [ ] DJI Mini 4 Pro / RC-N2 / Android DJI MSDK Bridge 실장비 연결과 camera availability/encoded stream 최소 검증
+- [ ] 실제 장치 경로가 가능한 경우 MSDK stream 또는 telemetry 중 최소 한 경로를 Local Edge 서비스와 연결
+- [ ] 발표용 정상 시나리오 1개를 고정하고 Frontend·Backend·AI·MySQL 상태를 한 번에 검증
+- [ ] 실기체·네트워크 장애 시 즉시 전환할 스마트폰/더미 영상 기반 대체 시나리오 고정
+- [ ] 발표 직전 무변경 readiness, 복구 Runbook, 시연 캡처·로그·DB Evidence 확정
+- [ ] 09.07 Feature Freeze 이후 신규 기능 추가 없이 Critical issue 0 유지
 
-### P1 — 핵심 완료 후 확장
+### P1 — P0 안정화 후 남은 기간에 수행
 
-- [ ] AWS Edge–Cloud Hybrid Go / No-Go 결과 반영
-- [ ] GO인 경우 AI Event / Telemetry의 AWS 전달 및 로그·저장 최소 검증
-- [ ] Pose 기반 쓰러짐·위험 행동 규칙 및 이벤트 정책 실험
-- [ ] Segmentation 결과를 위험영역·작업구역 판정에 활용하는 선택 기능 검토
+- [ ] RTX Edge GPU에서 `yolo26m.pt` Detection 또는 검증된 기존 모델의 발표 기준선 확보
+- [ ] `best.pt` PPE/안전 탐지 모델의 데이터·라벨·학습 설정·검증 지표 재점검
+- [ ] 실제/준실제 텔레메트리와 Flight Session·AI Event의 동일 세션 추적
+- [ ] 개인 계정·RBAC·QR Pairing·HTTPS·CI/CD·Rollback 핵심 회귀 검증
+
+### P2 — 시간 허용 시 또는 발표 후 확장
+
+- [ ] Pose Estimation·Instance Segmentation의 선택적/단계적 추론 통합
+- [ ] BoT-SORT 또는 ByteTrack 기반 객체 ID·궤적 유지
+- [ ] VisDrone 재학습·고해상도/타일 추론 기반 원거리·소형 객체 개선
+- [ ] Pose 위험 행동 규칙과 Segmentation 위험영역 판정 실험
 
 ### 선행 기반 — 이미 검증
 
@@ -65,6 +67,9 @@
 - [x] GitHub Actions CI/CD + Windows self-hosted runner
 - [x] Health Check 및 Automatic Rollback
 - [x] 발표용 Docker 기준선 5 images / 5 healthy containers + Build Cache 0B 정리
+- [x] Local AI + AWS Frontend/Backend/MySQL Hybrid 배포 및 SSH 터널 접근 검증
+- [x] Local AI → AWS Phase 3 Event HTTP 201, MySQL 정확히 1행, AWS Frontend 표시 검증
+- [x] AWS 발표 readiness PASS 후 EC2 정상 중지, Elastic IP·EBS 보존
 
 ---
 
@@ -117,46 +122,56 @@ VisionFlow Dashboard / MySQL
 | 기간 | Milestone | 주요 작업 | 완료 기준 / Evidence | 상태 |
 |---|---|---|---|:---:|
 | **08.13 ~ 08.18** | **Phase 3 사전 기술 검증 / 보안·배포·DJI Bridge Readiness** | - AWS EC2·Security Group·SSH·Docker 및 Edge → AWS JSON Event 검증<br>- Phase 3 Backend `DJI_LIVE` Event ingest/depth observability Docker runtime 검증<br>- 개인 계정 로그인·DB Role RBAC·자동 초기 비밀번호·최초 변경 강제 적용 및 실제 브라우저 검증<br>- DJI MSDK `DjiSdkBootstrap.kt` camera availability/encoded stream listener 구현 및 `assembleDebug` PASS<br>- Docker 이미지 5개/healthy 컨테이너 5개로 발표 기준선 정리, Build Cache 0B<br>- AWS EC2 `VisionFlow-Drone` 중지 및 Elastic IP 유지로 비용 제어<br>- DJI 기체·RC-N2·스마트폰·배터리·데이터 케이블 준비 | - Backend ingest/depth observability 로그 PASS<br>- VIEWER/OPERATOR/ADMIN 계정·최초 비밀번호 변경 PASS<br>- `app-debug.apk` 생성<br>- Docker 5-service healthy<br>- AWS 선택 확장 재개 가능 상태 보존 | ✅ **선행 완료** |
-| **08.19 ~ 08.20** | **Phase 3 Kickoff / DJI MSDK 실장비 Gate** | - 2차 기준선 및 P0/P1 범위 재확인<br>- 스마트폰 ADB 연결 및 Debug APK 설치<br>- Mini 4 Pro ↔ RC-N2 ↔ Android MSDK Bridge 연결<br>- 프로펠러 비가동 상태에서 `MSDK_REGISTER_SUCCESS`, Product Connect 확인<br>- camera availability 확인 후 `MSDK_ENCODED_STREAM_FIRST/PROGRESS` 실제 packet 검증<br>- FlightController/Product/RemoteController Key telemetry smoke test | - ADB `device` 확인<br>- MSDK 등록·Product 연결 PASS<br>- camera 1개 이상 available<br>- encoded stream 첫 packet 및 누적 progress 로그 확보<br>- 실장비 telemetry 최소 1종 확인 | 🔵 **Kickoff** |
-| **08.21 ~ 08.22** | **SQLD 일정 보호 / 저개입 자동 검증** | - SQLD 시험 대비를 최우선하고 프로젝트 작업량 최소화<br>- 자동 Validation·Benchmark·로그 정리처럼 저개입 작업만 수행<br>- DJI Gate 결과와 차단 이슈를 문서화 | - SQLD 일정 침해 없음<br>- 08.23 재개 지점 명확화 | 🔵 **예정** |
-| **08.23 ~ 08.24** | **MSDK Encoded Stream → Edge AI Ingest PoC** | - Android MSDK encoded stream의 PC/Edge 전달 방식 확정<br>- Edge AI Adapter/Receiver 구성<br>- FastAPI ingest와 frame decode 연결<br>- reconnect·buffer·frame drop·latency 확인<br>- 기존 smartphone/browser ingest와 동일 인터페이스로 정규화 | - Edge PC에서 실기체 camera frame 수신<br>- FastAPI ingest HTTP/stream status 정상<br>- 안정적 재연결 절차와 latency 기준 확보 | 🔵 **예정** |
-| **08.25 ~ 08.27** | **AI 영상 추론 고도화 통합** | - 기본 Detection 모델을 `yolo26m.pt` 중심으로 재구성하고 `best.pt` 전문 탐지와 역할 분리<br>- Detection → Tracking → 선택적 Pose/Segmentation의 단계형 inference orchestration 구현<br>- 사람/위험 후보 ROI에 Pose를 선택 적용하고 필요 장면에 Segmentation을 선택 적용해 GPU 부하 제어<br>- VisDrone 기반 원거리·소형 객체 탐지 보완 실험<br>- 고해상도 입력, 타일 추론 및 small-object 대응 설정 비교<br>- snapshot/video evidence 및 Event schema에 track id·pose·mask 결과 반영 검토<br>- FPS·p50/p95 inference latency·drop rate·VRAM·Precision/Recall·mAP 기록 | - `yolo26m.pt` 실시간 기준선 확보<br>- Tracking ID 지속성 확인<br>- Pose/Seg 결과 관제 화면 또는 Event에서 확인<br>- `best.pt` 개선 모델 검증<br>- 원거리·소형 객체 개선 전/후 비교 Evidence 확보 | 🔵 **예정** |
-| **08.28 ~ 08.31** | **실기체 관제 Session / Telemetry 통합** | - 비행 세션과 영상·AI Event 연계<br>- 실제 또는 확보 가능한 비행 데이터 Adapter 연결<br>- 위치·고도·방향·속도 등 관제 데이터 정규화<br>- MySQL 저장 및 지도·경로 재생 회귀 검증 | - 하나의 Flight Session에서 Telemetry + AI Event 추적 가능<br>- DB/대시보드 E2E 확인 | 🔵 **예정** |
-| **09.01 ~ 09.03** | **AWS Hybrid 선택 확장 / Core Debug Buffer** | **GO:** Edge AI Event/Telemetry → AWS 최소 API·로그·저장 검증<br>**NO-GO:** AWS 종료 후 DJI/Edge/관제 Debug에 전 시간 투입<br>- AWS GPU/EKS/SageMaker는 본 일정의 필수 범위에서 제외 | - GO 시 Edge → AWS 실데이터 전달 Evidence<br>- NO-GO 시 Core E2E 차단 이슈 해소 | 🟠 **선택 확장** |
-| **09.04 ~ 09.06** | **통합 QA / 보안 / 배포 회귀** | - 개인 계정 로그인·Role 자동 적용·세션·최초 비밀번호 변경·QR Pairing·HTTPS 회귀 검증<br>- Docker Hub Release 및 Private CD Preflight 확인<br>- 실제 CD·Health Check·Rollback 회귀<br>- 장애 시 복구 시간 측정 | - 전 서비스 healthy<br>- 주요 E2E 및 Rollback PASS | 🔵 **예정** |
-| **09.07 ~ 09.08** | **현장 시연 시나리오 고정** | - 정상 시나리오 1개를 최우선으로 고정<br>- 영상·Telemetry·AI·Dashboard 동시 시연<br>- 네트워크/실기체 장애 시 대체 시연 경로 준비 | - 1회 이상 End-to-End 리허설 PASS<br>- 대체 시연 절차 준비 | 🔵 **예정** |
-| **09.09** | **발표·문서·Evidence 정리** | - README/Architecture/일정표 현행화<br>- Demo 캡처·영상·CI/CD Evidence 선별<br>- 구현/선택확장/미완료 항목 명확히 구분 | - GitHub 문서 최신화<br>- 발표 자료 Evidence 준비 | 🔵 **예정** |
-| **09.10** | **Feature Freeze / 최종 리허설** | - 신규 기능 추가 중단<br>- 발표 PC·네트워크·Drone·배터리 점검<br>- 전체 시나리오 반복 리허설<br>- DB/로그/복구 상태 확인 | - Critical issue 0<br>- 최종 리허설 PASS | 🔵 **예정** |
-| **09.11** | **3차 프로젝트 최종 시연·발표** | - 실기체/무선 영상/Edge AI/관제 통합 결과 시연<br>- CI/CD·Rollback 및 Hybrid 설계 결과 설명<br>- 기술적 한계와 후속 확장 방향 정리 | - 최종 발표 및 산출물 제출 | 🔵 **예정** |
+| **08.19 ~ 08.20** | **Phase 3 Kickoff / DJI MSDK 실장비 Gate** | - 2차 기준선과 P0/P1 범위 재확인<br>- Debug APK와 MSDK camera listener 빌드 기준선 유지<br>- 실장비 Gate는 안전한 실기 여건 확보 후 수행하도록 보류 | - 소스·APK readiness 유지<br>- 미검증 실장비 결과를 완료로 표기하지 않음 | 🔴 **실기 여건 보류** |
+| **08.21 ~ 08.22** | **SQLD 일정 보호 / 저개입 자동 검증** | - SQLD 시험 일정을 우선 보호<br>- 프로젝트 변경을 최소화하고 자동 검증·기록 중심으로 운영 | - 시험 일정 침해 없음<br>- 프로젝트 재개 기준선 유지 | ✅ **완료** |
+| **08.23 ~ 08.24** | **Core UI·인증·HTTPS 회귀 / MSDK PoC 보류** | - Frontend 운영 UI·RBAC·세션·QR Pairing·HTTPS 회귀 검증<br>- MSDK 실장비 입력은 환경 확보 전까지 변경 없이 보존 | - 주요 Frontend/API 회귀 PASS<br>- MSDK 미검증 범위 명시 | 🟡 **부분 완료** |
+| **08.25 ~ 08.27** | **AI Training Readiness·소형 객체 대응 기반** | - VisDrone S1 학습 계약·GPU preflight·batch 보정 기준선 정리<br>- Controlled live/replay 및 observability 계약 강화<br>- 최종 weight 생성 없이 재현 가능한 재개 지점 보존 | - S1 CPU/GPU readiness 확보<br>- 학습·실추론 완료로 과장하지 않음 | 🟡 **부분 완료** |
+| **08.28 ~ 08.31** | **S1 Fallback 정리 + AWS Hybrid 최소 E2E** | - S1 replay summary·historical evidence 복구<br>- AWS EC2에 Frontend·Backend·MySQL 배포<br>- Local AI Event 대상 두 경로를 AWS SSH 터널로 전환<br>- 통제 Phase 3 Event 1건을 HTTP 201로 저장하고 MySQL 1행·Frontend 표시 확인<br>- presentation readiness PASS 후 EC2 정상 중지, Elastic IP·EBS 유지 | - Local AI → AWS Backend/MySQL → Frontend Evidence PASS<br>- AWS 기준선 보존 및 과금 제어<br>- DJI·GPU 실추론은 미수행으로 구분 | 🟢 **Hybrid 검증 완료** |
+| **09.01 ~ 09.03** | **DJI / Local Edge AI Core Recovery Sprint** | - ADB·MSDK Product·camera availability·encoded stream 최소 Gate 재개<br>- 실장비가 차단되면 스마트폰/더미 영상 대체 입력을 즉시 고정<br>- 발표에 필요한 Detection 경로와 Event/Telemetry 연결만 우선 안정화<br>- AWS는 새 기능 없이 보존된 Evidence 확인 시에만 재가동 | - 실장비 또는 대체 입력 중 정상 경로 1개 확정<br>- 차단 사유와 대체 경로 문서화 | 🔵 **예정** |
+| **09.04 ~ 09.06** | **통합 QA / 보안 / 배포 회귀** | - Frontend·Backend·AI·MySQL 통합 health와 주요 API 검증<br>- 개인 계정·Role·세션·QR Pairing·HTTPS 회귀<br>- Docker Hub Release·Private CD·Rollback 핵심 경로 확인<br>- 발표 데이터·로그·DB Evidence 선별 | - 정상 시나리오 E2E PASS<br>- 주요 회귀 PASS 및 Critical issue 정리 | 🔵 **예정** |
+| **09.07** | **Feature Freeze / 정상·대체 시나리오 고정** | - 신규 기능 추가 중단<br>- 정상 시연 순서와 실기체·네트워크 장애 시 대체 경로 고정<br>- 복구 Runbook과 발표 PC·케이블·배터리 점검 | - Critical issue 0 또는 명시적 우회 절차<br>- 정상/대체 시나리오 문서 고정 | 🔵 **예정** |
+| **09.08** | **최종 리허설 / 문서·산출물 고정** | - 전체 시나리오 반복 리허설<br>- README·Architecture·일정표 최종 현행화<br>- Demo 캡처·영상·CI/CD·Hybrid Evidence 선별<br>- 구현·선택 확장·미완료 항목 명확히 구분 | - 최종 리허설 PASS<br>- 발표 자료와 제출 산출물 고정 | 🔵 **예정** |
+| **09.09** | **3차 프로젝트 최종 시연·발표** | - 검증된 정상 또는 대체 입력 기반 관제 시연<br>- Local Edge AI + AWS Hybrid 설계와 CI/CD·Rollback 결과 설명<br>- DJI·GPU 등 미완료 범위와 후속 확장 방향을 투명하게 제시 | - 최종 발표 및 산출물 제출 | 🏆 **최종 발표** |
 
 ---
 
-## ☁️ AWS Spike Go / No-Go Gate
+## ☁️ AWS Spike — GO 판정 및 기준선 고정
 
-AWS는 3차 프로젝트의 필수 성공 조건이 아니라 **Edge–Cloud 확장 가능성 검증 항목**입니다.
+AWS는 Local Edge AI를 대체하지 않는 **Frontend·Backend·MySQL 확장 배치**로 검증했습니다. 2026.08.31 최소 Hybrid E2E와 발표 readiness를 통과했으므로 Spike는 GO로 종료하며, 남은 일정에는 새 AWS 기능을 추가하지 않습니다.
 
-### GO 조건
+### 검증 결과
+
+- [x] AWS EC2 Frontend·Backend·MySQL 배포 및 health 확인
+- [x] Frontend → Backend → MySQL `/api/drones` HTTP 200·JSON 확인
+- [x] Local AI → AWS Phase 3 Event HTTP 201 확인
+- [x] AWS MySQL 발표 증거 Event 정확히 1행 및 AWS Frontend 표시 확인
+- [x] Frontend·Backend SSH 터널 접근과 비공개 MySQL 네트워크 경계 확인
+- [x] 발표 readiness PASS 후 EC2 정상 중지, Elastic IP·EBS 보존
+
+> 위 결과는 Hybrid 서비스·Event 전달 경로의 Evidence이며 DJI 실기체 영상이나 GPU 실제 추론 완료를 의미하지 않습니다.
+
+### 최초 GO 조건
 
 - Edge PC → AWS EC2 API 통신 성공
 - VisionFlow 형태 JSON Event 전달 및 서버 로그 확인
 - 4~6시간 이내에 네트워크·보안·Docker 운용이 감당 가능한 수준으로 판단
 - DJI / Edge AI P0 일정에 영향이 없음
 
-### NO-GO 조건
+### 중단 조건
 
 - IAM / Security Group / 네트워크 문제만으로 과도한 시간 소비
 - AWS 구현이 DJI 실기체·Edge AI 일정에 영향을 주기 시작함
 - GPU quota·비용·운영 복잡도가 프로젝트 가치보다 커짐
 - 안정적 시연 경로를 위협함
 
-> **NO-GO도 정상적인 기술 의사결정입니다.** 이 경우 실시간 AI는 Edge GPU에 유지하고 AWS는 후속 확장 범위로 기록합니다.
+> 남은 기간에는 AWS 기준선을 동결합니다. 재가동은 발표 Evidence 확인처럼 목적과 종료 시점이 명확한 경우에만 수행합니다.
 
 ---
 
 ## 🔒 일정 관리 원칙
 
-1. **P0 Core 우선:** DJI → Edge GPU → **Detection + Tracking + 선택적 Pose/Segmentation + 원거리 소형 객체 대응** → Telemetry/Event → Dashboard를 먼저 완성합니다.
-2. **AWS는 Optional:** GO Gate 통과 후에도 Core 일정에 여유가 있을 때만 확장합니다.
-3. **Feature Freeze:** 09.10부터 신규 기능을 추가하지 않습니다.
+1. **P0 Core 우선:** DJI 또는 검증된 대체 입력 → Local Edge Detection → Telemetry/Event → Dashboard의 발표 가능 경로를 먼저 완성합니다.
+2. **AWS 기준선 동결:** 검증된 Hybrid 배치에는 신규 기능을 추가하지 않고 Local Edge/DJI Core에 집중합니다.
+3. **Feature Freeze:** 09.07부터 신규 기능을 추가하지 않습니다.
 4. **Recovery First:** 실기체·네트워크 장애를 고려해 항상 대체 시연 경로를 유지합니다.
 5. **매일 현행화:** 실제 진행 결과에 따라 본 일정표의 상태와 Evidence를 갱신합니다.
