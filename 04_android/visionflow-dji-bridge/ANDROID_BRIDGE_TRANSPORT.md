@@ -16,9 +16,12 @@ Mini 4 Pro camera
   -> existing YOLO / PPE / Depth / Phase3 Reporter
 ```
 
-이번 단계에서는 `DjiSdkBootstrap.kt`의 실기체 WIP에 uploader를 연결하지 않습니다.
-실제 Mini 4 Pro camera packet을 확인한 뒤 callback의 byte-array/length 계약과
-codec 값을 검증하고 연결합니다.
+`DjiSdkBootstrap.kt`는 MSDK 등록 성공 시
+`DjiCameraStreamBridgeRuntime.start()`를 호출합니다. runtime은 available-camera
+listener에서 선택한 camera에 `ReceiveStreamListener`를 연결하고, H.264/H.265
+packet을 `DjiEncodedStreamUploader`로 전달합니다. 이 소프트웨어 wiring은
+구현됐지만 실제 Mini 4 Pro packet의 byte-array/offset/length, codec 및
+Annex-B framing 호환성은 실기체 Gate에서 검증합니다.
 
 ## AI runtime
 
@@ -89,8 +92,9 @@ Android는 `https://<EDGE_LAN_IP>:3443` 경로를 사용하며 cleartext HTTP는
 
 ## Android runtime configuration
 
-`DjiSdkBootstrap.kt`와 실제 MSDK callback을 연결하기 전에 runtime 설정은
-독립 계층으로 관리합니다.
+runtime 설정은 MSDK callback과 분리된 저장 계층으로 관리됩니다.
+`DjiCameraStreamBridgeRuntime`은 encoded packet을 처음 처리할 때
+`DjiBridgeRuntimeConfigStore`의 준비 상태를 확인하고 uploader를 생성합니다.
 
 ```text
 DjiBridgeRuntimeConfig
@@ -101,7 +105,7 @@ DjiBridgeRuntimeConfig
 DjiBridgeRuntimeConfigStore
   non-secret profile -> private SharedPreferences
   DJI bridge key     -> Android Keystore AES/GCM encrypted payload
-  sessionId          -> not persisted; supplied per flight session
+  sessionId          -> private SharedPreferences (1..36 chars)
 ```
 
 Bridge key는 평문 SharedPreferences, source tree, Gradle property 또는 APK
@@ -109,12 +113,21 @@ resource에 저장하지 않습니다. `snapshot()`은 key 존재 여부만 반�
 값은 반환하지 않습니다.
 
 `createUploader(sessionId)`는 저장된 HTTPS profile과 DJI 전용 key를 조합해
-`DjiEncodedStreamUploader`를 생성합니다. sessionId는 1~36자로 검증한 뒤에만
-사용합니다.
+`DjiEncodedStreamUploader`를 생성합니다. 호출자가 sessionId를 전달하면 검증 후
+사용하고, 전달하지 않으면 private SharedPreferences에 저장된 sessionId를 사용합니다.
 
-현재 단계에서는 이 config store를 `DjiSdkBootstrap.kt`에 연결하지 않습니다.
-실기체 MSDK byte framing을 확인한 뒤 bootstrap callback과 uploader lifecycle을
-연결합니다.
+`DjiCameraStreamBridgeRuntime`은 이 config store와 연결돼 있습니다. profile 또는
+credential이 준비되지 않았으면 uploader를 시작하지 않고 WAIT marker를 남깁니다.
+설정을 갱신하면 현재 uploader를 닫고 다음 encoded packet에서 새 설정으로 다시
+생성합니다.
+
+## Scope boundary
+
+이 계약의 DJI 실기체 범위는 encoded-video 전송입니다. 현재 Android bridge에는
+MSDK flight-controller telemetry key를 Backend telemetry/event 계약으로 변환해
+전송하는 adapter가 포함돼 있지 않습니다. 기존 simulator 또는 Backend telemetry
+검증 결과는 DJI 실기체 telemetry 연동 증거가 아니며, 해당 경로는 별도 구현과
+실기체 Gate가 필요합니다.
 
 ## Hardware WAIT boundary
 
