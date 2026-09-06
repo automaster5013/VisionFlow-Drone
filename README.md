@@ -1,27 +1,10 @@
-<!-- README conflict resolved for the Phase 2 closeout and Phase 3 preparation baseline. -->
+<!-- Last updated: 2026-09-07 KST. Status claims are limited to verified evidence. -->
 <div align="center">
 
 <!-- 저장소 루트에 PyvaOps_Logo.png 파일을 배치합니다. -->
 <img src="PyvaOps_Logo.png" width="800" alt="PyvaOps Team Logo">
 
 </div>
-
-<br>
-
-<div align="left">
-
-## 🎨 Team PyvaOps Logo Concept
-
-팀명 **PyvaOps**는 **Py**thon(AI) + Ja**va**(Backend) + Dev**Ops**(Infra)를 결합한 이름입니다.<br>
-서로 다른 기술 생태계를 하나의 실시간 파이프라인으로 연결하고, 설계부터 구현·검증·운영까지 직접 완성하는 **1인 올라운더(All-rounder) 프로젝트 팀**의 정체성을 담고 있습니다.
-
-- **인피니티 루프**: AI, 백엔드, 인프라가 단절 없이 연결되는 데이터 흐름과 지속적인 개선을 상징합니다.
-- **기술별 아이콘과 색상**: Python 기반 Vision AI, Java 기반 관제 백엔드, DevOps 기반 실행 환경의 결합을 표현합니다.
-- **네온 네트워크 이미지**: 실시간 영상·텔레메트리·이벤트가 유기적으로 흐르는 지능형 관제 시스템을 시각화합니다.
-
-</div>
-
----
 
 <div align="center">
 
@@ -58,6 +41,21 @@
 
 ---
 
+## 🚦 Phase 3 현재 상태 — 2026.09.07 KST
+
+| 트랙 | 확인된 결과 | 현재 경계 |
+|---|---|---|
+| 통합 관제 기준선 | 스마트폰·브라우저·시험 영상 → AI → Backend/MySQL → Dashboard, 인증·HTTPS·CI/CD·Rollback 검증 | 발표 정상·대체 시나리오 고정 단계 |
+| AWS Hybrid | Local AI → AWS Backend/MySQL → Frontend 최소 E2E PASS | 검증 기준선 동결, Evidence 확인 목적만 재가동 |
+| DJI Bridge | MSDK camera listener·encoded stream 전송/수신 소프트웨어 경로 구현, Debug APK 빌드 PASS | ADB·Product·실제 camera stream·DJI telemetry 실장비 E2E는 미검증 |
+| VisDrone S1 | 10-class 소형 객체 baseline 학습 완료, canonical weight 무결성 고정 | 발표용 controlled fallback이며 production safety certification은 아님 |
+| PPE S2 fast-track | pool 512 audit, focus 38 확정, 재주석 대상 34건 AI-assisted proposal, 9장·87 box smoke 입력 준비 PASS | 실제 GPU smoke·final source-group/split·GT·본 학습·모델 승격은 `HOLD` |
+| 발표 일정 | 09.07 Feature Freeze → 09.08 리허설·산출물 고정 → 09.09 발표 | 신규 기능보다 재현 가능한 시연과 복구 경로 우선 |
+
+> **판정 원칙:** `PASS`는 실제 실행 증거가 있는 범위만 뜻합니다. AI-assisted proposal과 reference label은 Ground Truth가 아니며, 1-epoch smoke는 실행되더라도 정확도 평가가 아니라 학습 파이프라인 점검입니다.
+
+---
+
 ## 📅 Phase 3 Work Schedule
 
 > **3차 프로젝트 공식 기간: 2026.08.19 ~ 2026.09.09**<br>
@@ -66,25 +64,22 @@
 
 ### 👉 [3차 프로젝트 상세 작업 일정표 바로가기](Daily_Schedule/PHASE3_SCHEDULE.md)
 
-핵심 우선순위는 다음과 같습니다.
+발표 전 핵심 우선순위는 다음과 같습니다.
 
-1. **DJI Mini 4 Pro / RC-N2 / Android MSDK Bridge 실제 장치 연결 및 encoded camera stream 검증**
-2. **MSDK 영상·텔레메트리 → Edge AI / Backend 입력 어댑터 확정**
-3. **AI 영상 추론 고도화 — YOLO26m Detection + Tracking + Pose + Segmentation + VisDrone 소형 객체 대응**
-4. **Edge GPU 기반 실시간 Multi-Task 추론 성능 최적화**
-5. **비행 세션·텔레메트리·AI Event·MySQL 통합**
-6. **개인 계정 로그인·RBAC·세션·QR Pairing·Audit 회귀 검증**
-7. **Next.js 관제 대시보드 End-to-End 시연**
-8. **CI/CD·Health Check·Automatic Rollback 회귀 검증**
-9. **로컬 AI + AWS Frontend/Backend/MySQL Hybrid E2E 검증 완료**
+1. **검증된 스마트폰·시험 영상·replay 입력으로 정상/대체 시연 경로 고정**
+2. **Frontend·Backend·AI·MySQL health와 인증·HTTPS·Rollback 핵심 회귀**
+3. **VisDrone S1 산출물과 PPE S2 provisional smoke Evidence 정리**
+4. **DJI 실장비 Gate는 성공 Evidence를 확보한 범위만 시연에 포함**
+5. **09.08 리허설과 README·일정표·발표 산출물 동결**
 
-### ✅ Phase 3 Pre-Kickoff Baseline — 2026.08.18
+### ✅ Verified Phase 3 Milestones
 
-- **운영자 인증 UX 개선:** 개인 ID/비밀번호 로그인, DB 귀속 RBAC, 자동 생성 임시 비밀번호와 최초 변경 강제, HttpOnly 세션, 모바일 QR Pairing 분리
-- **Phase 3 Backend 검증:** `DJI_LIVE` Event ingest/depth enrichment와 observability log를 Docker Hub 이미지 런타임까지 검증
-- **DJI Android Bridge 준비:** `DjiSdkBootstrap.kt` camera availability/encoded stream listener 컴파일 및 `app-debug.apk` 빌드 PASS. 실제 ADB 장치·encoded stream 런타임 검증은 Kickoff 첫 Gate
-- **Docker 발표 기준선:** Frontend/Backend/AI/MySQL/Caddy 5개 이미지와 5개 healthy 컨테이너로 정리, Build Cache 0B
-- **AWS 비용 제어:** EC2 `VisionFlow-Drone`은 중지, Elastic IP 유지. AWS는 Core P0 완료 후 선택 확장
+- **보안·모바일:** 개인 로그인, DB 귀속 RBAC, 자동 임시 비밀번호·최초 변경 강제, HttpOnly 세션, QR Pairing, 모바일 HTTPS와 실제 기기 주소 재탐지 검증
+- **서비스·배포:** Frontend/Backend/AI/MySQL/Caddy 5-service health, immutable image CI/CD, 순차 배포, Health Check와 Automatic Rollback 검증
+- **AWS Hybrid:** Local AI의 통제 Event를 AWS Backend/MySQL에 저장하고 AWS Frontend에서 조회하는 최소 E2E PASS
+- **DJI 소프트웨어 경로:** Android Bridge listener·uploader와 Edge AI 수신/FFmpeg decode 경로 구현 및 Debug APK 빌드 PASS. 실장비 runtime은 계속 별도 Gate
+- **VisDrone S1:** 10-class 항공 시점 Detection 학습 완료, 재현 가능한 canonical initializer 고정
+- **PPE Batch 0001:** curated pool 512 비파괴 감사, focus 38(재주석 34·격리 HOLD 4), 34건 AI-assisted proposal과 S2 smoke 입력 패키지 준비 완료
 
 ---
 
@@ -122,7 +117,7 @@
 - Android Bridge encoded stream → Edge AI(FastAPI + YOLO/OpenCV) 수신·추론 파이프라인 구현
 - DJI FlightController/Product/RemoteController Key 기반 텔레메트리 Adapter와 Flight Session 연계
 - AI Event·Snapshot·Telemetry·비행 이력을 MySQL과 관제 화면에서 통합 추적
-- **AI 영상 추론 고도화:** `yolo26m.pt` Detection + Tracking + `yolo26m-pose.pt` Pose + `yolo26m-seg.pt` Segmentation 단계형 통합, `best.pt` 퀄리티 개선, VisDrone 기반 원거리·소형 객체 대응
+- **AI 영상 추론 고도화:** Detection 중심의 VisDrone S1 baseline과 PPE S2 fast-track을 우선 검증하고, Tracking·Pose·Segmentation은 발표 후 선택 확장
 - 기존 HTTPS·RBAC·QR Pairing·CI/CD·Automatic Rollback의 3차 E2E 회귀 검증
 - AWS Edge–Cloud Spike는 GO로 판정했으며, 로컬 AI의 통제 Phase 3 Event를 AWS Backend·MySQL에 저장하고 AWS Frontend에서 조회하는 최소 Hybrid E2E를 검증
 - 최종 발표·현장 시연을 위한 정상/대체 시나리오와 복구 Runbook 고정
@@ -148,7 +143,36 @@ AI 추론은 로컬 PC에 유지하고, AWS EC2에는 Frontend·Backend·MySQL�
 - Frontend 3000과 MySQL 3306을 Security Group에 공개하지 않는 접근 경계 유지
 - 최종 presentation readiness에서 Frontend·Backend·AI health와 DB 증거를 읽기 전용으로 재검증
 
-> 이 검증은 하이브리드 서비스와 Event 전달 경로의 Evidence입니다. DJI 실기체 영상 입력과 Edge GPU 실제 추론 완료를 의미하지 않으며, 두 항목은 남은 Core P0 일정에서 별도로 검증합니다.
+> 이 검증은 하이브리드 서비스와 Event 전달 경로의 Evidence입니다. DJI 실기체 영상 입력이나 DJI stream 기반 Edge GPU 실시간 추론 완료를 의미하지 않으며, 해당 범위는 별도 Gate입니다.
+
+---
+
+## 🧠 AI 학습·데이터 현황
+
+### Stage 1 — VisDrone 소형 객체 대응
+
+- VisDrone 10-class S1 학습은 epoch 88에서 early stopping으로 완료했습니다.
+- Canonical initializer는 `yolo26m-visdrone-s1-best.pt`이며, 파일 크기 `44,121,433 bytes`, SHA-256 `486f29a14b68201defb2148db923633f15b68f0304b50ff1f66b893ea4e16422`로 고정했습니다.
+- 평가 계약·활성화 경계와 재현 정보는 [`yolo26m-visdrone-s1-best.manifest.json`](03_ai-server/visionflow-ai/models/manifests/yolo26m-visdrone-s1-best.manifest.json)에 기록하며, S1 지표를 PPE 정확도나 production safety certification으로 해석하지 않습니다.
+- 대용량 weight 자체는 Git에 포함하지 않으며, S1은 다시 학습하지 않고 PPE S2의 초기화 모델로만 사용합니다.
+
+### Stage 2 — PPE 4-class fast-track
+
+목표 taxonomy는 `helmet / vest / head / person`입니다. 발표 일정 때문에 재주석 대상 34건의 완전 수동 입력은 발표 후로 이연하고, 현재는 **AI-assisted provisional proposal + 기술 smoke** 경로만 준비합니다.
+
+| 단계 | 확인된 결과 | 상태 |
+|---|---:|:---:|
+| Curated annotation pool | 512건 provenance·exact/near-duplicate audit PASS | ✅ |
+| Batch 0001 disposition | 64건 중 유효 focus 38건(재주석 34, 격리 HOLD 4) | ✅ |
+| Anti-leakage 검토 | 기존 MNS 4개와 조건부 확장 1건, exact-payload 제약 2건을 Evidence로 고정 | ✅ 조건부 제약 |
+| AI-assisted proposal | 재주석 대상 이미지 34/34 처리 PASS | 🧪 제안 전용 |
+| PPE S2 smoke 입력 | 9장·87 provisional boxes(train 7, val 2) 조립 검증 PASS | 🧪 기술 입력 |
+| PPE S2 1-epoch GPU smoke | 아직 실행하지 않음 | 🟡 실행 대기 |
+| Final source-group / split | 최종 배정 0 | ⏸️ HOLD |
+| Semantic / box Ground Truth | 승인 0 | ⏸️ HOLD |
+| PPE S2 본 학습·canonical 승격 | 실행 0 | ⏸️ HOLD |
+
+> Candidate edge는 자동 source-group으로 승격하지 않습니다. Must-not-split와 exact-payload 제약은 데이터 누출 방지용 조건이며, 보존본·라벨·포함 여부 또는 Ground Truth 승인을 대신하지 않습니다.
 
 ---
 
@@ -315,13 +339,14 @@ flowchart LR
 | 🗄️ 이력 관리 | Telemetry Persistence | ✅ 구현 | MySQL 기반 텔레메트리 이력 저장 및 경로 조회 API |
 | 🎬 비행 세션 | Flight Session Management | ✅ 구현 | 가상 드론 촬영·비행 단위 세션 생성 및 상태 관리 |
 | 🤖 AI 수집 | Frame Ingest API | ✅ 구현 | 브라우저·스마트폰·시험 영상 프레임을 FastAPI로 전달 |
-| 🛡️ 안전 탐지 | Helmet / PPE Detection | 🟡 모델 고도화 중 | 작업자와 안전모·보호구 착용 여부 분석 |
-| 🧍 위험 행동 | Human Pose Estimation | 🔵 Phase 3 확장 | 쓰러짐 등 위험 행동 탐지 로직 연구 및 적용 |
-| 📶 실기체 연계 | Android DJI MSDK Bridge | 🟡 실기체 검증 준비 | Debug APK 빌드 완료, camera availability/encoded stream 및 DJI telemetry 실장비 검증 대기 |
+| 🔭 소형 객체 | VisDrone S1 Detection | ✅ 학습·검증 완료 | SHA-pinned canonical initializer와 발표용 controlled fallback 고정 |
+| 🛡️ 안전 탐지 | Helmet / PPE 4-class | 🟡 provisional smoke 준비 | 34건 AI proposal·9장 smoke 입력 준비 완료, final GT·split·본 학습 HOLD |
+| 🧍 위험 행동 | Human Pose Estimation | 🔵 발표 후 선택 확장 | 현재 발표 필수 범위에서 제외 |
+| 📶 실기체 연계 | Android DJI MSDK Bridge | 🟡 소프트웨어 구현·실장비 대기 | Debug APK와 encoded stream 송수신 코드 PASS, ADB/Product/실제 stream·telemetry runtime 미검증 |
 | ☁️ 하이브리드 배포 | Local AI + AWS Frontend/Backend/MySQL | ✅ 최소 E2E 검증 | SSH 터널 기반 서비스, Phase 3 Event 저장, MySQL 1행 및 Frontend 표시 확인 |
 | 🔐 운영 보안 | Account Login / RBAC / Session / QR Pairing / Audit | ✅ 3차 선행 개선 | 개인 계정 로그인, 서버 Role 자동 적용, 초기 비밀번호 자동 생성·최초 변경 강제, HttpOnly 세션, 모바일 QR 페어링, 감사 로그 |
 
-> 상태 표기: ✅ 구현 · 🟡 구현/검증 중 · 🔵 후속 확장
+> 상태 표기: ✅ 실행·검증 완료 · 🟡 준비/부분 완료 · 🧪 실험/잠정 · ⏸️ HOLD · 🔵 발표 후 확장
 
 ---
 
@@ -431,7 +456,7 @@ scripts\run-visionflow-backup.bat --consistent
 - [x] 비행 세션 API와 가상 드론 촬영 흐름 안정화
 - [x] 브라우저·스마트폰 영상 프레임 수집 흐름 고도화
 - [x] 스마트폰 실센서 모드 HTTPS/인증서 환경 재검증
-- [x] YOLO 기반 안전모·보호구 탐지 파이프라인 통합
+- [x] YOLO 기반 안전 탐지 API·화면 연결 기준선 통합(모델 품질 개선은 Phase 3에서 별도 관리)
 - [x] 대시보드 오류 처리, 로딩 상태 및 운영 UI 개선
 - [x] 전환·복구 스크립트와 다중 PC 개발 환경 표준화
 
@@ -449,11 +474,17 @@ scripts\run-visionflow-backup.bat --consistent
 
 - [x] DJI MSDK Android Bridge camera stream listener 컴파일 및 Debug APK 빌드
 - [ ] ADB 실장비 연결 → MSDK 등록/Product 연결 → camera availability/encoded stream 검증
-- [ ] MSDK encoded stream 수신 Adapter와 Edge AI 입력 경로 구현
-- [ ] Edge GPU YOLO/OpenCV 실시간 추론 및 성능 기준선 확보
+- [x] MSDK encoded stream 수신 Adapter와 Edge AI FFmpeg decode 입력 경로 구현
+- [x] VisDrone S1 10-class 학습 완료 및 canonical weight 고정
+- [x] PPE curated pool 512 provenance/duplicate audit와 Batch 0001 focus 38 확정
+- [x] 재주석 대상 34건 AI-assisted provisional proposal 생성
+- [x] PPE S2 1-epoch 기술 smoke 입력 9장·87 provisional boxes 조립 검증
+- [ ] PPE S2 1-epoch GPU smoke 실행·로그·weight Evidence 고정
+- [ ] 재주석 34건 완전 수동 보정과 semantic/box GT 승인(발표 후)
+- [ ] Final source-group·split·PPE S2 본 학습·canonical 승격(`HOLD`)
 - [ ] 실제/준실제 비행 데이터와 Flight Session·Telemetry 연결
 - [ ] AI Event·Snapshot·Telemetry·MySQL·관제 Dashboard 통합 E2E
-- [ ] Helmet/PPE 정밀도 보완 및 Human Pose Estimation 선택 확장
+- [ ] Human Pose Estimation·Tracking·Segmentation 선택 확장(발표 후)
 - [x] 개인 계정 로그인, DB Role 기반 RBAC, 자동 초기 비밀번호·최초 변경 강제, HttpOnly 세션, 보안 QR 페어링 및 감사 로그 강화
 - [x] Caddy HTTPS 진입점 및 Docker Compose Release 배포 구성
 - [x] GitHub Actions CI + Private CD + Docker Hub immutable SHA + 자동 Rollback 검증
@@ -476,6 +507,8 @@ scripts\run-visionflow-backup.bat --consistent
 ## 👤 Developer
 
 **이명휘 · Team PyvaOps**
+
+**PyvaOps**는 **Py**thon(AI) + Ja**va**(Backend) + Dev**Ops**(Infra)를 결합한 이름입니다. 인피니티 루프 로고는 영상·텔레메트리·이벤트가 AI, 백엔드, 인프라 사이를 끊김 없이 흐르는 구조와 지속적인 개선을 상징합니다.
 
 - VisionFlow-Drone 아키텍처 및 데이터 파이프라인 설계
 - Next.js 관제 대시보드 개발
