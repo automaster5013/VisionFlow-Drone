@@ -173,7 +173,7 @@ export function MobileNavigation({ operatorSecurity }: MobileNavigationProps) {
         : null;
 
     return (
-        <div className="shrink-0 lg:hidden">
+        <div className="lg:hidden" style={{ flexShrink: 0 }}>
             <button
                 ref={openerRef}
                 type="button"
