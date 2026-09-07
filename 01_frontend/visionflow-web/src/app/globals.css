@@ -2400,6 +2400,24 @@ html[data-resolved-theme=dark] .vf-demo-mode-command__mode-card {
   color-scheme: dark;
 }
 
+/* Keep demo controls aligned and the preview usable within a laptop viewport. */
+.vf-demo-mode-command__preview {
+  border-color: var(--vf-border) !important;
+  background: #020617 !important;
+  box-shadow: var(--vf-shadow);
+}
+
+.vf-demo-mode-command__preview-stage {
+  width: 100%;
+  background: #020617;
+}
+
+.vf-demo-mode-command__telemetry > div {
+  border: 1px solid var(--vf-border);
+  background: var(--vf-surface-1) !important;
+}
+
+
 /* Phase 1K: demo scenario theme-responsive command hierarchy. */
 .vf-demo-scenario-command {
   background: var(--vf-bg) !important;
