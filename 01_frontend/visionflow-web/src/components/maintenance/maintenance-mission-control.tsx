@@ -1047,7 +1047,7 @@ function ReadinessFilterButton({
       type="button"
       aria-pressed={active}
       onClick={onSelect}
-      className={`rounded-full border px-3 py-1.5 text-[11px] font-black transition ${
+      className={`vf-maintenance-readiness-filter rounded-full border px-3 py-1.5 text-[11px] font-black transition ${
         active
           ? "border-cyan-300 bg-cyan-300 text-slate-950"
           : "border-slate-600 bg-slate-950/60 text-slate-300 hover:border-cyan-300/60 hover:text-cyan-100"

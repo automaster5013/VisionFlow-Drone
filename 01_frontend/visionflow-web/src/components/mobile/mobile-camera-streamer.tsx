@@ -718,7 +718,7 @@ export function MobileCameraStreamer() {
 
         <div className="vf-camera-command__preview-grid grid gap-4 xl:grid-cols-2">
           <section className="vf-camera-command__preview overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <header className="border-b border-slate-200 p-4">
+            <header className="vf-camera-command__preview-header border-b border-slate-200 p-4">
               <h2 className="font-bold text-slate-900">원본 카메라 영상</h2>
               <p className="mt-1 text-xs text-slate-500">
                 브라우저가 AI 서버로 전송하는 원본 프레임입니다.
