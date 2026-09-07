@@ -765,7 +765,7 @@ export function MaintenanceWorkOrderBoard({
           </div>
         )}
 
-        <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
+        <p className="vf-maintenance-flight-gate-note mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
           비행 시작 게이트는 OFF·ADVISORY·ENFORCED 모드를 지원합니다.
           기본 ADVISORY는 경고만 표시해 발표 흐름을 보호하고, ENFORCED는
           재운항 승인 전 새 비행 세션 생성을 차단합니다.

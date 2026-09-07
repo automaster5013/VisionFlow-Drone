@@ -623,7 +623,8 @@ function DroneReliabilityCard({ item }: { item: FleetDroneReliability }) {
 
   return (
     <article
-      className={`break-inside-avoid rounded-2xl border p-5 shadow-sm ${presentation.className}`}
+      data-status={item.status}
+      className={`vf-reliability-card break-inside-avoid rounded-2xl border p-5 shadow-sm ${presentation.className}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -687,7 +688,7 @@ function DroneReliabilityCard({ item }: { item: FleetDroneReliability }) {
       </div>
 
       {item.latestAssessment.primaryRisk && (
-        <div className="mt-4 rounded-xl bg-white/70 p-3 text-xs">
+        <div className="vf-reliability-card__diagnosis mt-4 rounded-xl bg-white/70 p-3 text-xs">
           <div className="font-black text-slate-900">최근 주요 진단</div>
           <div className="mt-1 font-bold">
             {item.latestAssessment.primaryRisk.title}
@@ -727,7 +728,7 @@ function ReliabilityValue({
   value: string;
 }) {
   return (
-    <div className="rounded-lg bg-white/70 p-3">
+    <div className="vf-reliability-card__value rounded-lg bg-white/70 p-3">
       <div className="text-[10px] font-bold text-slate-500">{label}</div>
       <div className="mt-1 font-black text-slate-900">{value}</div>
     </div>

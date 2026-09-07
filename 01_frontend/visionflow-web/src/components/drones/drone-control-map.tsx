@@ -118,33 +118,47 @@ function createDroneIcon(
         : drone.isStale
       ? "#64748b"
       : (STATUS_COLORS[drone.status] ?? "#64748b");
-  const symbol = flightBlocked || flightAttention ? "!" : "✈";
 
-  const size = selected ? 46 : 38;
+  const size = selected ? 52 : 40;
+  const alertBadge =
+    flightBlocked || flightAttention
+      ? '<span class="visionflow-drone-map-marker__alert">!</span>'
+      : "";
+  const selectedLabel = selected
+    ? '<span class="visionflow-drone-map-marker__label">선택</span>'
+    : "";
 
   return L.divIcon({
     className: "",
     html: `
-            <div style="
-                width:${size}px;
-                height:${size}px;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                border-radius:50%;
-                color:white;
-                font-size:${selected ? 23 : 19}px;
-                background:${statusColor};
-                border:${selected ? 4 : 3}px solid white;
-                box-shadow:0 3px 14px rgba(15,23,42,0.45);
-                transition:all 150ms ease;
-            ">
-                ${symbol}
-            </div>
-        `,
+      <div
+        class="visionflow-drone-map-marker${selected ? " visionflow-drone-map-marker--selected" : ""}"
+        style="width:${size}px;height:${size}px;--vf-drone-marker-color:${statusColor}"
+      >
+        ${selectedLabel}
+        <span class="visionflow-drone-map-marker__body">
+          <svg
+            aria-hidden="true"
+            width="${selected ? 34 : 26}"
+            height="${selected ? 34 : 26}"
+            viewBox="0 0 64 64"
+            fill="none"
+          >
+            <circle cx="13" cy="14" r="8" stroke="currentColor" stroke-width="4" />
+            <circle cx="51" cy="14" r="8" stroke="currentColor" stroke-width="4" />
+            <circle cx="13" cy="50" r="8" stroke="currentColor" stroke-width="4" />
+            <circle cx="51" cy="50" r="8" stroke="currentColor" stroke-width="4" />
+            <path d="M19 20L27 28M45 20L37 28M19 44L27 36M45 44L37 36" stroke="currentColor" stroke-width="5" stroke-linecap="round" />
+            <rect x="23" y="24" width="18" height="16" rx="6" fill="currentColor" />
+            <path d="M29 40L26 48M35 40L38 48" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+          </svg>
+          ${alertBadge}
+        </span>
+      </div>
+    `,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -(size / 2)],
+    popupAnchor: [0, -(size / 2 + (selected ? 8 : 0))],
   });
 }
 
@@ -514,6 +528,7 @@ export default function DroneControlMap({
             selectedDroneId === drone.id,
             replayPoint?.droneId === drone.id,
           )}
+          zIndexOffset={selectedDroneId === drone.id ? 500 : 0}
           eventHandlers={{
             click: () => onSelectDrone(drone.id),
           }}

@@ -516,7 +516,8 @@ export function AiAlertOperationsPanel({
                         return (
                             <article
                                 key={alert.id}
-                                className={`rounded-xl border p-4 ${severity.cardClassName}`}
+                                data-severity={alert.severity}
+                                className={`vf-ai-alert-card rounded-xl border p-4 ${severity.cardClassName}`}
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">

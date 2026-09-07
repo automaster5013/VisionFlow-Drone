@@ -55,6 +55,24 @@ interface AiPerformanceMetrics {
   health: AiPerformanceHealth;
 }
 
+function formatDeviceLabel(device: string): string {
+  const normalized = device.trim().toLowerCase();
+
+  if (/^\d+$/.test(normalized)) {
+    return `GPU ${normalized}`;
+  }
+
+  if (normalized === "cuda") {
+    return "CUDA GPU";
+  }
+
+  if (normalized.startsWith("cuda:")) {
+    return `CUDA GPU ${normalized.slice("cuda:".length)}`;
+  }
+
+  return device;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -375,7 +393,7 @@ export function AiPerformancePanel() {
               모델 <strong className="text-white">{metrics.modelName}</strong>
             </span>
             <span>
-              장치 <strong className="text-white">{metrics.device}</strong>
+              장치 <strong className="text-white">{formatDeviceLabel(metrics.device)}</strong>
             </span>
             <span>
               소스 <strong className="text-white">{metrics.sourceType}</strong>

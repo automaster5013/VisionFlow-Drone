@@ -520,8 +520,8 @@ textarea {
   padding: 20px; box-shadow: var(--vf-shadow);
 }
 .vf-operations-dashboard__hero::after {
-  position: absolute; top: 0; right: 0; width: 34%; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--vf-accent)); content: "";
+  position: absolute; inset: 0 0 auto; height: 2px;
+  background: linear-gradient(90deg, var(--vf-accent), #8b7cf6, transparent 72%); content: "";
 }
 .vf-command-panel { border-color: var(--vf-border) !important; background: var(--vf-surface-1) !important; box-shadow: var(--vf-shadow); }
 .vf-command-panel--accent { background: linear-gradient(135deg, color-mix(in srgb, var(--vf-accent) 7%, transparent), transparent 38%), var(--vf-surface-1) !important; }
@@ -665,6 +665,13 @@ html[data-resolved-theme="dark"] .vf-fleet-card.bg-blue-50 {
 
 .vf-camera-command__preview-grid {
   align-items: stretch;
+}
+
+@media (min-width: 1280px) {
+  .vf-camera-command__preview-header,
+  .vf-ai-preview__header {
+    min-height: 7rem;
+  }
 }
 
 .vf-camera-command__metric,
@@ -2534,6 +2541,92 @@ html[data-resolved-theme=dark] .vf-demo-scenario-command :is(.text-slate-400, .t
   background-color: color-mix(in srgb, var(--vf-surface-2) 88%, transparent) !important;
 }
 
+html[data-resolved-theme="dark"] .vf-ai-alert-card {
+  background-color: #102633 !important;
+  color: #f8fafc;
+}
+
+html[data-resolved-theme="dark"] .vf-ai-alert-card[data-severity="INFO"] {
+  border-color: #38bdf8 !important;
+  background-color: #0c2b3d !important;
+}
+
+html[data-resolved-theme="dark"] .vf-ai-alert-card[data-severity="WARNING"] {
+  border-color: #fbbf24 !important;
+  background-color: #2c291d !important;
+}
+
+html[data-resolved-theme="dark"] .vf-ai-alert-card[data-severity="CRITICAL"] {
+  border-color: #fb7185 !important;
+  background-color: #35202a !important;
+}
+
+html[data-resolved-theme="dark"] .vf-ai-alert-card :is(.text-slate-950, .text-slate-900) {
+  color: #f8fafc !important;
+}
+
+html[data-resolved-theme="dark"] .vf-ai-alert-card :is(.text-slate-600, .text-slate-500) {
+  color: #cbd5e1 !important;
+}
+
+html[data-resolved-theme="dark"] .vf-ai-alert-card .border-slate-200\/80 {
+  border-color: rgba(203, 213, 225, 0.32) !important;
+}
+
+html[data-resolved-theme="dark"] .vf-reliability-card__value,
+html[data-resolved-theme="dark"] .vf-reliability-card__diagnosis {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background-color: #142c3a !important;
+}
+
+html[data-resolved-theme="dark"] .vf-reliability-card__value .text-slate-500 {
+  color: #a9c4d4 !important;
+}
+
+html[data-resolved-theme="dark"] .vf-reliability-card__value .text-slate-900,
+html[data-resolved-theme="dark"] .vf-reliability-card__diagnosis .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+html[data-resolved-theme="dark"] .vf-reliability-card__diagnosis .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html[data-resolved-theme="dark"] .vf-reliability-card__diagnosis > div:nth-child(2) {
+  color: #fda4af;
+}
+
+html[data-resolved-theme="dark"] .vf-maintenance-queue-counter.bg-rose-50,
+html[data-resolved-theme="dark"] .vf-maintenance-queue-counter.bg-rose-100 {
+  background-color: #3a2029 !important;
+  color: #fda4af !important;
+}
+
+html[data-resolved-theme="dark"] .vf-maintenance-queue-counter.bg-amber-50,
+html[data-resolved-theme="dark"] .vf-maintenance-queue-counter.bg-amber-100 {
+  background-color: #352b16 !important;
+  color: #fcd34d !important;
+}
+
+html[data-resolved-theme="dark"] .vf-maintenance-queue-counter.bg-emerald-50 {
+  background-color: #103128 !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-resolved-theme="dark"] .vf-maintenance-queue-counter {
+  border: 1px solid currentColor;
+}
+
+html[data-resolved-theme="dark"] .vf-maintenance-flight-gate-note {
+  border-color: #d5a72d !important;
+  background-color: #352b16 !important;
+  color: #fde68a !important;
+}
+
+html[data-resolved-theme="dark"] .vf-maintenance-readiness-filter[aria-pressed="true"] {
+  color: #082030 !important;
+}
+
 /* Phase 1A bridge: existing light utility surfaces remain usable in night mode
    while individual pages are progressively migrated to command components. */
 html[data-resolved-theme="dark"] :is(.bg-white, .bg-slate-50, .bg-slate-100) {
@@ -2615,6 +2708,86 @@ html[data-resolved-theme="dark"] :is(input, select, textarea) {
   font-size: 10px;
 }
 
+.visionflow-drone-map-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.visionflow-drone-map-marker__body {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  border: 3px solid rgba(255, 255, 255, 0.96);
+  border-radius: 50%;
+  background: var(--vf-drone-marker-color);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.48);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.visionflow-drone-map-marker--selected .visionflow-drone-map-marker__body {
+  border-width: 4px;
+  box-shadow:
+    0 0 0 4px #a855f7,
+    0 0 0 8px rgba(255, 255, 255, 0.92),
+    0 8px 24px rgba(126, 34, 206, 0.72);
+  transform: scale(1.06);
+}
+
+.visionflow-drone-map-marker--selected::before {
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border: 3px solid #c084fc;
+  border-radius: 50%;
+  content: "";
+  animation: vf-selected-drone-pulse 1.8s ease-out infinite;
+}
+
+.visionflow-drone-map-marker__label {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #7e22ce;
+  color: #fff;
+  padding: 2px 7px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.42);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.visionflow-drone-map-marker__alert {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 4;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #991b1b;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+@keyframes vf-selected-drone-pulse {
+  from { opacity: 0.8; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.65); }
+}
+
 @media (min-width: 640px) {
   .vf-command-header__inner {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -2626,7 +2799,7 @@ html[data-resolved-theme="dark"] :is(input, select, textarea) {
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1536px) {
   .vf-command-header__inner {
     grid-template-columns: minmax(260px, 1fr) auto minmax(360px, 1fr);
   }

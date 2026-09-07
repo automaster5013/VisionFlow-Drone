@@ -305,7 +305,7 @@ function QueueCounter({
   style: string;
 }) {
   return (
-    <div className={`rounded-lg px-3 py-2 ${style}`}>
+    <div className={`vf-maintenance-queue-counter rounded-lg px-3 py-2 ${style}`}>
       <p className="font-bold">{label}</p>
       <p className="mt-0.5 text-lg font-black">{value}대</p>
     </div>
