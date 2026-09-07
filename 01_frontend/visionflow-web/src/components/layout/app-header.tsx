@@ -71,8 +71,14 @@ export function AppHeader({
             <p className="vf-command-header__eyebrow">
               VisionFlow Command Center
             </p>
-            <p className="vf-command-header__title">
-              Drone · Vision AI · Safety Operations
+            <p
+              className="vf-command-header__title"
+              title="Drone · Vision AI · Safety Operations"
+            >
+              <span className="sm:hidden">Drone · Vision AI</span>
+              <span className="hidden sm:inline">
+                Drone · Vision AI · Safety Operations
+              </span>
             </p>
           </div>
         </div>

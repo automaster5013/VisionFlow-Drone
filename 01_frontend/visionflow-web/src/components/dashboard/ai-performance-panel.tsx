@@ -208,6 +208,7 @@ function MetricTile({
 export function AiPerformancePanel() {
   const [metrics, setMetrics] = useState<AiPerformanceMetrics | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [connectionUnavailable, setConnectionUnavailable] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -218,6 +219,15 @@ export function AiPerformancePanel() {
           cache: "no-store",
         });
         const payload: unknown = await response.json();
+
+        if (response.status === 502) {
+          if (active) {
+            setMetrics(null);
+            setErrorMessage(null);
+            setConnectionUnavailable(true);
+          }
+          return;
+        }
 
         if (!response.ok) {
           const message =
@@ -234,9 +244,11 @@ export function AiPerformancePanel() {
         if (active) {
           setMetrics(payload);
           setErrorMessage(null);
+          setConnectionUnavailable(false);
         }
       } catch (error) {
         if (active) {
+          setConnectionUnavailable(false);
           setErrorMessage(
             error instanceof Error
               ? error.message
@@ -260,6 +272,18 @@ export function AiPerformancePanel() {
   const ingest = metrics?.ingest ?? null;
   const health = metrics?.health ?? null;
   const healthView = health ? healthPresentation(health.status) : null;
+  const connectionLabel = healthView?.label ??
+    (connectionUnavailable
+      ? "Edge AI 연결 대기"
+      : errorMessage
+        ? "확인 필요"
+        : "연결 확인 중");
+  const connectionClassName = healthView?.className ??
+    (connectionUnavailable
+      ? "bg-sky-100 text-sky-800"
+      : errorMessage
+        ? "bg-rose-100 text-rose-800"
+        : "bg-slate-100 text-slate-600");
 
   return (
     <article className="mt-6 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
@@ -274,13 +298,25 @@ export function AiPerformancePanel() {
           </p>
         </div>
         <div
-          className={`rounded-full px-3 py-1 text-xs font-bold ${
-            healthView?.className ?? "bg-slate-100 text-slate-600"
-          }`}
+          className={`rounded-full px-3 py-1 text-xs font-bold ${connectionClassName}`}
         >
-          {healthView?.label ?? "연결 확인 중"}
+          {connectionLabel}
         </div>
       </div>
+
+      {connectionUnavailable && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+        >
+          <div className="font-bold">Edge AI 연결 대기</div>
+          <p className="mt-1">
+            AI 추론 서버가 현재 연결되지 않았습니다. 관제 화면의 나머지 기능은
+            계속 사용할 수 있으며, Edge AI 서버가 시작되면 자동 연결됩니다.
+          </p>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
