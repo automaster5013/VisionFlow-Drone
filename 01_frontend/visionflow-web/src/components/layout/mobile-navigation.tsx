@@ -173,7 +173,7 @@ export function MobileNavigation({ operatorSecurity }: MobileNavigationProps) {
         : null;
 
     return (
-        <div className="lg:hidden">
+        <div className="lg:hidden" style={{ flexShrink: 0 }}>
             <button
                 ref={openerRef}
                 type="button"
@@ -181,7 +181,7 @@ export function MobileNavigation({ operatorSecurity }: MobileNavigationProps) {
                 aria-controls={panelId}
                 aria-label="주요 메뉴 열기"
                 onClick={() => setOpen(true)}
-                className="inline-flex min-h-10 items-center rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
+                className="inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
             >
                 메뉴
             </button>
