@@ -608,46 +608,42 @@ export function DemoModeConsole() {
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <ModeCard
-          icon="📱"
-          title="스마트폰 실시간 촬영 모드"
-          description="발표 기본 모드입니다. 노트북 모바일 핫스팟 또는 신뢰 가능한 로컬 Wi-Fi에서 사용합니다."
-          active={mode === "PHONE"}
-          badge={mode === "PHONE" ? "ACTIVE" : "PRIMARY"}
-          button="스마트폰 실시간 모드 시작"
-          disabled={busy}
-          onClick={() => void startPhone()}
-          tone="violet"
-        />
-        <ModeCard
-          icon="🎞️"
-          title="비상용 로컬 더미영상 모드"
-          description="사전 촬영 MP4를 노트북에서 1회 재생합니다. 발표장 인터넷과 외부 Wi-Fi가 없어도 동작합니다."
-          active={mode === "DUMMY"}
-          badge={
-            dummyAvailable === true
-              ? "READY"
-              : dummyAvailable === false
-                ? "MISSING"
-                : "CHECKING"
-          }
-          button="비상 더미영상 1회 재생"
-          disabled={busy || dummyAvailable === false}
-          onClick={() => void startDummy()}
-          tone="amber"
-        />
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_360px]">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-black shadow-sm">
-          <div className="flex justify-between border-b border-slate-800 px-5 py-4 text-white">
-            <span className="font-black">입력 영상 미리보기</span>
-            <span className="text-xs text-slate-300">
-              {FRAME_INTERVAL_MS}ms 간격
-            </span>
+      <div className="grid items-stretch gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.7fr)]">
+        <section className="vf-demo-mode-command__preview overflow-hidden rounded-3xl border border-slate-200 bg-black shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-800 px-5 py-4 text-white">
+            <div>
+              <p className="font-black">입력 영상 미리보기</p>
+              <p className="mt-1 text-xs text-slate-300">
+                {FRAME_INTERVAL_MS}ms 간격으로 AI 서버에 전송합니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="block text-xs font-black text-slate-300">
+                발표 대상 드론 ID
+                <input
+                  type="number"
+                  min={1}
+                  disabled={running}
+                  value={droneId}
+                  onChange={(event) =>
+                    setDroneId(
+                      Math.max(1, Number(event.target.value) || 1),
+                    )
+                  }
+                  className="mt-1 block w-32 rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-60"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={!running}
+                onClick={() => stopMode()}
+                className="rounded-xl border border-slate-600 bg-slate-900 px-5 py-2 font-black text-white disabled:opacity-40"
+              >
+                현재 모드 중지
+              </button>
+            </div>
           </div>
-          <div className="relative aspect-video">
+          <div className="vf-demo-mode-command__preview-stage relative aspect-video">
             <video
               ref={phoneVideoRef}
               muted
@@ -676,61 +672,55 @@ export function DemoModeConsole() {
               }
             />
             {mode === "IDLE" && (
-              <div className="absolute inset-0 flex items-center justify-center text-slate-400">
-                위의 두 모드 중 하나를 시작하세요.
+              <div className="absolute inset-0 flex items-center justify-center px-5 text-center text-slate-400">
+                오른쪽의 두 모드 중 하나를 시작하세요.
               </div>
             )}
           </div>
           <canvas ref={canvasRef} className="hidden" />
+        </section>
+
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1 xl:grid-rows-2">
+          <ModeCard
+            icon="📱"
+            title="스마트폰 실시간 촬영 모드"
+            description="발표 기본 모드입니다. 노트북 모바일 핫스팟 또는 신뢰 가능한 로컬 Wi-Fi에서 사용합니다."
+            active={mode === "PHONE"}
+            badge={mode === "PHONE" ? "ACTIVE" : "PRIMARY"}
+            button="스마트폰 실시간 모드 시작"
+            disabled={busy}
+            onClick={() => void startPhone()}
+            tone="violet"
+          />
+          <ModeCard
+            icon="🎞️"
+            title="비상용 로컬 더미영상 모드"
+            description="사전 촬영 MP4를 노트북에서 1회 재생합니다. 발표장 인터넷과 외부 Wi-Fi가 없어도 동작합니다."
+            active={mode === "DUMMY"}
+            badge={
+              dummyAvailable === true
+                ? "READY"
+                : dummyAvailable === false
+                  ? "MISSING"
+                  : "CHECKING"
+            }
+            button="비상 더미영상 1회 재생"
+            disabled={busy || dummyAvailable === false}
+            onClick={() => void startDummy()}
+            tone="amber"
+          />
         </div>
+      </div>
 
-        <aside className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <label className="block text-xs font-black text-slate-500">
-            발표 대상 드론 ID
-            <input
-              type="number"
-              min={1}
-              disabled={running}
-              value={droneId}
-              onChange={(event) =>
-                setDroneId(
-                  Math.max(1, Number(event.target.value) || 1),
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base font-bold text-slate-900 disabled:bg-slate-100"
-            />
-          </label>
-
-          <StatusRow label="입력 상태" value={modeLabel(mode)} />
-          <StatusRow label="Source ID" value={sourceId} />
-          <StatusRow label="세션 ID" value={sessionId ?? "-"} />
-          <StatusRow label="시작 시각" value={formatTime(startedAt)} />
-          <StatusRow
-            label="마지막 전송 성공"
-            value={formatTime(lastSuccessAt)}
-          />
-          <StatusRow
-            label="성공/실패"
-            value={`${stats.succeeded}/${stats.failed}`}
-          />
-          <StatusRow
-            label="AI 큐"
-            value={stats.queueDepth?.toString() ?? "-"}
-          />
-          <StatusRow
-            label="AI 누적 수신/드롭"
-            value={`${stats.acceptedFrames ?? "-"}/${stats.droppedFrames ?? "-"}`}
-          />
-
-          <button
-            type="button"
-            disabled={!running}
-            onClick={() => stopMode()}
-            className="w-full rounded-xl bg-slate-950 px-5 py-3 font-black text-white disabled:opacity-40"
-          >
-            현재 모드 중지
-          </button>
-        </aside>
+      <div className="vf-demo-mode-command__telemetry grid gap-3 rounded-3xl border border-slate-200 bg-slate-950 p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+        <StatusRow label="입력 상태" value={modeLabel(mode)} />
+        <StatusRow label="Source ID" value={sourceId} />
+        <StatusRow label="세션 ID" value={sessionId ?? "-"} />
+        <StatusRow label="시작 시각" value={formatTime(startedAt)} />
+        <StatusRow label="마지막 전송 성공" value={formatTime(lastSuccessAt)} />
+        <StatusRow label="성공/실패" value={`${stats.succeeded}/${stats.failed}`} />
+        <StatusRow label="AI 큐" value={stats.queueDepth?.toString() ?? "-"} />
+        <StatusRow label="AI 누적 수신/드롭" value={`${stats.acceptedFrames ?? "-"}/${stats.droppedFrames ?? "-"}`} />
       </div>
 
       <div
@@ -780,11 +770,11 @@ function ModeCard({
 
   return (
     <article
-      className={`vf-demo-mode-command__mode-card rounded-3xl border p-6 shadow-sm ${
+      className={`vf-demo-mode-command__mode-card flex h-full flex-col rounded-3xl border p-6 shadow-sm ${
         active ? activeClass : "border-slate-200 bg-white"
       }`}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-1 items-start justify-between gap-4">
         <div>
           <div className="text-3xl" aria-hidden="true">
             {icon}
