@@ -12,8 +12,8 @@
 | GitHub | `automaster5013/VisionFlow-Drone` |
 
 > **일정 변경 확정(2026.08.31):** 최종 발표일이 2026.09.11에서 **2026.09.09로 이틀 앞당겨졌습니다.**
-> **현행화 기준(2026.09.07 KST):** VisDrone S1 학습과 canonical weight 고정은 완료했습니다. PPE 4-class S2는 curated pool·provenance audit·AI-assisted proposal·smoke 입력 조립까지만 완료됐으며, 실제 GPU smoke와 본 학습은 별도 Gate입니다.
-> **발표 우선 원칙:** DJI 실기체 경로가 안정적이면 사용하되, 실기체 상태가 발표를 차단하지 않도록 검증된 스마트폰·시험 영상·replay 대체 경로를 함께 고정합니다.
+> **현행화 기준(2026.09.09 KST):** 발표용 기능 동결, 17장 PPT 검토와 10분 노트 원고 작성, 약 3분 56초 통합 MP4 제작·검사 완료. 제출·발표 및 Gamma 노트 저장은 확인 대기입니다.
+> **발표 입력:** 더미영상·가상 텔레메트리 기반 시연을 사용합니다. 실내 실기체 운용 대신 Drone-Eye 별도 DEMO를 소개하며, 스마트폰 실제 카메라·위치 재시험은 보류했습니다.
 > **품질 경계:** provisional annotation은 최종 Ground Truth가 아닙니다. final source-group·split·semantic/box GT·canonical PPE weight 승격은 계속 `HOLD`입니다.
 
 ---
@@ -35,27 +35,26 @@
 
 ## 🎯 Phase 3 성공 기준
 
-### P0 — 09.09 발표 전 반드시 완료
+### P0 — 발표 산출물 준비 및 확인
 
-- [x] VisDrone S1 10-class 학습 완료 및 canonical weight 무결성 고정
-- [x] PPE Batch 0001 curated pool 512건과 유효 focus 38건의 비파괴 audit 완료
-- [x] 재주석 대상 34건 AI-assisted provisional proposal packet 준비
-- [x] PPE S2 1-epoch 기술 smoke 입력 9장·87 provisional boxes 조립 검증
-- [ ] PPE S2 4-class 1-epoch GPU smoke를 기술 Gate로 실행하고 결과·로그·weight 보존
-- [ ] smoke 통과 시에만 제한된 provisional inference Evidence 확보
-- [ ] DJI 실기체 또는 검증된 스마트폰·시험 영상·replay 중 발표 정상 경로 1개 확정
-- [ ] 실기체·네트워크·모델 장애 시 즉시 전환할 대체 시나리오와 복구 Runbook 고정
-- [ ] Frontend·Backend·AI·MySQL의 발표용 E2E health와 Event 표시 재검증
-- [x] README·일정표에 완료·잠정·HOLD 범위를 동일하게 반영
-- [ ] 09.07 Feature Freeze 이후 Critical 수정 외 신규 기능 추가 중단
+- [x] 더미영상·가상 텔레메트리 기반 정상 시연 경로 확정
+- [x] 09.09 세션 프레임 수락 94회·좌표 25개·AI 이벤트 4건 및 저장·재조회 확인
+- [x] 서버 일시정지 기록과 품질 진단 수신 공백 구분 확인
+- [x] 최종 PPT 17장 내용·레이아웃 검토
+- [x] 각 페이지 시간 배분과 발표자 노트 입력 프롬프트 작성 (설명 10분)
+- [x] VisionFlow + 별도 Drone-Eye 통합 MP4 제작 및 전체 디코딩·연결 지점 확인
+- [x] 사용자 요청으로 현재 개발 동결, 발표자료 작업으로 전환
+- [x] README·일정표 현행화
+- [ ] Gamma 카드의 실제 발표자 노트 저장 확인
+- [ ] 실제 발표 속도 기준 리허설과 제출·발표 완료 확인
 
-### P1 — P0 안정화 후 발표 전 시간이 허용될 때
+### P1 — 발표 후 재개할 검증 (현재 동결)
 
-- [ ] PPE S2 smoke 통과 결과를 바탕으로 제한된 provisional fine-tuning 수행
-- [ ] provisional PPE checkpoint의 발표 샘플 정성 검증
-- [ ] DJI Mini 4 Pro / RC-N2 / Android MSDK 실장비 camera stream 또는 telemetry 최소 Gate
-- [ ] 실제/준실제 텔레메트리와 Flight Session·AI Event의 동일 세션 추적
-- [ ] 개인 계정·RBAC·QR Pairing·HTTPS·CI/CD·Rollback 최종 회귀 검증
+- [ ] PPE S2 GPU smoke 및 추가 학습 (입력 패키지 준비와 실행 완료를 구분)
+- [ ] 원거리 후보의 대표 현장 데이터 평가 및 운영 적용 판단
+- [ ] 스마트폰 실제 카메라·위치 입력 재시험
+- [ ] DJI Mini 4 Pro / RC-N2 / Android MSDK 실장비 E2E
+- [ ] 전체 인증·배포·Rollback 회귀 재시험 (09.09 세션 검증으로 대체하지 않음)
 
 ### P2 — 발표 후 정식 품질 단계
 
@@ -67,7 +66,9 @@
 - [ ] 정식 PPE 4-class 학습·평가와 canonical weight 승격
 - [ ] Tracking·Pose·Segmentation·고해상도/타일 추론 선택 확장
 
-### 선행 기반 — 이미 검증
+### 선행 기반 — 이전 단계 검증 기록
+
+아래 기록은 해당 시점의 결과이며 현재 컨테이너 수·AWS 실행 상태나 09.09 현장 재시험을 뜻하지 않습니다.
 
 - [x] 스마트폰 실제 GPS·방향 센서 + 후면 카메라 + YOLO 통합 E2E
 - [x] 개인 계정 로그인 + DB Role 기반 VIEWER / OPERATOR / ADMIN RBAC + HttpOnly 브라우저 세션
@@ -93,7 +94,9 @@
 
 3차 프로젝트의 AI 관제는 **Detection baseline을 먼저 검증**하고, Tracking·Pose·Segmentation은 발표 후 단계적으로 조합하는 구조로 설계합니다.
 
-### AI 학습·데이터 현행 상태 — 2026.09.07
+### AI 학습·데이터 현행 상태 — 2026.09.09
+
+기존 PPE 모델과 별도 COCO 사람 탐지 모델의 운영 구성을 유지합니다. 아래 S2 입력 준비와 기존 PPE 운영 모델은 구분합니다. 24장 후보 진단 및 원본 데이터셋 확인 결과는 [09.09 마감 기록](../docs/presentation-closeout-20260909.md)을 참조하세요.
 
 | 구분 | 현재 상태 | 품질·승격 경계 |
 |---|---|---|
@@ -104,10 +107,12 @@
 | Provenance audit | 🟢 packet 완료 | exact/near-duplicate·MNS 정보는 anti-leakage Evidence로만 사용 |
 | AI-assisted proposal | 🧪 제안 packet 완료 | 34개 이미지 처리, final GT 자동 승격 없음 |
 | PPE S2 smoke 입력 | 🧪 조립 검증 완료 | 9장·87 provisional boxes, smoke-only train 7 / val 2 |
-| PPE S2 1-epoch GPU smoke | 🟡 실행 대기 | 기술 파이프라인 확인용이며 정확도 평가가 아님 |
+| PPE S2 1-epoch GPU smoke | ⏸️ 발표 후 재개 | 기술 파이프라인 확인용이며 정확도 평가가 아님 |
 | Final source-group·split | ⏸️ HOLD | 사람 adjudication 전 자동 배정 금지 |
 | Semantic/box GT | ⏸️ HOLD | reference/provisional label의 GT 자동 승격 금지 |
 | PPE 본 학습·canonical 승격 | ⏸️ HOLD | 발표 후 수동 재주석·QC·split 확정 뒤 수행 |
+
+다음은 **후속 확장 개념도**이며 현재 운영 배치가 아닙니다. S1 후보·provisional S2·Tracking/Pose/Seg를 모두 운영에 적용했다는 의미가 아닙니다.
 
 ```text
 DJI / Wireless Video
@@ -161,9 +166,9 @@ VisionFlow Dashboard / MySQL
 | **08.28 ~ 08.31** | **AWS Hybrid 최소 E2E + S1 기준선 진행** | - AWS EC2 Frontend·Backend·MySQL 배포<br>- Local AI Event의 AWS Backend 전달<br>- MySQL 1행·Frontend 표시 및 presentation readiness 확인<br>- VisDrone S1 학습·평가 진행과 안전한 재개 | - HTTP 201, DB Evidence, Frontend 표시 PASS<br>- AWS 기준선 보존 및 과금 제어 | 🟢 **검증 완료** |
 | **09.01 ~ 09.03** | **VisDrone S1 완료·Checkpoint 고정 / DJI Gate 보존** | - VisDrone 항공 시점 10-class Detection S1 학습 완료<br>- canonical best weight 이름·크기·SHA-256 고정<br>- DJI 실장비 Gate는 완료 증거 없이 미검증 상태 유지 | - `yolo26m-visdrone-s1-best.pt` 확보<br>- epoch 88 early stopping 및 무결성 확인<br>- DJI 실기체 결과 과장 없음 | 🟢 **S1 완료** |
 | **09.04 ~ 09.06** | **PPE Batch 0001 Data Fast-track** | - curated annotation pool 512건 구축<br>- 64건 계약 캘리브레이션·disposition 승인<br>- 유효 focus 38건을 재주석 34·격리 HOLD 4로 확정<br>- provenance·exact/near-duplicate·MNS audit<br>- AI-assisted proposal v1r1 생성과 smoke 입력 9장·87 boxes 조립 | - 원본 curated tree 변경 0<br>- proposal-only·assembly-only PASS<br>- final group·split·GT·학습 자동 승격 0 | 🟢 **잠정 입력 준비 완료** |
-| **09.07** | **Feature Freeze / PPE S2 Smoke Gate** | - Critical 수정 외 신규 기능 추가 중단<br>- PPE S2 4-class 1-epoch GPU smoke 별도 실행·기술 검증<br>- 성공 시 provisional inference 샘플·로그·weight 보존<br>- 실패 시 반복 튜닝보다 S1·기존 검증 경로 기반 발표 fallback 고정 | - 실제 실행 결과가 있을 때만 smoke PASS 표기<br>- final GT·canonical PPE 승격 없음<br>- 정상/대체 시나리오 결정 | 🟡 **진행/실행 대기** |
-| **09.08** | **최종 리허설 / 문서·산출물 동결** | - Frontend·Backend·AI·MySQL 정상 시나리오 반복 검증<br>- 실기체 실패 시 스마트폰·시험 영상·replay 대체 시나리오 리허설<br>- README·일정표·Architecture·발표 자료 현행화<br>- 로그·DB·화면·weight provenance Evidence 선별 | - 리허설 PASS<br>- 발표 PC·케이블·배터리·네트워크·복구 Runbook 점검<br>- 완료·잠정·HOLD 표기 일치 | 🔵 **예정** |
-| **09.09** | **3차 프로젝트 최종 시연·발표** | - 검증된 정상 또는 대체 입력 기반 관제 시연<br>- Local Edge AI + AWS Hybrid + CI/CD·Rollback 설명<br>- VisDrone S1 완료와 PPE S2 provisional fast-track을 구분해 설명<br>- DJI·final GT·정식 PPE 학습의 미완료 범위를 투명하게 제시 | - 최종 발표 및 산출물 제출 | 🏆 **최종 발표** |
+| **09.07** | **기존 학습·발표 기준선 정리** | S1 canonical weight 및 PPE provisional 입력 준비 기록 정리 | GPU smoke·본 학습·정식 승격은 미완료 | 🧪 **기준선 / 잠정** |
+| **09.08** | **발표 시연 기능 보완** | 더미영상·가상 텔레메트리 재생, 사람·보호구 표시 순서와 미착용 경고, 관제·보고서 흐름 보완 | 통합 결과는 09.09 세션 기록으로 확인; 실기체 시험과 구분 | 🟡 **09.09 검증으로 연결** |
+| **09.09** | **검증·개발 동결·발표 산출물 완성** | 세션 기록·일시정지·저장 재조회 확인; 원거리 후보·PPE 데이터 검토 후 개발 동결; PPT 17장·10분 노트 프롬프트·통합 MP4 제작 | MP4 약 3분 56초, 전체 디코딩 검사 완료; Gamma 실제 노트 저장·제출·발표는 확인 대기 | 🟢 **자료 준비 완료** |
 
 ---
 
@@ -209,5 +214,5 @@ AWS는 Local Edge AI를 대체하지 않는 **Frontend·Backend·MySQL 확장 �
 5. **Anti-leakage Before Split:** exact/near-duplicate와 must-not-split Evidence를 검토한 뒤에만 final split을 확정합니다.
 6. **Canonical Promotion Gate:** 정식 PPE weight는 수동 재주석·QC·source-group·split·평가 완료 뒤에만 승격합니다.
 7. **AWS 기준선 동결:** 검증된 Hybrid 배치에는 발표를 위협하는 신규 기능을 추가하지 않습니다.
-8. **Feature Freeze:** 09.07부터 Critical 수정과 발표 Evidence 보완 외 변경을 중단합니다.
+8. **Feature Freeze:** 09.07의 동결 계획 이후 발표 보완을 진행했으며, 09.09 사용자 요청 시점의 개발 상태를 동결했습니다. 추가 학습·운영 모델 교체는 후속 검증 대상으로 유지합니다.
 9. **Evidence-based Status:** 실행 로그가 없는 항목은 완료로 표시하지 않고 `진행`, `실험`, `HOLD`로 구분합니다.
