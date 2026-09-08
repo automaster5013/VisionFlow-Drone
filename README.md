@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-09-07 KST. Status claims are limited to verified evidence. -->
+<!-- Last updated: 2026-09-09 KST. Status claims are limited to verified evidence. -->
 <div align="center">
 
 <!-- 저장소 루트에 PyvaOps_Logo.png 파일을 배치합니다. -->
@@ -41,18 +41,19 @@
 
 ---
 
-## 🚦 Phase 3 현재 상태 — 2026.09.07 KST
+## 🚦 Phase 3 현재 상태 — 2026.09.09 KST
 
-| 트랙 | 확인된 결과 | 현재 경계 |
-|---|---|---|
-| 통합 관제 기준선 | 스마트폰·브라우저·시험 영상 → AI → Backend/MySQL → Dashboard, 인증·HTTPS·CI/CD·Rollback 검증 | 발표 정상·대체 시나리오 고정 단계 |
-| AWS Hybrid | Local AI → AWS Backend/MySQL → Frontend 최소 E2E PASS | 검증 기준선 동결, Evidence 확인 목적만 재가동 |
-| DJI Bridge | MSDK camera listener·encoded stream 전송/수신 소프트웨어 경로 구현, Debug APK 빌드 PASS | ADB·Product·실제 camera stream·DJI telemetry 실장비 E2E는 미검증 |
-| VisDrone S1 | 10-class 소형 객체 baseline 학습 완료, canonical weight 무결성 고정 | 발표용 controlled fallback이며 production safety certification은 아님 |
-| PPE S2 fast-track | pool 512 audit, focus 38 확정, 재주석 대상 34건 AI-assisted proposal, 9장·87 box smoke 입력 준비 PASS | 실제 GPU smoke·final source-group/split·GT·본 학습·모델 승격은 `HOLD` |
-| 발표 일정 | 09.07 Feature Freeze → 09.08 리허설·산출물 고정 → 09.09 발표 | 신규 기능보다 재현 가능한 시연과 복구 경로 우선 |
+**발표 기준 기능을 동결하고, 최종 PPT 17장·발표자 노트 원고·통합 MP4를 준비했습니다.** 제출 및 실제 발표 완료 여부는 아직 확인하지 않았습니다.
 
-> **판정 원칙:** `PASS`는 실제 실행 증거가 있는 범위만 뜻합니다. AI-assisted proposal과 reference label은 Ground Truth가 아니며, 1-epoch smoke는 실행되더라도 정확도 평가가 아니라 학습 파이프라인 점검입니다.
+- **통합 시연:** 준비된 영상의 실제 로컬 GPU 추론 + 가상 텔레메트리 → AWS 웹/API/MySQL → 세션 보고서 저장·재조회 확인.
+- **시연 기록:** 09.09 짧은 세션에서 영상 프레임 수락 94회, 좌표 25개, AI 이벤트 4건. 서버에 기록된 13초 일시정지를 품질 진단의 수신 공백에서 구분했습니다. 처리·저장 건수이며 FPS나 탐지 정확도가 아닙니다.
+- **운영 AI:** 기존 PPE 모델과 별도 사람 탐지 모델을 함께 사용합니다. person·hardhat·no-hardhat·vest를 표시하며, 사람 박스는 뒤에, 보호구는 앞에 표시하고 미착용 중앙 경고는 천천히 깜빡입니다.
+- **원거리 후보:** VisDrone 검증 이미지 24장·입력 960의 작은 사람 Recall은 기존 COCO 26.5%, S1 46.3%였습니다. 하지만 건설현장 시연 표본에서는 S1의 사람 탐지가 감소해 운영 교체를 보류했습니다. 공식 전체 평가·PPE 정확도·운영 성능으로 일반화하지 않습니다.
+- **데이터·학습:** 원본 PPE 데이터셋을 저장소 외부에서 확인했습니다. 현재 라벨의 person 부재와 라벨 의미·중복 검수 과제가 남아 있습니다. 반사띠가 있는 파란 작업복을 vest 정의에 포함했으나 추가 학습·정식 GT·모델 승격은 완료하지 않았습니다.
+- **실기체·모바일:** DJI 소프트웨어 경로와 실장비 E2E는 구분합니다. 이번 제출 준비에서 스마트폰 실제 카메라·위치 재시험과 실기체 야외 시험은 수행하지 않았습니다.
+- **발표 산출물:** PPT 17장 검토 완료, 설명 10분 분량의 페이지별 Gamma 발표자 노트 입력 프롬프트 작성, VisionFlow → 별도 Drone-Eye DEMO 통합 MP4 제작·전체 디코딩 검사 완료.
+
+자세한 결과·산출물 파일명·검증 범위는 [09.09 발표 준비 마감 기록](docs/presentation-closeout-20260909.md)을 참고하세요. **Drone-Eye는 별도 영상 분석 DEMO이며 VisionFlow 직접 연동이나 여섯 분석 모듈의 운영 적용을 뜻하지 않습니다.**
 
 ---
 
@@ -64,15 +65,17 @@
 
 ### 👉 [3차 프로젝트 상세 작업 일정표 바로가기](Daily_Schedule/PHASE3_SCHEDULE.md)
 
-발표 전 핵심 우선순위는 다음과 같습니다.
+발표 준비의 현재 상태와 남은 순서는 다음과 같습니다.
 
-1. **검증된 스마트폰·시험 영상·replay 입력으로 정상/대체 시연 경로 고정**
-2. **Frontend·Backend·AI·MySQL health와 인증·HTTPS·Rollback 핵심 회귀**
-3. **VisDrone S1 산출물과 PPE S2 provisional smoke Evidence 정리**
-4. **DJI 실장비 Gate는 성공 Evidence를 확보한 범위만 시연에 포함**
-5. **09.08 리허설과 README·일정표·발표 산출물 동결**
+1. **완료:** 더미영상·가상 텔레메트리 세션과 보고서 기록 검증
+2. **완료:** PPT 최종본 17장 검토 및 10분 발표자 노트 입력 프롬프트 작성
+3. **완료:** 약 3분 56초의 통합 제출 MP4 제작·검사
+4. **확인 대기:** Gamma 실제 노트 저장, 시간 측정 리허설, 최종 제출·발표
+5. **후속:** 원거리/PPE 데이터 검수·추가 학습 및 실기체·스마트폰 현장 검증
 
-### ✅ Verified Phase 3 Milestones
+### ✅ 선행 검증 기록 (09.07까지의 기준선)
+
+아래는 이전 단계의 검증 기록입니다. 09.09 현장 재시험이나 현재 실행 상태를 뜻하지 않습니다.
 
 - **보안·모바일:** 개인 로그인, DB 귀속 RBAC, 자동 임시 비밀번호·최초 변경 강제, HttpOnly 세션, QR Pairing, 모바일 HTTPS와 실제 기기 주소 재탐지 검증
 - **서비스·배포:** Frontend/Backend/AI/MySQL/Caddy 5-service health, immutable image CI/CD, 순차 배포, Health Check와 Automatic Rollback 검증
@@ -91,7 +94,7 @@
 
 <!-- 예: <img src="docs/images/visionflow-dashboard-demo.gif" width="900" alt="VisionFlow-Drone Dashboard Demo"> -->
 
-**실시간 드론 관제 대시보드 · 텔레메트리 경로 · AI 영상 분석 결과 시연 준비 중**
+**발표 MP4 제작 완료 · 일부 관제 구간은 화면 캡처 편집, AI 구간은 추론 영상 · 별도 Drone-Eye DEMO 포함**
 
 </div>
 
