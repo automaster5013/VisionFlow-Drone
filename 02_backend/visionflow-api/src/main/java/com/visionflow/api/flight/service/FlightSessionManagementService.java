@@ -184,6 +184,20 @@ public class FlightSessionManagementService {
         return FlightSessionResponse.from(session);
     }
 
+    @Transactional
+    public FlightSessionResponse pause(Long droneId, String sessionId) {
+        FlightSession session = findManagedSessionForUpdate(droneId, sessionId);
+        session.pause(LocalDateTime.now());
+        return FlightSessionResponse.from(session);
+    }
+
+    @Transactional
+    public FlightSessionResponse resume(Long droneId, String sessionId) {
+        FlightSession session = findManagedSessionForUpdate(droneId, sessionId);
+        session.resume(LocalDateTime.now());
+        return FlightSessionResponse.from(session);
+    }
+
     private void publishClosedEvent(FlightSession session) {
         eventPublisher.publishEvent(new FlightSessionClosedEvent(
                 session.getDroneId(),

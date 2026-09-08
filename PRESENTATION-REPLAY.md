@@ -59,3 +59,21 @@ No keys or trusted-host files are included. These scripts target the existing
 AWS deployment; the video tunnel binds AWS Docker bridge 172.17.0.1:18000,
 not AWS loopback, so the frontend container can reach it. The remote SSH server
 must already permit that binding. They do not change server SSH policy.
+
+## Presentation pause ledger (2026-09-09)
+
+POST /api/drones/{droneId}/flight-sessions/{sessionId}/pause and /resume record
+server timestamps for active presentation-simulator-001 sessions only. Duplicate
+pause/resume calls are idempotent; complete/abort closes an open pause. Operators
+and admins use the existing authenticated mutation proxy. Failed frame delivery
+does not create an intentional pause record.
+
+Flyway V27 adds flight_session_pause; existing history is unchanged. Replay
+responses include pauses. The report displays the ledger and both server quality
+rule VFQ-1.1.0 and browser fallback subtract only the confirmed overlap from
+telemetry gaps. Unexplained residual gaps still count; no historical pauses are
+inferred. Deploy backend before frontend. Rolling back code does not require
+removing the additive table.
+
+Validation: backend full tests, pause persistence round trip with transaction
+rollback, frontend pause overlap tests, TypeScript, ESLint and production build.

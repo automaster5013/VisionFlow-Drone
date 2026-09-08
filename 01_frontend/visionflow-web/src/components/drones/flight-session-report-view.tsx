@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { pausedSecondsBetween } from "@/lib/flight-pause";
 import { useEffect, useMemo, useState } from "react";
 
 import { useOperatorAccess } from "@/components/security/operator-access-provider";
@@ -369,7 +370,7 @@ function buildQualityAssessment(
       continue;
     }
 
-    telemetryGaps.push(elapsedSeconds);
+    telemetryGaps.push(Math.max(0, elapsedSeconds - pausedSecondsBetween(previous.timestamp, current.timestamp, replay.pauses)));
     const previousCoordinate = assessmentCoordinate(previous.point);
     const currentCoordinate = assessmentCoordinate(current.point);
 
@@ -509,7 +510,7 @@ function buildQualityAssessment(
       detail:
         maximumTelemetryGapSeconds === null
           ? "유효한 기록 시각 간격을 계산할 수 없습니다."
-          : `최대 수신 공백은 ${maximumTelemetryGapSeconds.toFixed(1)}초입니다.`,
+          : `기록된 일시정지를 제외한 최대 수신 공백은 ${maximumTelemetryGapSeconds.toFixed(1)}초입니다.`,
       recommendation: "네트워크 연결과 모바일 전송 간격을 점검하세요.",
     });
   }
@@ -963,13 +964,13 @@ export function FlightSessionReportView({
   );
   const qualityAssessment = useMemo(
     () =>
-      calculatedQualityAssessment && persistedQuality
+      calculatedQualityAssessment && persistedQuality && (!(replay?.pauses?.length) || persistedQuality.ruleVersion === "VFQ-1.1.0")
         ? mergePersistedQualityAssessment(
             calculatedQualityAssessment,
             persistedQuality,
           )
         : calculatedQualityAssessment,
-    [calculatedQualityAssessment, persistedQuality],
+    [calculatedQualityAssessment, persistedQuality, replay?.pauses],
   );
 
   const detectionSummary = useMemo(() => {
@@ -1525,6 +1526,14 @@ export function FlightSessionReportView({
           </div>
         </section>
 
+        <section className="mt-6 rounded-xl border border-slate-200 p-4" aria-label="시연 일시정지 기록">
+          <h2 className="font-bold">시연 일시정지 기록</h2>
+          <p className="mt-2 text-sm">서버에 기록된 일시정지 구간만 수신 공백 계산에서 제외합니다. 전송 오류와 기록되지 않은 과거 공백은 제외하지 않습니다.</p>
+          {(replay.pauses ?? []).length === 0 ? <p className="mt-2">기록된 일시정지 없음</p> :
+            <ul className="mt-2 space-y-2">{replay.pauses!.map((pause, index) =>
+              <li key={`${pause.pausedAt}-${index}`}>{formatDateTime(pause.pausedAt)} → {pause.resumedAt ? formatDateTime(pause.resumedAt) : "일시정지 중 (공백 제외 미확정)"}</li>
+            )}</ul>}
+        </section>
         <footer className="mt-8 border-t border-slate-200 pt-4 text-xs text-slate-500">
           이 보고서는 MySQL에 저장된 VisionFlow 비행 텔레메트리와 AI 추론
           이벤트를 조회해 생성했습니다. 출력 시각:{" "}

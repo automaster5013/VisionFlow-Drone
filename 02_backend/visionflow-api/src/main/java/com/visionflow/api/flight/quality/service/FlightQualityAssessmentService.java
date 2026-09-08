@@ -26,7 +26,7 @@ import java.util.List;
 @Service
 public class FlightQualityAssessmentService {
 
-    public static final String CURRENT_RULE_VERSION = "VFQ-1.0.0";
+    public static final String CURRENT_RULE_VERSION = "VFQ-1.1.0";
     private static final int MAX_TELEMETRY_SAMPLES = 50_000;
     private static final int MAX_AI_EVENTS = 20_000;
 
@@ -94,7 +94,8 @@ public class FlightQualityAssessmentService {
         FlightQualitySnapshot snapshot = calculator.calculate(
                 session.getStatus(),
                 telemetry,
-                aiEvents
+                aiEvents,
+                session.getPauses()
         );
         LocalDateTime evaluatedAt =
                 LocalDateTime.now(ZoneOffset.UTC);

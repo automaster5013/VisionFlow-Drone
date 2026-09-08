@@ -3,7 +3,7 @@
   "project": "visionflow",
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 81,
+    "backend": 83,
     "frontend": 83,
     "ai": 11
   },
@@ -201,6 +201,16 @@
           "service": "backend",
           "method": "POST",
           "path": "/api/drones/{}/flight-sessions/{}/abort"
+        },
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/drones/{}/flight-sessions/{}/pause"
+        },
+        {
+          "service": "backend",
+          "method": "POST",
+          "path": "/api/drones/{}/flight-sessions/{}/resume"
         }
       ]
     },

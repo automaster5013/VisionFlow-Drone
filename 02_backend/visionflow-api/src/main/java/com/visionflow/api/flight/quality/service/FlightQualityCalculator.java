@@ -30,6 +30,12 @@ public class FlightQualityCalculator {
             List<DroneTelemetryHistory> telemetry,
             List<AiInferenceEvent> aiEvents
     ) {
+        return calculate(sessionStatus, telemetry, aiEvents, List.of());
+    }
+
+    public FlightQualitySnapshot calculate(FlightSessionStatus sessionStatus,
+            List<DroneTelemetryHistory> telemetry, List<AiInferenceEvent> aiEvents,
+            List<com.visionflow.api.flight.domain.FlightSessionPause> pauses) {
         List<DroneTelemetryHistory> orderedTelemetry =
                 telemetry.stream()
                         .sorted(
@@ -81,7 +87,9 @@ public class FlightQualityCalculator {
                 continue;
             }
 
-            gaps.add(elapsedSeconds);
+            double pausedSeconds = pauses.stream().mapToDouble(pause ->
+                    pause.overlapSeconds(previous.getRecordedAt(), current.getRecordedAt())).sum();
+            gaps.add(Math.max(0, elapsedSeconds - pausedSeconds));
 
             if (
                     hasValidCoordinate(previous)
