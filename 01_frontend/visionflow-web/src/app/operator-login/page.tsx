@@ -53,7 +53,7 @@ export default async function OperatorLoginPage({
 
         <OperatorAccountLoginForm returnTo={returnTo} />
 
-        <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+        <div data-operator-qr-help className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
           <p className="text-sm font-bold text-sky-900">
             스마트폰에서 접속 중인가요?
           </p>
