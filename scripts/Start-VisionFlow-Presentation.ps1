@@ -7,6 +7,11 @@ if (!(Test-Path -LiteralPath $key) -or !(Test-Path -LiteralPath $known)) { throw
 $ai = Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:8000/health' -TimeoutSec 10
 if ($ai.StatusCode -ne 200) { throw 'Local AI is not ready. Start Docker and visionflow-ai first.' }
 Write-Host 'LOCAL_AI=PASS'
+$policy = & docker inspect visionflow-ai --format '{{range .Config.Env}}{{println .}}{{end}}' | Where-Object { $_ -like 'AI_SNAPSHOT_POLICY=*' }
+if ($LASTEXITCODE -ne 0 -or $policy -ne 'AI_SNAPSHOT_POLICY=INCIDENT_ONLY') {
+  throw 'AI snapshot persistence is not enabled. Recreate the AI service with compose.presentation.yaml before rehearsal.'
+}
+Write-Host 'AI_SNAPSHOT_POLICY=PASS'
 # Use a child PowerShell because the existing helper uses exit.
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Start-VisionFlow-Aws-Event-Tunnel.ps1') -IdentityFile $IdentityFile -KnownHostsFile $KnownHostsFile
 if ($LASTEXITCODE -ne 0) { throw 'Event tunnel startup failed.' }

@@ -1,4 +1,7 @@
 services:
+  ai-server:
+    environment:
+      AI_SNAPSHOT_POLICY: INCIDENT_ONLY
   frontend-web:
     volumes:
       - type: bind
