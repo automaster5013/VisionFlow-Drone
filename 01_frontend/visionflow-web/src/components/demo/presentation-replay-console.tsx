@@ -117,7 +117,7 @@ export function PresentationReplayConsole() {
           context.drawImage(v, 0, 0, c.width, c.height);
           const jpeg = await new Promise<Blob>((resolve, reject) => c.toBlob(blob => blob ? resolve(blob) : reject(new Error("영상 인코딩 실패")), "image/jpeg", .8));
           if (generation.current !== epoch) return;
-          const query = new URLSearchParams({ droneId: String(owned.droneId), sessionId: owned.sessionId, sourceId: DEVICE, capturedAt: new Date().toISOString() });
+          const query = new URLSearchParams({ droneId: String(owned.droneId), sessionId: owned.sessionId, sourceId: DEVICE, sourceType: "DUMMY_VIDEO", capturedAt: new Date().toISOString() });
           const response = await fetch(`/api/ai/ingest/frame?${query}`, { method: "POST", body: jpeg, headers: { "Content-Type": "image/jpeg" }, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]) });
           if (!response.ok) throw new Error(`AI 영상 전송 실패: ${response.status}`);
           const result = await response.json();

@@ -44,3 +44,18 @@ its session identifiers belong to a different database. Tunnel restart helper is
 outputs/Start-VisionFlow-Aws-Event-Tunnel.ps1 in the desktop task directory.
 
 Final AWS verification: 107.1 seconds, 323 accepted video frames, 87 SIMULATOR telemetry rows, 11 actual AI events, session COMPLETED, final altitude and speed zero.
+
+Browser replay source correction (2026-09-08): presentation frames explicitly pass
+DUMMY_VIDEO through the authenticated proxy and AI ingestion queue. Unspecified
+browser input remains SMARTPHONE_LIVE; other browser source types are rejected.
+The stream and performance monitor follow the processed frame source.
+Regression tests: 14 passed; frontend typecheck, lint and production build passed.
+AWS verification: 82 accepted frames and 22 telemetry writes, then session ended.
+
+The restart helpers are versioned under scripts/Start-VisionFlow-Presentation.ps1
+and scripts/Start-VisionFlow-Aws-Event-Tunnel.ps1. Pass -IdentityFile and
+-KnownHostsFile pointing to your existing local SSH key and trusted host file.
+No keys or trusted-host files are included. These scripts target the existing
+AWS deployment; the video tunnel binds AWS Docker bridge 172.17.0.1:18000,
+not AWS loopback, so the frontend container can reach it. The remote SSH server
+must already permit that binding. They do not change server SSH policy.
