@@ -135,3 +135,12 @@ def test_stream_api_returns_status_and_latest_jpeg() -> None:
     assert reset_response.status_code == 200
     assert reset_response.json()["running"] is True
     assert performance_monitor.snapshot()["processedFrames"] == 0
+
+def test_performance_source_follows_current_frame():
+    from dataclasses import replace
+    monitor = InferencePerformanceMonitor(source_type='SMARTPHONE_LIVE', configured_input_fps=5, model_path='test.pt', device='cpu')
+    packet = _create_inference_packet()
+    monitor.record(replace(packet, frame=replace(packet.frame, source_type=VideoSourceType.DUMMY_VIDEO)))
+    assert monitor.snapshot()['sourceType'] == 'DUMMY_VIDEO'
+    monitor.record(packet)
+    assert monitor.snapshot()['sourceType'] == 'SMARTPHONE_LIVE'

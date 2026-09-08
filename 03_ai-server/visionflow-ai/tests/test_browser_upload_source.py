@@ -145,3 +145,33 @@ def test_ingest_api_rejects_payload_over_limit() -> None:
         )
 
     assert response.status_code == 413
+
+@pytest.mark.parametrize('source_type', ['DUMMY_VIDEO', 'SMARTPHONE_LIVE'])
+def test_ingest_preserves_explicit_source_type(source_type):
+    source = BrowserUploadSource(fps=5, queue_capacity=2)
+    source.open()
+    app = create_stream_app(AnnotatedFrameHub(jpeg_quality=80), allowed_origins=(), internal_security_enabled=False, ingest_source=source)
+    with TestClient(app) as client:
+        response = client.post('/api/ingest/frame', params={'droneId': 1, 'sourceId': 'presentation-simulator-001', 'sessionId': 'demo', 'sourceType': source_type}, content=_jpeg(), headers={'Content-Type': 'image/jpeg'})
+    assert response.status_code == 200
+    packet = source.read()
+    source.close()
+    assert packet.source_type.value == source_type
+
+@pytest.mark.parametrize('source_type', ['DJI_LIVE', 'INVALID', ''])
+def test_ingest_rejects_unsupported_browser_type(source_type):
+    source = BrowserUploadSource(fps=5, queue_capacity=2)
+    app = create_stream_app(AnnotatedFrameHub(jpeg_quality=80), allowed_origins=(), internal_security_enabled=False, ingest_source=source)
+    with TestClient(app) as client:
+        response = client.post('/api/ingest/frame', params={'droneId': 1, 'sourceId': 'demo', 'sessionId': 'demo', 'sourceType': source_type}, content=_jpeg(), headers={'Content-Type': 'image/jpeg'})
+    assert response.status_code == 422
+    assert source.status()['acceptedFrames'] == 0
+
+def test_queued_sources_do_not_overwrite_each_other():
+    source = BrowserUploadSource(fps=5, queue_capacity=2)
+    source.open()
+    for kind in (VideoSourceType.DUMMY_VIDEO, VideoSourceType.SMARTPHONE_LIVE):
+        source.submit_jpeg(_jpeg(), source_id='test', session_id='test', drone_id=1, captured_at=None, source_type=kind)
+    assert source.read().source_type is VideoSourceType.DUMMY_VIDEO
+    assert source.read().source_type is VideoSourceType.SMARTPHONE_LIVE
+    source.close()

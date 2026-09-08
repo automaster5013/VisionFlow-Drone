@@ -23,6 +23,7 @@ class BrowserSubmittedFrame:
     drone_id: int
     captured_at: datetime
     image: NDArray[np.uint8]
+    source_type: VideoSourceType
 
 
 class BrowserUploadSource(VideoSource):
@@ -61,7 +62,10 @@ class BrowserUploadSource(VideoSource):
         session_id: str,
         drone_id: int,
         captured_at: datetime | None,
+        source_type: VideoSourceType = VideoSourceType.SMARTPHONE_LIVE,
     ) -> dict[str, object]:
+        if source_type not in (VideoSourceType.SMARTPHONE_LIVE, VideoSourceType.DUMMY_VIDEO):
+            raise ValueError("Unsupported browser video source type")
         if not jpeg:
             raise ValueError("JPEG 프레임 본문이 비어 있습니다.")
 
@@ -84,6 +88,7 @@ class BrowserUploadSource(VideoSource):
             drone_id=drone_id,
             captured_at=normalized_captured_at,
             image=image,
+            source_type=source_type,
         )
 
         with self._lock:
@@ -133,7 +138,7 @@ class BrowserUploadSource(VideoSource):
             packet = FramePacket(
                 source_id=submitted.source_id,
                 session_id=submitted.session_id,
-                source_type=VideoSourceType.SMARTPHONE_LIVE,
+                source_type=submitted.source_type,
                 drone_id=submitted.drone_id,
                 frame_index=self._frame_index,
                 captured_at=submitted.captured_at,

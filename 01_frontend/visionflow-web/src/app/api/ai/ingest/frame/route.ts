@@ -40,6 +40,10 @@ export async function POST(request: NextRequest) {
   const droneId = request.nextUrl.searchParams.get("droneId") ?? "";
   const sourceId = request.nextUrl.searchParams.get("sourceId")?.trim() ?? "";
   const sessionId = request.nextUrl.searchParams.get("sessionId")?.trim() ?? "";
+  const sourceType = request.nextUrl.searchParams.get("sourceType") ?? "SMARTPHONE_LIVE";
+  if (sourceType !== "SMARTPHONE_LIVE" && sourceType !== "DUMMY_VIDEO") {
+    return badRequest("지원하지 않는 브라우저 영상 소스 유형입니다.");
+  }
   const capturedAt = request.nextUrl.searchParams.get("capturedAt") ?? "";
 
   if (!/^\d+$/.test(droneId) || Number(droneId) <= 0) {
@@ -90,6 +94,7 @@ export async function POST(request: NextRequest) {
     droneId,
     sourceId,
     sessionId,
+    sourceType,
   });
 
   if (capturedAt) {

@@ -82,6 +82,7 @@ class InferencePerformanceMonitor:
                 self._started_monotonic = recorded_monotonic
 
             self._running = True
+            self._source_type = inference.frame.source_type.value
             self._processed_frames += 1
             detection_count = len(inference.detections)
 

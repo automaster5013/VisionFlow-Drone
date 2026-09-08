@@ -7,7 +7,7 @@ from secrets import compare_digest
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 import cv2
 import uvicorn
@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from fastapi.security import APIKeyHeader
 
-from app.domain import InferencePacket
+from app.domain import InferencePacket, VideoSourceType
 from app.metrics import InferencePerformanceMonitor
 from app.sources.browser_upload import BrowserUploadSource
 from app.sources.dji_android_bridge import DjiAndroidBridgeSource
@@ -351,6 +351,9 @@ def create_stream_app(
                 str,
                 Query(alias="sessionId", min_length=1, max_length=36),
             ],
+            source_type: Annotated[
+                Literal["SMARTPHONE_LIVE", "DUMMY_VIDEO"], Query(alias="sourceType")
+            ] = "SMARTPHONE_LIVE",
             captured_at: Annotated[
                 datetime | None,
                 Query(alias="capturedAt"),
@@ -399,6 +402,7 @@ def create_stream_app(
                     session_id=session_id,
                     drone_id=drone_id,
                     captured_at=captured_at,
+                    source_type=VideoSourceType(source_type),
                 )
             except ValueError as error:
                 raise HTTPException(
