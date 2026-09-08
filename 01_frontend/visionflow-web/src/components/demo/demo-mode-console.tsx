@@ -593,6 +593,7 @@ export function DemoModeConsole() {
         </div>
       </header>
 
+      <a href="/presentation-replay" className="block rounded-xl bg-blue-700 p-4 font-bold text-white">발표용 영상·가상 텔레메트리 통합 시연 열기 →</a>
       {phoneInterrupted && (
         <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5">
           <p className="text-lg font-black text-amber-950">
