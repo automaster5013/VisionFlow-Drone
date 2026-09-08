@@ -16,6 +16,8 @@ import {
   useDroneFleetTelemetry,
   type DroneTrackPoint,
 } from "@/hooks/use-drone-fleet-telemetry";
+import { useFleetPresentationSessions } from "@/hooks/use-fleet-presentation-sessions";
+import { fleetFlightState } from "@/lib/fleet-presentation-status";
 import type { Drone } from "@/types/drone";
 import type { GeofenceDraft } from "@/types/geofence";
 import type { IncidentReplayFocus } from "@/types/incident-replay";
@@ -353,9 +355,11 @@ export function DroneFleetControl({
     };
   }, [effectiveSelectedId, replayState, selectedSourceTrack]);
 
-  const flyingCount = drones.filter(
-    (drone) => !drone.isStale && drone.status === "FLYING",
-  ).length;
+  const presentationSessions = useFleetPresentationSessions(drones.map(drone => drone.id));
+  const flightStates = drones.map(drone => fleetFlightState(drone, presentationSessions.active.has(drone.id)));
+  const actualFlyingCount = flightStates.filter(state => state.actual).length;
+  const simulatedFlyingCount = flightStates.filter(state => state.simulated).length;
+  const flyingCount = actualFlyingCount + simulatedFlyingCount;
 
   const staleCount = drones.filter((drone) => drone.isStale).length;
 
@@ -496,9 +500,12 @@ export function DroneFleetControl({
                           : "bg-emerald-100 text-emerald-700"
                       }`}
                     >
-                      {drone.isStale ? "STALE" : drone.status}
+                      {fleetFlightState(drone, presentationSessions.active.has(drone.id)).label}
                     </span>
 
+                    {presentationSessions.active.has(drone.id) && (
+                      <span className="text-xs text-slate-500">기체 상태: {drone.status}</span>
+                    )}
                     {violating && (
                       <span className="rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
                         GEOFENCE
@@ -626,9 +633,9 @@ export function DroneFleetControl({
             hint="등록된 관제 대상"
           />
           <FleetOverviewMetric
-            label="비행 중"
+            label="비행 · 시연 중"
             value={`${flyingCount}대`}
-            hint="실시간 ACTIVE"
+            hint={presentationSessions.failed ? "시연 상태 조회 실패 · 집계 확인 필요" : `실기체 ${actualFlyingCount}대 · 시연 ${simulatedFlyingCount}대`}
             tone="emerald"
           />
           <FleetOverviewMetric
