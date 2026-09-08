@@ -118,6 +118,29 @@ function normalizeMobileOrigin(value: string): string {
   return parsed.origin;
 }
 
+function isLocalRuntimeHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (host === "localhost" || host.endsWith(".localhost") || host === "::1") {
+    return true;
+  }
+
+  const octets = host.split(".").map(Number);
+  if (octets.length !== 4 || octets.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return false;
+  }
+
+  return octets[0] === 127 || octets[0] === 10 ||
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+    (octets[0] === 192 && octets[1] === 168);
+}
+
+function currentPublicHttpsOrigin(): string | null {
+  return window.location.protocol === "https:" &&
+    !isLocalRuntimeHost(window.location.hostname)
+    ? window.location.origin
+    : null;
+}
+
 export function OperatorPairingConsole() {
   const { status } = useOperatorAccess();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -133,6 +156,7 @@ export function OperatorPairingConsole() {
     useState<MobileHttpsRuntimeProfile | null>(null);
   const [runtimeLoading, setRuntimeLoading] = useState(false);
   const [mobileOriginManual, setMobileOriginManual] = useState(false);
+  const [publicOrigin, setPublicOrigin] = useState<string | null>(null);
   const issuerRole = isPairingRole(status?.role) ? status.role : null;
 
   const allowedRoles = useMemo<PairingRole[]>(() => {
@@ -149,11 +173,7 @@ export function OperatorPairingConsole() {
     let cancelled = false;
 
     const timer = window.setTimeout(() => {
-      const currentHost = window.location.hostname;
-      const currentIsLan =
-        currentHost !== "localhost" &&
-        currentHost !== "127.0.0.1" &&
-        currentHost !== "::1";
+      const localRuntimeHost = isLocalRuntimeHost(window.location.hostname);
       const remembered =
         window.localStorage.getItem("visionflow.mobilePairingOrigin") ?? "";
 
@@ -166,6 +186,20 @@ export function OperatorPairingConsole() {
       }
 
       async function initializeMobileOrigin() {
+        const publicHttpsOrigin = currentPublicHttpsOrigin();
+        setPublicOrigin(publicHttpsOrigin);
+        if (publicHttpsOrigin) {
+          setMobileOrigin(publicHttpsOrigin);
+          setMobileOriginManual(false);
+          setRuntimeProfile(null);
+          return;
+        }
+        if (!localRuntimeHost) {
+          setMobileOrigin(remembered);
+          setMobileOriginManual(Boolean(remembered));
+          return;
+        }
+
         setRuntimeLoading(true);
 
         try {
@@ -182,7 +216,7 @@ export function OperatorPairingConsole() {
             return;
           }
 
-          if (currentIsLan && window.location.protocol === "https:") {
+          if (localRuntimeHost && window.location.protocol === "https:" && !["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)) {
             setMobileOrigin(window.location.origin);
             setMobileOriginManual(false);
             return;
@@ -190,6 +224,12 @@ export function OperatorPairingConsole() {
 
           setMobileOrigin(remembered);
           setMobileOriginManual(Boolean(remembered));
+        } catch (caught) {
+          if (!cancelled) {
+            setMobileOrigin(remembered);
+            setMobileOriginManual(Boolean(remembered));
+            setError(caught instanceof Error ? caught.message : "주소 자동 감지에 실패했습니다.");
+          }
         } finally {
           if (!cancelled) {
             setRuntimeLoading(false);
@@ -279,6 +319,21 @@ export function OperatorPairingConsole() {
     setRuntimeLoading(true);
     setError(null);
 
+    const publicHttpsOrigin = currentPublicHttpsOrigin();
+    setPublicOrigin(publicHttpsOrigin);
+    if (publicHttpsOrigin) {
+      setMobileOrigin(publicHttpsOrigin);
+      setMobileOriginManual(false);
+      setRuntimeProfile(null);
+      setRuntimeLoading(false);
+      return;
+    }
+    if (!isLocalRuntimeHost(window.location.hostname)) {
+      setRuntimeLoading(false);
+      setError("공개 HTTPS 페이지에서 열거나 스마트폰 접속용 HTTPS 주소를 직접 입력하세요.");
+      return;
+    }
+
     const previousGeneratedAt = runtimeProfile?.generatedAt ?? null;
     let latestProfile: MobileHttpsRuntimeProfile | null = null;
 
@@ -338,7 +393,7 @@ export function OperatorPairingConsole() {
     try {
       const origin = normalizeMobileOrigin(mobileOrigin);
       const usingDetectedOrigin =
-        !mobileOriginManual && runtimeProfile?.origin === origin;
+        !mobileOriginManual && !usingPublicOrigin && runtimeProfile?.origin === origin;
 
       if (usingDetectedOrigin && !runtimeProfile.ready) {
         throw new Error(runtimeProfile.message);
@@ -462,14 +517,19 @@ export function OperatorPairingConsole() {
   const remainingLabel = creation
     ? new Date(creation.expiresAt).toLocaleTimeString("ko-KR")
     : null;
+  const usingPublicOrigin =
+    !mobileOriginManual && publicOrigin !== null && mobileOrigin.trim() === publicOrigin;
   const detectedOriginBlocked =
     !mobileOriginManual &&
+    !usingPublicOrigin &&
     (!runtimeProfile?.fresh ||
       !runtimeProfile.ready ||
       runtimeProfile.origin !== mobileOrigin.trim());
-  const runtimeTone = mobileOriginManual
+  const runtimeTone = usingPublicOrigin
+    ? "border-emerald-700 bg-emerald-950 text-emerald-100"
+    : mobileOriginManual
     ? "border-amber-200 bg-amber-50 text-amber-800"
-    : runtimeProfile?.ready
+    : usingPublicOrigin || runtimeProfile?.ready
       ? "border-emerald-200 bg-emerald-50 text-emerald-800"
       : runtimeProfile?.state === "BLOCKED"
         ? "border-red-200 bg-red-50 text-red-800"
@@ -478,7 +538,9 @@ export function OperatorPairingConsole() {
           : "border-slate-200 bg-slate-50 text-slate-600";
   const runtimeLabel = mobileOriginManual
     ? "수동 주소"
-    : runtimeLoading
+    : usingPublicOrigin
+      ? "현재 공개 HTTPS 주소 사용"
+      : runtimeLoading
       ? "주소 감지 중"
       : runtimeProfile?.ready
         ? "자동 감지됨 · HTTPS 정상"
@@ -530,7 +592,9 @@ export function OperatorPairingConsole() {
                   <p className="mt-1 leading-5">
                     {mobileOriginManual
                       ? "직접 입력한 주소입니다. 자동 SAN/HTTPS 검증 결과는 적용되지 않습니다."
-                      : runtimeProfile?.message ??
+                      : usingPublicOrigin
+                        ? "현재 브라우저의 공개 HTTPS 주소로 스마트폰 QR을 생성합니다."
+                        : runtimeProfile?.message ??
                         "Windows host Runtime Agent의 네트워크 정보를 기다리고 있습니다."}
                   </p>
                 </div>
@@ -539,7 +603,7 @@ export function OperatorPairingConsole() {
                     type="button"
                     onClick={() => void refreshMobileOrigin()}
                     disabled={runtimeLoading}
-                    className="shrink-0 rounded-lg border border-current/20 bg-white/70 px-3 py-2 font-bold disabled:opacity-50"
+                    className="shrink-0 rounded-lg border border-blue-700 bg-blue-700 px-3 py-2 font-bold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-wait disabled:border-blue-900 disabled:bg-blue-900 disabled:text-white"
                   >
                     {runtimeLoading ? "감지 중..." : "주소 다시 감지"}
                   </button>
@@ -547,7 +611,7 @@ export function OperatorPairingConsole() {
               </div>
               {runtimeProfile?.fresh &&
                 runtimeProfile.hostIp &&
-                !mobileOriginManual && (
+                !mobileOriginManual && !usingPublicOrigin && (
                 <p className="mt-2 font-mono">
                   Host {runtimeProfile.hostIp} · Port {runtimeProfile.port}
                 </p>
@@ -558,7 +622,7 @@ export function OperatorPairingConsole() {
               id="mobile-pairing-origin-help"
               className="text-xs leading-5 text-slate-500"
             >
-              자동 감지 주소는 인증서 SAN과 HTTPS /healthz까지 확인합니다. 필요하면 입력창을 직접 수정해 수동 override할 수 있습니다.
+              공개 HTTPS 페이지에서는 현재 주소를 사용합니다. 로컬/LAN에서는 Runtime Agent가 인증서 SAN과 HTTPS /healthz를 확인합니다. 필요하면 주소를 직접 입력할 수 있습니다.
             </p>
           </div>
 
@@ -658,13 +722,14 @@ export function OperatorPairingConsole() {
           ) : (
             <div className="space-y-2 text-sm leading-6 text-slate-500">
               <p>
-                QR 생성 전에 Windows host의 현재 LAN 주소와
-                <br />
-                mobile HTTPS 상태를 자동으로 확인합니다.
+                {usingPublicOrigin
+                  ? "현재 공개 HTTPS 주소로 스마트폰 로그인 QR을 생성합니다."
+                  : "QR 생성 전에 Windows host의 현재 LAN 주소와 mobile HTTPS 상태를 자동으로 확인합니다."}
               </p>
+              {usingPublicOrigin && <p className="font-mono text-xs text-slate-600">{publicOrigin}</p>}
               {runtimeProfile?.fresh &&
                 runtimeProfile.origin &&
-                !mobileOriginManual && (
+                !mobileOriginManual && !usingPublicOrigin && (
                 <p className="font-mono text-xs text-slate-600">
                   {runtimeProfile.origin}
                 </p>

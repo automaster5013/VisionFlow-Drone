@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import math
 import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-import numpy as np
+import cv2
 import torch
 from ultralytics import YOLO
 
@@ -65,6 +67,12 @@ def _normalized_classes(names: Any) -> list[dict[str, object]]:
     ]
 
 
+def _box_iou(a: Detection, b: Detection) -> float:
+    intersection = max(0.0, min(a.x2, b.x2) - max(a.x1, b.x1)) * max(0.0, min(a.y2, b.y2) - max(a.y1, b.y1))
+    union = max(0.0, a.x2 - a.x1) * max(0.0, a.y2 - a.y1) + max(0.0, b.x2 - b.x1) * max(0.0, b.y2 - b.y1) - intersection
+    return intersection / union if union > 0 else 0.0
+
+
 class YoloDetector:
     def __init__(
         self,
@@ -93,6 +101,43 @@ class YoloDetector:
         self._image_size = image_size
         self._resolved_model_path = self._resolve_model_path()
         self._status = self._build_status()
+        self._warning_enabled = os.environ.get("AI_NO_HARDHAT_WARNING", "false").lower() == "true"
+        self._warning_until = 0.0
+        self._warning_source = None
+        self._warning_asset = None
+        if self._warning_enabled:
+            self._warning_asset = cv2.imread(str(Path(__file__).parent.parent / "assets/no-hardhat-warning.png"), cv2.IMREAD_UNCHANGED)
+            if self._warning_asset is None:
+                raise FileNotFoundError("No-hardhat warning asset is missing")
+        self._person_model = None
+        person_path = os.environ.get("AI_PERSON_MODEL_PATH", "").strip()
+        self._status["inferenceMode"] = "SINGLE_MODEL"
+        if person_path:
+            path = Path(person_path).expanduser()
+            if not path.is_file():
+                raise FileNotFoundError(f"Person detector model not found: {path}")
+            output_classes = [item for item in self._status["classes"]
+                              if self._class_resolver(int(item["id"]), str(item["name"])).canonical_name == "person"]
+            if len(output_classes) != 1:
+                raise ValueError("Person fusion requires exactly one person output class")
+            self._person_output_id = int(output_classes[0]["id"])
+            self._person_confidence = float(os.environ.get("AI_PERSON_CONFIDENCE", "0.25"))
+            if not 0 < self._person_confidence <= 1:
+                raise ValueError("AI_PERSON_CONFIDENCE must be in (0, 1]")
+            self._person_model = YOLO(str(path))
+            person_classes = [item for item in _normalized_classes(self._person_model.names)
+                              if str(item["name"]).strip().lower() == "person"]
+            if len(person_classes) != 1:
+                raise ValueError("Auxiliary model must contain exactly one person class")
+            self._person_source_id = int(person_classes[0]["id"])
+            self._person_model.to(self._effective_device)
+            self._status["inferenceMode"] = "PPE_WITH_PERSON_DETECTOR"
+            self._status["personDetector"] = {
+                "path": str(path), "sha256": _sha256(path),
+                "confidence": self._person_confidence, "imageSize": self._image_size,
+                "sourceClassId": self._person_source_id, "outputClassId": self._person_output_id,
+                "boxSource": "model_prediction",
+            }
 
     def _validate_runtime(self, *, require_local_model: bool) -> None:
         local_model = Path(self._model_path).expanduser()
@@ -228,48 +273,132 @@ class YoloDetector:
             device=self._device,
             verbose=False,
         )
+        detections: list[Detection] = []
+        for result in results or []:
+            if result.boxes is None:
+                continue
+            for xyxy, confidence, class_id_value in zip(
+                result.boxes.xyxy.detach().cpu().tolist(),
+                result.boxes.conf.detach().cpu().tolist(),
+                result.boxes.cls.detach().cpu().tolist(), strict=True,
+            ):
+                if confidence < self._confidence:
+                    continue
+                class_id = int(class_id_value)
+                resolved = self._class_resolver(class_id, str(result.names.get(class_id, class_id)))
+                detections.append(Detection(
+                    class_id=class_id, class_name=resolved.canonical_name,
+                    confidence=float(confidence), x1=float(xyxy[0]), y1=float(xyxy[1]),
+                    x2=float(xyxy[2]), y2=float(xyxy[3]),
+                ))
+
+        if getattr(self, "_person_model", None) is not None:
+            person_results = self._person_model.predict(
+                source=frame.image, classes=[self._person_source_id],
+                conf=self._person_confidence, iou=self._iou,
+                imgsz=self._image_size, device=self._device, verbose=False,
+            )
+            people = [d for d in detections if d.class_name == "person"]
+            detections = [d for d in detections if d.class_name != "person"]
+            for result in person_results or []:
+                if result.boxes is None:
+                    continue
+                for xyxy, confidence, class_id in zip(
+                    result.boxes.xyxy.detach().cpu().tolist(),
+                    result.boxes.conf.detach().cpu().tolist(),
+                    result.boxes.cls.detach().cpu().tolist(), strict=True,
+                ):
+                    if int(class_id) != self._person_source_id or confidence < self._person_confidence:
+                        continue
+                    people.append(Detection(
+                        class_id=self._person_output_id, class_name="person",
+                        confidence=float(confidence), x1=float(xyxy[0]), y1=float(xyxy[1]),
+                        x2=float(xyxy[2]), y2=float(xyxy[3]),
+                    ))
+            # Suppress duplicates across models without modifying predicted coordinates.
+            kept: list[Detection] = []
+            for person in sorted(people, key=lambda d: d.confidence, reverse=True):
+                if not any(_box_iou(person, existing) > 0.5 for existing in kept):
+                    kept.append(person)
+            detections.extend(kept)
         inference_ms = (time.perf_counter() - started_at) * 1_000.0
 
-        if not results:
-            return InferencePacket(
-                frame=frame,
-                detections=(),
-                inference_ms=inference_ms,
-                annotated_image=frame.image.copy(),
+        # Only draw model detections; PPE locations do not establish a person's extent.
+        display_aliases = {
+            "helmet": "hardhat",
+            "vest": "vest",
+            "head": "no-hardhat",
+            "person": "person",
+        }
+        # Draw each object's box and label together, back to front.
+        # PPE must remain visible even when a person box/label overlaps it.
+        draw_priority = {"person": 0, "vest": 2, "helmet": 3, "head": 3}
+        box_colors = {
+            "person": (0, 255, 255),
+            "vest": (0, 140, 255),
+            "helmet": (255, 96, 32),
+            "head": (0, 0, 220),
+        }
+        annotated_image = frame.image.copy()
+        drawing_order = sorted(
+            detections,
+            key=lambda item: (
+                draw_priority.get(item.class_name.strip().lower(), 1),
+                item.confidence,
+            ),
+        )
+        for detection in drawing_order:
+            canonical_name = detection.class_name.strip().lower()
+            hardhat_color = (255, 96, 32)
+            cv2.rectangle(
+                annotated_image,
+                (int(detection.x1), int(detection.y1)),
+                (int(detection.x2), int(detection.y2)),
+                box_colors.get(canonical_name, (160, 160, 160)),
+                2,
+            )
+            label_name = display_aliases.get(canonical_name, detection.class_name)
+            label = f"{label_name} {detection.confidence:.2f}"
+            font_scale = 0.70
+            font_thickness = 2
+            (label_width, label_height), baseline = cv2.getTextSize(
+                label,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                font_scale,
+                font_thickness,
+            )
+            label_x = max(0, int(detection.x1))
+            label_bottom = max(label_height + baseline + 4, int(detection.y1))
+            label_top = max(0, label_bottom - label_height - baseline - 6)
+            background_color = (
+                hardhat_color
+                if canonical_name == "helmet"
+                else (0, 0, 220)
+                if canonical_name == "head"
+                else (0, 140, 255)
+                if canonical_name == "vest"
+                else (24, 24, 24)
+            )
+            cv2.rectangle(
+                annotated_image,
+                (label_x, label_top),
+                (label_x + label_width + 8, label_bottom),
+                background_color,
+                -1,
+            )
+            cv2.putText(
+                annotated_image,
+                label,
+                (label_x + 4, label_bottom - baseline - 3),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                font_scale,
+                (255, 255, 255),
+                font_thickness,
+                cv2.LINE_AA,
             )
 
-        result = results[0]
-        detections: list[Detection] = []
-
-        if result.boxes is not None:
-            boxes = result.boxes
-            coordinates = boxes.xyxy.detach().cpu().tolist()
-            confidences = boxes.conf.detach().cpu().tolist()
-            class_ids = boxes.cls.detach().cpu().tolist()
-            names: Mapping[int, str] = result.names
-
-            for xyxy, confidence, class_id_value in zip(
-                coordinates,
-                confidences,
-                class_ids,
-                strict=True,
-            ):
-                class_id = int(class_id_value)
-                source_name = str(names.get(class_id, class_id))
-                resolved_class = self._class_resolver(class_id, source_name)
-                detections.append(
-                    Detection(
-                        class_id=class_id,
-                        class_name=resolved_class.canonical_name,
-                        confidence=float(confidence),
-                        x1=float(xyxy[0]),
-                        y1=float(xyxy[1]),
-                        x2=float(xyxy[2]),
-                        y2=float(xyxy[3]),
-                    )
-                )
-
-        annotated_image = np.asarray(result.plot())
+        if getattr(self, "_warning_enabled", False):
+            self._draw_safety_warning(annotated_image, frame, detections)
 
         return InferencePacket(
             frame=frame,
@@ -277,3 +406,37 @@ class YoloDetector:
             inference_ms=inference_ms,
             annotated_image=annotated_image,
         )
+
+    def _draw_safety_warning(self, image, frame, detections) -> None:
+        # Use the source timestamp so playback pauses do not create rapid flashing.
+        now = frame.captured_at.timestamp()
+        source = (frame.source_id, frame.session_id)
+        if source != self._warning_source or now < getattr(self, "_warning_last_time", now):
+            self._warning_until = 0.0
+            self._warning_source = source
+        self._warning_last_time = now
+        if any(d.class_name in {"head", "no-hardhat"} for d in detections):
+            self._warning_until = now + 1.5
+        if now >= self._warning_until:
+            return
+        height, width = image.shape[:2]
+        asset = self._warning_asset
+        target_width = min(int(width * 0.70), asset.shape[1])
+        target_height = max(1, round(asset.shape[0] * target_width / asset.shape[1]))
+        text = cv2.resize(asset, (target_width, target_height), interpolation=cv2.INTER_AREA)
+        left, top = (width - target_width) // 2, (height - target_height) // 2
+        pad = max(4, int(width * 0.012))
+        x1, y1, x2, y2 = max(0, left-pad), max(0, top-pad), min(width, left+target_width+pad), min(height, top+target_height+pad)
+        region = image[y1:y2, x1:x2]
+        original_region = region.copy()
+        background = region.copy()
+        background[:] = (16, 16, 180)
+        pulse = 0.78
+        cv2.addWeighted(background, pulse, region, 1-pulse, 0, dst=region)
+        cv2.rectangle(image, (x1+2,y1+2), (x2-3,y2-3), (70,70,255), 2)
+        roi = image[top:top+target_height, left:left+target_width]
+        alpha = text[:, :, 3:4].astype("float32") / 255.0
+        roi[:] = (text[:, :, :3] * alpha + roi * (1-alpha)).astype("uint8")
+        # Fade the entire warning, including text and border, once every 2 seconds.
+        visibility = max(0.0, min(1.0, 0.5 + 0.75 * math.cos(now * math.pi)))
+        cv2.addWeighted(region, visibility, original_region, 1-visibility, 0, dst=region)

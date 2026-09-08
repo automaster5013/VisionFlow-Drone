@@ -1082,7 +1082,7 @@ export function MobileFlightControl() {
           </div>
         </header>
 
-        <section className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+        <section className="vf-flight-session-card rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-xs font-semibold text-cyan-700">
