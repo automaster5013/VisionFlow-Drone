@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 81,
+    "backend": 83,
     "frontend": 83,
     "ai": 11,
-    "tables": 18,
+    "tables": 19,
     "entities": 17,
     "repositories": 17,
-    "foreignKeys": 12
+    "foreignKeys": 13
   },
   "tables": [
     {
@@ -138,6 +138,14 @@
       "repository": "OperatorUserRepository",
       "classification": "SECURITY",
       "note": "운영자 계정·비밀번호 해시·역할·활성 상태를 영속화하며 V26에서 초기 비밀번호 교체 상태를 확장"
+    },
+    {
+      "name": "flight_session_pause",
+      "createdIn": "V27__create_flight_session_pause.sql",
+      "entity": null,
+      "repository": null,
+      "classification": "OWNED_COLLECTION",
+      "note": "FlightSession의 ElementCollection으로 저장되는 서버 시각의 시연 정지 구간"
     }
   ],
   "foreignKeys": [
@@ -212,6 +220,12 @@
       "fromColumn": "work_order_id",
       "toTable": "maintenance_work_order",
       "toColumn": "id"
+    },
+    {
+      "fromTable": "flight_session_pause",
+      "fromColumn": "session_id",
+      "toTable": "flight_session",
+      "toColumn": "session_id"
     }
   ],
   "softCorrelations": [
@@ -388,7 +402,8 @@
         "drone_telemetry_history",
         "ai_inference_event",
         "ai_detection",
-        "audit_log"
+        "audit_log",
+        "flight_session_pause"
       ],
       "runtimeStores": []
     },
@@ -415,7 +430,8 @@
         "ai_inference_event",
         "incident",
         "incident_action_history",
-        "maintenance_work_order"
+        "maintenance_work_order",
+        "flight_session_pause"
       ],
       "runtimeStores": []
     },

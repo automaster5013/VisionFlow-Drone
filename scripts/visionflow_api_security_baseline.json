@@ -3,7 +3,7 @@
   "project": "visionflow",
   "baselineCommit": "23fa718cab4efcd1b4563707509527d861d50a6c",
   "expectedCounts": {
-    "backend": 81,
+    "backend": 83,
     "frontend": 83,
     "ai": 11
   },
@@ -383,6 +383,22 @@
         "ROLE_AI_INTERNAL"
       ],
       "reason": "Phase 3 Depth enrichment 수집은 AI 내부 서비스 인증 전용"
+    },
+    {
+      "method": "POST",
+      "path": "/api/drones/{}/flight-sessions/{}/pause",
+      "allowedAccess": [
+        "ROLES_OPERATOR_ADMIN"
+      ],
+      "reason": "발표 일시정지 기록 변경은 OPERATOR/ADMIN만 허용"
+    },
+    {
+      "method": "POST",
+      "path": "/api/drones/{}/flight-sessions/{}/resume",
+      "allowedAccess": [
+        "ROLES_OPERATOR_ADMIN"
+      ],
+      "reason": "발표 일시정지 기록 변경은 OPERATOR/ADMIN만 허용"
     }
   ],
   "expectedBackendPublicWrites": [
