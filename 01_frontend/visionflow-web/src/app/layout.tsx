@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import type { ReactNode } from "react";
 
+import { PresentationCaptions } from "@/components/layout/presentation-captions";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { OperatorAccessProvider } from "@/components/security/operator-access-provider";
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                 </main>
               </div>
             </div>
+          <PresentationCaptions />
           </OperatorAccessProvider>
         </ThemeProvider>
       </body>
