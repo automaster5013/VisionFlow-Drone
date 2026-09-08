@@ -167,6 +167,24 @@ public class FlightSessionReplayController {
         return response;
     }
 
+    @PostMapping("/{sessionId}/pause")
+    public FlightSessionResponse pauseSession(@PathVariable @Positive Long droneId,
+            @PathVariable @NotBlank @Size(max = 36) String sessionId) {
+        FlightSessionResponse response = managementService.pause(droneId, sessionId);
+        auditLogService.record(AuditAction.FLIGHT_SESSION_UPDATED, AuditEntityType.FLIGHT_SESSION,
+                sessionId, "시연 일시정지", Map.of("droneId", droneId, "action", "PAUSE"));
+        return response;
+    }
+
+    @PostMapping("/{sessionId}/resume")
+    public FlightSessionResponse resumeSession(@PathVariable @Positive Long droneId,
+            @PathVariable @NotBlank @Size(max = 36) String sessionId) {
+        FlightSessionResponse response = managementService.resume(droneId, sessionId);
+        auditLogService.record(AuditAction.FLIGHT_SESSION_UPDATED, AuditEntityType.FLIGHT_SESSION,
+                sessionId, "시연 재개", Map.of("droneId", droneId, "action", "RESUME"));
+        return response;
+    }
+
     @PostMapping("/{sessionId}/complete")
     public FlightSessionResponse completeSession(
             @PathVariable

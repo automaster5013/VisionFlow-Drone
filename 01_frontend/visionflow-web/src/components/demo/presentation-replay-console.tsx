@@ -62,6 +62,18 @@ export function PresentationReplayConsole() {
     return () => { window.removeEventListener("pagehide", release); release(); };
   }, []);
 
+  async function pausePresentation() {
+    const owned = current.current;
+    if (!owned || busy) return;
+    halt(); setState("PAUSED"); setBusy(true);
+    try {
+      await api(`/api/drones/${owned.droneId}/flight-sessions/${encodeURIComponent(owned.sessionId)}/pause`, "POST");
+      setError(null);
+    } catch (e) {
+      setError(`일시정지 기록 실패: 이 구간은 통신 공백으로 남을 수 있습니다. ${e instanceof Error ? e.message : e}`);
+    } finally { setBusy(false); }
+  }
+
   async function finish(landed = false) {
     halt();
     setState("PAUSED");
@@ -153,6 +165,7 @@ export function PresentationReplayConsole() {
         current.current = owned; setSession(owned);
         v.currentTime = 0; setPosition(0); setFrames(0); setTelemetryCount(0); setLoopCount(1);
       }
+      await api(`/api/drones/${owned.droneId}/flight-sessions/${encodeURIComponent(owned.sessionId)}/resume`, "POST");
       v.loop = repeat;
       await v.play();
       setState("RUNNING");
@@ -181,7 +194,7 @@ export function PresentationReplayConsole() {
       <label className="mt-4 flex gap-2"><input type="checkbox" checked={repeat} disabled={!!session || busy} onChange={e => setRepeat(e.target.checked)} />영상·경로 반복 재생</label>
       <div className="mt-4 flex flex-wrap gap-3">
         <button className={button} disabled={busy || state === "RUNNING" || !duration} onClick={() => void start()}>{session ? "재개" : "통합 시연 시작"}</button>
-        <button className={button} disabled={busy || state !== "RUNNING"} onClick={() => { halt(); setState("PAUSED"); }}>일시정지</button>
+        <button className={button} disabled={busy || state !== "RUNNING"} onClick={() => void pausePresentation()}>일시정지</button>
         <button className={button} disabled={busy || !session} onClick={() => void finish()}>종료 · 세션 저장</button>
         <button className={button} disabled={busy || !!session} onClick={() => { if (video.current) video.current.currentTime = 0; setPosition(0); setSample(null); setFrames(0); setTelemetryCount(0); setLoopCount(1); setState("READY"); setError(null); }}>초기화</button>
       </div>

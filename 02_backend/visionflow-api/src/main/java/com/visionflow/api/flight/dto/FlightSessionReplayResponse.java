@@ -16,6 +16,7 @@ public record FlightSessionReplayResponse(
         int aiEventCount,
         int detectionCount,
         List<DroneTelemetryHistoryResponse> telemetry,
-        List<AiInferenceEventResponse> aiEvents
+        List<AiInferenceEventResponse> aiEvents,
+        List<com.visionflow.api.flight.domain.FlightSessionPause> pauses
 ) {
 }

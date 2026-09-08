@@ -56,4 +56,5 @@ export interface FlightSessionReplay {
   detectionCount: number;
   telemetry: FlightReplayTelemetry[];
   aiEvents: AiInferenceEvent[];
+  pauses?: { pausedAt: string; resumedAt: string | null }[];
 }

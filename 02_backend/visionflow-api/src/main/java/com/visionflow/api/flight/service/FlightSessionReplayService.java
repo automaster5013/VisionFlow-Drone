@@ -289,7 +289,9 @@ public class FlightSessionReplayService {
                 eventResponses.size(),
                 detectionCount,
                 telemetryResponses,
-                eventResponses
+                eventResponses,
+                sessionRepository.findBySessionIdAndDroneId(normalizedSessionId, droneId)
+                        .map(FlightSession::getPauses).orElse(List.of())
         );
     }
 

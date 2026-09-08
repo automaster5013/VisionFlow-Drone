@@ -60,6 +60,37 @@ public class FlightSession {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @jakarta.persistence.ElementCollection
+    @jakarta.persistence.CollectionTable(name = "flight_session_pause", joinColumns = @jakarta.persistence.JoinColumn(name = "session_id"))
+    @jakarta.persistence.OrderColumn(name = "pause_index")
+    private java.util.List<FlightSessionPause> pauses = new java.util.ArrayList<>();
+
+    public java.util.List<FlightSessionPause> getPauses() { return java.util.List.copyOf(pauses); }
+
+    public void pause(LocalDateTime at) {
+        requirePresentationSession();
+        if (!pauses.isEmpty() && pauses.get(pauses.size() - 1).getResumedAt() == null) return;
+        if (pauses.size() >= 1000) throw new IllegalArgumentException("일시정지 기록 한도에 도달했습니다.");
+        pauses.add(new FlightSessionPause(normalizeEndedAt(at)));
+        touch();
+    }
+
+    public void resume(LocalDateTime at) {
+        requirePresentationSession();
+        closePause(at);
+        touch();
+    }
+
+    private void closePause(LocalDateTime at) {
+        if (!pauses.isEmpty()) pauses.get(pauses.size() - 1).resume(at);
+    }
+
+    private void requirePresentationSession() {
+        if (status != FlightSessionStatus.ACTIVE || !"presentation-simulator-001".equals(sourceDeviceId)) {
+            throw new IllegalArgumentException("진행 중인 발표 시연 세션만 일시정지·재개할 수 있습니다.");
+        }
+    }
+
     protected FlightSession() {
     }
 
@@ -118,6 +149,7 @@ public class FlightSession {
         ensureOpen(FlightSessionStatus.COMPLETED);
         this.status = FlightSessionStatus.COMPLETED;
         this.endedAt = normalizeEndedAt(completedAt);
+        closePause(this.endedAt);
         touch();
     }
 
@@ -129,6 +161,7 @@ public class FlightSession {
         ensureOpen(FlightSessionStatus.ABORTED);
         this.status = FlightSessionStatus.ABORTED;
         this.endedAt = normalizeEndedAt(abortedAt);
+        closePause(this.endedAt);
         touch();
     }
 

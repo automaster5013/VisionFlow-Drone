@@ -10,7 +10,7 @@ const BACKEND_API_URL = (
   "http://localhost:8080"
 ).replace(/\/$/, "");
 
-const ALLOWED_ACTIONS = new Set(["complete", "abort"]);
+const ALLOWED_ACTIONS = new Set(["complete", "abort", "pause", "resume"]);
 
 interface RouteContext {
   params: Promise<{

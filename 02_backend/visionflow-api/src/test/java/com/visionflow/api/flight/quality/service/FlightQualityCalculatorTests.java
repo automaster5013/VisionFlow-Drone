@@ -22,6 +22,21 @@ class FlightQualityCalculatorTests {
             new FlightQualityCalculator();
 
     @Test
+    void subtractsOnlyConfirmedPauseAndPreservesUnexplainedGap() {
+        LocalDateTime start = LocalDateTime.of(2026, 9, 9, 10, 0);
+        var pause = new com.visionflow.api.flight.domain.FlightSessionPause(start.plusSeconds(2));
+        var samples = List.of(telemetry(start, "37.5", "126.9", "30", 90),
+                telemetry(start.plusSeconds(30), "37.5", "126.9", "30", 90));
+        assertThat(calculator.calculate(FlightSessionStatus.COMPLETED, samples, List.of(), List.of(pause))
+                .maxTelemetryGapSeconds()).isEqualTo(30);
+        pause.resume(start.plusSeconds(20));
+        assertThat(calculator.calculate(FlightSessionStatus.COMPLETED, samples, List.of(), List.of(pause))
+                .maxTelemetryGapSeconds()).isEqualTo(12);
+        assertThat(calculator.calculate(FlightSessionStatus.COMPLETED, samples, List.of())
+                .maxTelemetryGapSeconds()).isEqualTo(30);
+    }
+
+    @Test
     void completeSessionWithHealthyEvidenceScoresOneHundred() {
         LocalDateTime startedAt =
                 LocalDateTime.of(2026, 7, 25, 1, 0);
