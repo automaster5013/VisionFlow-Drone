@@ -12,10 +12,10 @@ interface DroneDetailProps {
 }
 
 function formatNumber(
-    value: number | null,
+    value: number | null | undefined,
     digits = 2,
 ): string {
-    if (value === null) {
+    if (value == null || !Number.isFinite(value)) {
         return "-";
     }
 
@@ -23,7 +23,7 @@ function formatNumber(
 }
 
 function formatBattery(
-    value: number | null,
+    value: number | null | undefined,
 ): string {
     return value === null ? "-" : `${value}%`;
 }
@@ -56,7 +56,7 @@ export function DroneDetail({
                 </div>
 
                 <div className="flex flex-col items-start gap-3 lg:items-end">
-                    <DroneStatusBadge status={drone.status} />
+                    <div className="flex items-center gap-2"><span className="text-sm text-slate-500">기체 운용 상태</span><DroneStatusBadge status={drone.status} /></div>
 
                     <DroneAutoRefresh intervalMs={5000} />
                 </div>
@@ -103,7 +103,15 @@ export function DroneDetail({
                                     7,
                                 )}
                             />
+                            <MetricCard label="방위각" value={drone.heading == null ? "-" : `${formatNumber(drone.heading, 1)}°`} />
+                            <MetricCard label="피치" value={drone.pitch == null ? "-" : `${formatNumber(drone.pitch, 1)}°`} />
+                            <MetricCard label="롤" value={drone.roll == null ? "-" : `${formatNumber(drone.roll, 1)}°`} />
+                            <MetricCard label="지상 속도" value={drone.groundSpeed == null ? "-" : `${formatNumber(drone.groundSpeed)} m/s`} />
+                            <MetricCard label="수평 정확도" value={drone.horizontalAccuracy == null ? "-" : `${formatNumber(drone.horizontalAccuracy)} m`} />
+                            <MetricCard label="센서 출처" value={drone.telemetrySource ?? "-"} />
+                            <MetricCard label="송신 기기" value={drone.sourceDeviceId ?? "-"} />
                         </div>
+                        <p className="mt-3 text-sm text-slate-500">기체 운용 상태와 텔레메트리 수신 상태는 별도입니다. 스마트폰 송신기의 배터리는 가상 값입니다.</p>
                     </article>
 
                     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
