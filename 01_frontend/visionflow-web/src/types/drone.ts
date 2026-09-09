@@ -21,6 +21,15 @@ export interface Drone {
     longitude: number | null;
     altitude: number | null;
     batteryLevel: number | null;
+    heading?: number | null;
+    pitch?: number | null;
+    roll?: number | null;
+    groundSpeed?: number | null;
+    horizontalAccuracy?: number | null;
+    verticalAccuracy?: number | null;
+    telemetrySource?: string | null;
+    sourceDeviceId?: string | null;
+    flightSessionId?: string | null;
     lastConnectedAt: string | null;
     createdAt: string;
     updatedAt: string;
