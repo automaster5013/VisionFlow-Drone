@@ -1,4 +1,4 @@
-> **최신 작업 현황: 2026.09.09** — [Phase 3 일정표](PHASE3_SCHEDULE.md)와 [발표 준비 마감 기록](../docs/presentation-closeout-20260909.md)을 참고하세요. 아래 Phase 2 일정은 당시 기록으로 보존합니다.
+> **최신 작업 현황: 2026.09.09** — [Phase 3 일정표](PHASE3_SCHEDULE.md)와 [발표 준비 마감 기록](../docs/presentation-closeout-20260909.md)을 참고하세요. 09.09 오전 [스마트폰 실센서 송수신 검증](../docs/smartphone-telemetry-20260909.md)을 추가했습니다. 아래 Phase 2 일정은 당시 기록으로 보존합니다.
 
 # 📅 [Phase 2] 지능형 드론 관제 파이프라인 프로젝트 상세 일정표
 
