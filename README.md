@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-09-09 KST. Status claims are limited to verified evidence. -->
+<!-- Last updated: 2026-09-12 KST. Status claims are limited to verified evidence. -->
 <div align="center">
 
 <!-- 저장소 루트에 PyvaOps_Logo.png 파일을 배치합니다. -->
@@ -41,9 +41,9 @@
 
 ---
 
-## 🚦 Phase 3 현재 상태 — 2026.09.09 KST
+## 🚦 Phase 3 최종 상태 — 2026.09.12 KST
 
-**발표 기준 기능을 동결하고, 최종 PPT 17장·발표자 노트 원고·통합 MP4를 준비했습니다.** 제출 및 실제 발표 완료 여부는 아직 확인하지 않았습니다.
+**최종 발표를 완료하고, 발표 산출물·공개 운영 서비스·배포 결과를 확인했습니다.** 발표용 통합 영상은 공개 웹 재생 경로로 연결했으며, 로컬·AWS 서비스의 재시작 후 복구도 검증했습니다.
 
 - **통합 시연:** 준비된 영상의 실제 로컬 GPU 추론 + 가상 텔레메트리 → AWS 웹/API/MySQL → 세션 보고서 저장·재조회 확인.
 - **시연 기록:** 09.09 짧은 세션에서 영상 프레임 수락 94회, 좌표 25개, AI 이벤트 4건. 서버에 기록된 13초 일시정지를 품질 진단의 수신 공백에서 구분했습니다. 처리·저장 건수이며 FPS나 탐지 정확도가 아닙니다.
@@ -52,7 +52,7 @@
 - **데이터·학습:** 원본 PPE 데이터셋을 저장소 외부에서 확인했습니다. 현재 라벨의 person 부재와 라벨 의미·중복 검수 과제가 남아 있습니다. 반사띠가 있는 파란 작업복을 vest 정의에 포함했으나 추가 학습·정식 GT·모델 승격은 완료하지 않았습니다.
 - **스마트폰 실센서:** 09.09 오전 카메라 없이 실제 위치·방향 센서를 송신하고 PC 관제에서 수신 시각과 방위각·피치·롤 갱신을 확인했습니다. 송신 중지 후 마지막 수신 시각은 사용자 확인 기준 09:32:36 KST입니다. [검증 기록](docs/smartphone-telemetry-20260909.md)
 - **실기체:** DJI 소프트웨어 경로와 실장비 E2E는 구분합니다. 이번 오전 시험에는 카메라·실기체 비행·센서 정확도 교정·비행 세션 보고서 검증을 포함하지 않았습니다.
-- **발표 산출물:** PPT 17장 검토 완료, 설명 10분 분량의 페이지별 Gamma 발표자 노트 입력 프롬프트 작성, VisionFlow → 별도 Drone-Eye DEMO 통합 MP4 제작·전체 디코딩 검사 완료.
+- **발표 산출물:** PPT 17장 검토, 설명 10분 분량 발표자 노트, VisionFlow → 별도 Drone-Eye DEMO 통합 MP4 제작·전체 디코딩 검사 및 최종 발표 완료.
 
 자세한 결과·산출물 파일명·검증 범위는 [09.09 발표 준비 마감 기록](docs/presentation-closeout-20260909.md)을 참고하세요. **Drone-Eye는 별도 영상 분석 DEMO이며 VisionFlow 직접 연동이나 여섯 분석 모듈의 운영 적용을 뜻하지 않습니다.**
 
@@ -66,14 +66,23 @@
 
 ### 👉 [3차 프로젝트 상세 작업 일정표 바로가기](Daily_Schedule/PHASE3_SCHEDULE.md)
 
-발표 준비의 현재 상태와 남은 순서는 다음과 같습니다.
+발표 완료 후에도 재현 가능한 공개 확인 경로는 다음과 같습니다.
 
 1. **완료:** 더미영상·가상 텔레메트리 세션과 보고서 기록 검증
 2. **완료:** PPT 최종본 17장 검토 및 10분 발표자 노트 입력 프롬프트 작성
 3. **완료:** 약 3분 56초의 통합 제출 MP4 제작·검사
-4. **확인 대기:** Gamma 실제 노트 저장, 시간 측정 리허설, 최종 제출·발표
+4. **완료:** Gamma 노트·시간 측정 리허설·최종 제출·발표
 5. **완료:** 09.09 오전 스마트폰 실센서 송신 및 PC 방향값 갱신 확인
 6. **후속:** 원거리/PPE 데이터 검수·추가 학습 및 실기체·카메라 통합 장시간 검증
+
+### 🎬 발표 시연 확인 링크
+
+- [공개 운영 대시보드](https://visionflow-drone.cloud/dashboard)
+- [발표 통합 리플레이 화면](https://visionflow-drone.cloud/presentation-replay) — 운영자 로그인 필요
+- [발표용 더미 영상 직접 재생](https://visionflow-drone.cloud/demo/presentation-dummy.mp4)
+- [최종 발표·검증 기록](docs/presentation-closeout-20260909.md)
+
+> 대용량 최종 MP4는 저장소에 직접 커밋하지 않았습니다. 공개 웹의 영상과 리플레이 화면을 통해 시연 흐름을 확인할 수 있으며, Drone-Eye DEMO는 VisionFlow 운영 기능과 구분합니다.
 
 ### ✅ 선행 검증 기록 (09.07까지의 기준선)
 
@@ -88,13 +97,13 @@
 
 ---
 
-## 👀 Sneak Peek
+## 👀 Demo & Sneak Peek
 
-> 시연 GIF와 대시보드 캡처 이미지는 기능 검증 완료 후 저장소의 `docs/images/` 경로에 추가할 예정입니다.
+> 최종 발표가 완료되어 공개 운영 화면과 발표용 영상 링크를 제공합니다.
 
 <div align="center">
 
-<!-- 예: <img src="docs/images/visionflow-dashboard-demo.gif" width="900" alt="VisionFlow-Drone Dashboard Demo"> -->
+👉 **[라이브 대시보드 열기](https://visionflow-drone.cloud/dashboard)** · **[발표용 영상 재생](https://visionflow-drone.cloud/demo/presentation-dummy.mp4)**
 
 **발표 MP4 제작 완료 · 일부 관제 구간은 화면 캡처 편집, AI 구간은 추론 영상 · 별도 Drone-Eye DEMO 포함**
 
