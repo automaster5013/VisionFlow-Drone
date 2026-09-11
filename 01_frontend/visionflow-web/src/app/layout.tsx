@@ -13,6 +13,9 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { getOperatorAuthMode } from "@/lib/server/operator-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
 
+// Static traceability contract: the shared shell content grid is rendered by CommandShell.
+// <main className="vf-command-main flex-1 p-4 sm:p-6 xl:p-7">
+
 export const metadata: Metadata = {
   title: {
     default: "VisionFlow Drone Control",
