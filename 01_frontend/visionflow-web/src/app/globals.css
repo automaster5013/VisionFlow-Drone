@@ -2964,6 +2964,72 @@ html[data-resolved-theme="light"] [data-showcase] :is(.border-white\/10, .border
 html[data-resolved-theme="light"] [data-showcase] .shadow-2xl {
   --tw-shadow-color: rgba(14, 116, 144, 0.15) !important;
 }
+
+[data-showcase] .showcase-primary-button {
+  color: #082f49 !important;
+  text-shadow: none;
+}
+
+[data-showcase] .showcase-primary-button:hover {
+  color: #082f49 !important;
+}
+
+[data-showcase] .showcase-hero-title {
+  text-wrap: balance;
+}
+
+/* Public portfolio presentation: keep the showcase bright and welcoming. */
+[data-showcase] {
+  background: #f4f8fc !important;
+  color: #0f2740 !important;
+}
+
+[data-showcase] .bg-slate-950 {
+  background: #ffffff !important;
+}
+
+[data-showcase] .bg-slate-950\/80 {
+  background: rgba(255, 255, 255, 0.94) !important;
+}
+
+[data-showcase] .bg-white\/\[0\.03\],
+[data-showcase] .bg-white\/\[0\.04\] {
+  background: #ffffff !important;
+}
+
+[data-showcase] :is(.text-slate-100, .text-slate-200, .text-slate-300) {
+  color: #29445f !important;
+}
+
+[data-showcase] :is(.text-slate-400, .text-slate-500) {
+  color: #607991 !important;
+}
+
+[data-showcase] :is(.border-white\/10, .border-white\/20) {
+  border-color: #d4e1ec !important;
+}
+
+[data-showcase] .border-y {
+  border-color: #dbe7f0 !important;
+}
+
+[data-showcase] .bg-gradient-to-br {
+  background: linear-gradient(135deg, #dff6fb 0%, #ffffff 52%, #eef0ff 100%) !important;
+}
+
+[data-showcase] .shadow-2xl {
+  --tw-shadow-color: rgba(14, 116, 144, 0.18) !important;
+}
+
+/* The product preview remains a dark command-center specimen inside the light page. */
+[data-showcase] .bg-gradient-to-br .bg-slate-950\/80 {
+  background: #071426 !important;
+}
+
+html[data-resolved-theme="dark"] [data-showcase] {
+  background: #f4f8fc !important;
+  color: #0f2740 !important;
+}
 .vf-caption-launch, .vf-caption-panel {
   position: fixed; z-index: 1000; color: #fff !important;
   background: rgba(3, 10, 20, .96) !important;
