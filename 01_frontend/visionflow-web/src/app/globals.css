@@ -2929,6 +2929,41 @@ html[data-resolved-theme="dark"] [data-operator-qr-help] a:focus-visible {
   border: 1px solid var(--vf-border);
 }
 /* Recording captions retain their contrast in both application themes. */
+
+/* Public showcase keeps a distinct light palette instead of inheriting the dark demo canvas. */
+html[data-resolved-theme="light"] [data-showcase] {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html[data-resolved-theme="light"] [data-showcase] .bg-slate-950 {
+  background: #ffffff !important;
+}
+
+html[data-resolved-theme="light"] [data-showcase] .bg-slate-950\/80 {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+html[data-resolved-theme="light"] [data-showcase] .bg-white\/\[0\.03\],
+html[data-resolved-theme="light"] [data-showcase] .bg-white\/\[0\.04\] {
+  background: #ffffff !important;
+}
+
+html[data-resolved-theme="light"] [data-showcase] :is(.text-slate-100, .text-slate-200, .text-slate-300) {
+  color: #334155 !important;
+}
+
+html[data-resolved-theme="light"] [data-showcase] :is(.text-slate-400, .text-slate-500) {
+  color: #64748b !important;
+}
+
+html[data-resolved-theme="light"] [data-showcase] :is(.border-white\/10, .border-white\/20) {
+  border-color: #dbe4ee !important;
+}
+
+html[data-resolved-theme="light"] [data-showcase] .shadow-2xl {
+  --tw-shadow-color: rgba(14, 116, 144, 0.15) !important;
+}
 .vf-caption-launch, .vf-caption-panel {
   position: fixed; z-index: 1000; color: #fff !important;
   background: rgba(3, 10, 20, .96) !important;

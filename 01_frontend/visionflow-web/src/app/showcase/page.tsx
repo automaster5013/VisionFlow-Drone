@@ -9,7 +9,7 @@ const capabilities = [
 
 export default function ShowcasePage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main data-showcase className="min-h-screen bg-slate-950 text-slate-100">
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-8 sm:px-10 lg:px-16 lg:pt-12">
         <nav className="flex items-center justify-between border-b border-white/10 pb-6">
           <div className="flex items-center gap-3">
