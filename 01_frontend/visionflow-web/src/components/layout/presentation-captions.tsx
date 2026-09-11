@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { usePathname } from "next/navigation";
 
 const KEY = "visionflow-presentation-captions-v1";
 const EVENT = "visionflow-captions-change";
@@ -34,11 +33,8 @@ function save(value: string) {
 
 export function PresentationCaptions() {
   const value = useSyncExternalStore(subscribe, snapshot, () => "off");
-  const pathname = usePathname();
-  const allowed = /^\/(dashboard|presentation-replay|ai-preview|drones)(\/|$)/.test(pathname);
   const index = /^\d+$/.test(value) ? Number(value) : -1;
   const active = index >= 0 && index < captions.length;
-  if (!allowed) return null;
   if (!active) return <button className="vf-caption-launch" onClick={() => save("0")}>발표 자막 켜기</button>;
   return (
     <section className="vf-caption-panel" aria-label="발표용 자막">
