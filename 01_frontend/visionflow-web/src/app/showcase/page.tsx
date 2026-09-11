@@ -27,15 +27,15 @@ export default function ShowcasePage() {
         <div className="grid gap-12 pb-20 pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-24">
           <div>
             <p className="mb-5 text-sm font-bold uppercase tracking-[0.35em] text-cyan-300">Drone · Vision AI · Safety Operations</p>
-            <h1 className="max-w-4xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              영상과 텔레메트리를 연결하는
-              <span className="block text-cyan-300">지능형 드론 관제 플랫폼</span>
+            <h1 className="showcase-hero-title max-w-3xl text-4xl font-black leading-[1.14] tracking-[-0.035em] sm:text-5xl lg:text-[clamp(3.25rem,4.4vw,4.5rem)]">
+              <span className="block whitespace-normal lg:whitespace-nowrap">영상과 텔레메트리를 연결하는</span>
+              <span className="mt-2 block text-cyan-300">지능형 드론 관제 플랫폼</span>
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">
               VisionFlow-Drone은 가상 드론과 실제 드론 확장 경로를 하나의 표준 파이프라인으로 연결합니다. 영상 입력, AI 탐지, 비행 데이터, 이벤트 이력을 운영 화면에서 추적할 수 있도록 설계했습니다.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <a href="https://visionflow-drone.cloud/demo/presentation-dummy.mp4" className="rounded-full bg-cyan-300 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-200">발표 영상 재생</a>
+              <a href="https://visionflow-drone.cloud/demo/presentation-dummy.mp4" className="showcase-primary-button rounded-full bg-cyan-300 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-200">발표 영상 재생</a>
               <Link href="/presentation-replay" className="rounded-full border border-white/20 px-6 py-3 font-bold transition hover:border-cyan-300 hover:text-cyan-200">인터랙티브 데모</Link>
               <Link href="/operator-login" className="rounded-full border border-white/20 px-6 py-3 font-bold transition hover:border-cyan-300 hover:text-cyan-200">관제 화면 들어가기</Link>
             </div>
@@ -64,7 +64,7 @@ export default function ShowcasePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-16 text-center sm:px-10 lg:px-16"><p className="text-sm text-slate-400">최종 발표 시연은 가상 드론·더미 영상 기반이며, DJI 실기체와 AWS AI 확장은 후속 검증 범위입니다.</p><div className="mt-6 flex justify-center gap-3"><a href="https://github.com/automaster5013/VisionFlow-Drone" className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold hover:border-cyan-300">GitHub 저장소</a><Link href="/operator-login" className="rounded-full bg-cyan-300 px-5 py-2 text-sm font-bold text-slate-950">운영 콘솔 로그인</Link></div></section>
+      <section className="mx-auto max-w-7xl px-6 py-16 text-center sm:px-10 lg:px-16"><p className="text-sm text-slate-400">최종 발표 시연은 가상 드론·더미 영상 기반이며, DJI 실기체와 AWS AI 확장은 후속 검증 범위입니다.</p><div className="mt-6 flex justify-center gap-3"><a href="https://github.com/automaster5013/VisionFlow-Drone" className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold hover:border-cyan-300">GitHub 저장소</a><Link href="/operator-login" className="showcase-primary-button rounded-full bg-cyan-300 px-5 py-2 text-sm font-bold text-slate-950">운영 콘솔 로그인</Link></div></section>
     </main>
   );
 }

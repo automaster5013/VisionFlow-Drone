@@ -2964,6 +2964,19 @@ html[data-resolved-theme="light"] [data-showcase] :is(.border-white\/10, .border
 html[data-resolved-theme="light"] [data-showcase] .shadow-2xl {
   --tw-shadow-color: rgba(14, 116, 144, 0.15) !important;
 }
+
+[data-showcase] .showcase-primary-button {
+  color: #082f49 !important;
+  text-shadow: none;
+}
+
+[data-showcase] .showcase-primary-button:hover {
+  color: #082f49 !important;
+}
+
+[data-showcase] .showcase-hero-title {
+  text-wrap: balance;
+}
 .vf-caption-launch, .vf-caption-panel {
   position: fixed; z-index: 1000; color: #fff !important;
   background: rgba(3, 10, 20, .96) !important;
