@@ -2976,6 +2976,7 @@ html[data-resolved-theme="light"] [data-showcase] .shadow-2xl {
 
 [data-showcase] .showcase-hero-title {
   text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 /* Public portfolio presentation: keep the showcase bright and welcoming. */
@@ -2990,6 +2991,10 @@ html[data-resolved-theme="light"] [data-showcase] .shadow-2xl {
 
 [data-showcase] .bg-slate-950\/80 {
   background: rgba(255, 255, 255, 0.94) !important;
+}
+
+[data-showcase] .bg-gradient-to-br .bg-slate-950\/80 {
+  background: #071426 !important;
 }
 
 [data-showcase] .bg-white\/\[0\.03\],
@@ -3021,9 +3026,42 @@ html[data-resolved-theme="light"] [data-showcase] .shadow-2xl {
   --tw-shadow-color: rgba(14, 116, 144, 0.18) !important;
 }
 
-/* The product preview remains a dark command-center specimen inside the light page. */
-[data-showcase] .bg-gradient-to-br .bg-slate-950\/80 {
-  background: #071426 !important;
+[data-showcase] .showcase-capability-title {
+  color: #0e7490 !important;
+}
+
+[data-showcase] .bg-gradient-to-br .bg-white\/\[0\.04\] {
+  background: #101f35 !important;
+  border-color: #263a54 !important;
+}
+
+[data-showcase] .bg-gradient-to-br .text-slate-400 {
+  color: #b7c9dc !important;
+}
+
+[data-showcase] .bg-gradient-to-br .text-cyan-200 {
+  color: #67e8f9 !important;
+}
+
+[data-showcase] .bg-gradient-to-br .text-emerald-100 {
+  color: #a7f3d0 !important;
+}
+
+[data-showcase] .showcase-primary-button,
+html[data-resolved-theme] [data-showcase] .showcase-primary-button {
+  color: #082f49 !important;
+  background-color: #67e8f9 !important;
+  text-shadow: none !important;
+}
+
+[data-showcase] .showcase-primary-button:hover,
+html[data-resolved-theme] [data-showcase] .showcase-primary-button:hover {
+  color: #082f49 !important;
+  background-color: #22d3ee !important;
+}
+
+[data-showcase] .text-slate-400 {
+  color: #526a80 !important;
 }
 
 html[data-resolved-theme="dark"] [data-showcase] {

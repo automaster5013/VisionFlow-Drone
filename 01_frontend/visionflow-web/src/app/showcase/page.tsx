@@ -24,12 +24,13 @@ export default function ShowcasePage() {
           </Link>
         </nav>
 
-        <div className="grid gap-12 pb-20 pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-24">
-          <div>
+        <div className="grid gap-10 pb-20 pt-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.8fr)] lg:items-center xl:gap-16 lg:pt-24">
+          <div className="min-w-0">
             <p className="mb-5 text-sm font-bold uppercase tracking-[0.35em] text-cyan-300">Drone · Vision AI · Safety Operations</p>
-            <h1 className="showcase-hero-title max-w-3xl text-4xl font-black leading-[1.14] tracking-[-0.035em] sm:text-5xl lg:text-[clamp(3.25rem,4.4vw,4.5rem)]">
-              <span className="block whitespace-normal lg:whitespace-nowrap">영상과 텔레메트리를 연결하는</span>
-              <span className="mt-2 block text-cyan-300">지능형 드론 관제 플랫폼</span>
+            <h1 className="showcase-hero-title max-w-3xl text-4xl font-black leading-[1.16] tracking-[-0.035em] sm:text-5xl lg:text-[clamp(2.85rem,3.65vw,3.85rem)]">
+              <span className="block">영상과 텔레메트리를</span>
+              <span className="mt-1 block">연결하는</span>
+              <span className="mt-1 block text-cyan-300">지능형 드론 관제 플랫폼</span>
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">
               VisionFlow-Drone은 가상 드론과 실제 드론 확장 경로를 하나의 표준 파이프라인으로 연결합니다. 영상 입력, AI 탐지, 비행 데이터, 이벤트 이력을 운영 화면에서 추적할 수 있도록 설계했습니다.
@@ -53,7 +54,7 @@ export default function ShowcasePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {capabilities.map(([title, description]) => <article key={title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><h2 className="text-lg font-bold text-cyan-200">{title}</h2><p className="mt-3 text-sm leading-6 text-slate-300">{description}</p></article>)}
+          {capabilities.map(([title, description]) => <article key={title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><h2 className="showcase-capability-title text-lg font-bold text-cyan-200">{title}</h2><p className="mt-3 text-sm leading-6 text-slate-300">{description}</p></article>)}
         </div>
       </section>
 
