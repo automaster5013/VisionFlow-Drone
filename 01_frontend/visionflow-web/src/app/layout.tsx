@@ -5,9 +5,9 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import type { ReactNode } from "react";
 
-import { PresentationCaptions } from "@/components/layout/presentation-captions";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { CommandShell } from "@/components/layout/command-shell";
 import { OperatorAccessProvider } from "@/components/security/operator-access-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { getOperatorAuthMode } from "@/lib/server/operator-auth";
@@ -45,21 +45,17 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
         <ThemeProvider>
           <OperatorAccessProvider status={operatorSecurity}>
-            <div className="vf-command-shell flex min-h-screen">
-              <AppSidebar operatorSecurity={operatorSecurity} />
-
-              <div className="flex min-w-0 flex-1 flex-col">
+            <CommandShell
+              sidebar={<AppSidebar operatorSecurity={operatorSecurity} />}
+              header={
                 <AppHeader
                   operatorSecurity={operatorSecurity}
                   operatorAuthMode={operatorAuthMode}
                 />
-
-                <main className="vf-command-main flex-1 p-4 sm:p-6 xl:p-7">
-                  {children}
-                </main>
-              </div>
-            </div>
-          <PresentationCaptions />
+              }
+            >
+              {children}
+            </CommandShell>
           </OperatorAccessProvider>
         </ThemeProvider>
       </body>
