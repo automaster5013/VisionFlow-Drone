@@ -3312,7 +3312,7 @@ html[data-resolved-theme] [data-showcase] .bg-gradient-to-br > .bg-slate-950\/80
 .vf-caption-controls button { color: #fff !important; background: #16344b !important; border: 1px solid #7896ac; border-radius: 6px; padding: 4px 12px; }
 .vf-caption-controls button:disabled { opacity: .4; cursor: not-allowed; }
 .vf-caption-controls button:focus-visible, .vf-caption-launch:focus-visible { outline: 3px solid #38bdf8; outline-offset: 3px; }
-@media (max-width: 767px) {
+@media (max-width: 767px), (max-height: 800px) {
   .vf-caption-launch-showcase { position: static; display: block; width: fit-content; margin: 14px 16px 18px auto; }
 }
 @media print { .vf-caption-panel, .vf-caption-launch { display: none; } }
