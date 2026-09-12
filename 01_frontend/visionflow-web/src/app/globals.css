@@ -3087,6 +3087,65 @@ html[data-resolved-theme] [data-showcase] .bg-gradient-to-br > .bg-slate-950\/80
 html[data-resolved-theme] [data-showcase] .bg-gradient-to-br > .bg-slate-950\/80 .text-emerald-100 {
   color: #a7f3d0 !important;
 }
+
+/* Showcase hero: high-contrast editorial accent and a reusable drone-image stage. */
+[data-showcase] .showcase-eyebrow,
+[data-showcase] .showcase-hero-accent {
+  color: #0e7490 !important;
+}
+
+[data-showcase] .showcase-drone-card {
+  border-color: #b7dce7;
+  background: linear-gradient(145deg, #d8f2f5, #eef2ff);
+  box-shadow: 0 28px 70px rgba(15, 39, 64, 0.2) !important;
+}
+
+[data-showcase] .showcase-drone-image {
+  z-index: -2;
+}
+
+[data-showcase] .showcase-drone-wash {
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(6, 22, 42, 0.04) 0%, rgba(6, 22, 42, 0.02) 28%, rgba(6, 22, 42, 0.36) 56%, rgba(6, 22, 42, 0.88) 100%);
+}
+
+[data-showcase] .showcase-drone-brand {
+  color: #102a43;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 28px rgba(15, 39, 64, 0.12);
+}
+
+[data-showcase] .showcase-ready-pill {
+  color: #065f46;
+  background: rgba(236, 253, 245, 0.96);
+}
+
+[data-showcase] .showcase-drone-info {
+  border-color: rgba(203, 229, 243, 0.28);
+  background: rgba(5, 19, 38, 0.94);
+}
+
+[data-showcase] .showcase-drone-stat {
+  border-color: rgba(203, 229, 243, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-showcase] .showcase-drone-pipeline {
+  color: #e0f2fe;
+  border-color: rgba(103, 232, 249, 0.3);
+  background: rgba(8, 47, 73, 0.8);
+}
+
+@media (max-width: 639px) {
+  [data-showcase] .showcase-drone-info {
+    padding: 1rem;
+  }
+
+  [data-showcase] .showcase-drone-pipeline {
+    font-size: 0.75rem;
+    line-height: 1.5rem;
+  }
+}
 .vf-caption-launch, .vf-caption-panel {
   position: fixed; z-index: 1000; color: #fff !important;
   background: rgba(3, 10, 20, .96) !important;
