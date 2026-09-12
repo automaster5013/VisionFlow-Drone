@@ -49,11 +49,11 @@ export default function ShowcasePage() {
             <div className="relative z-10 flex min-h-[27rem] flex-col justify-between p-5 sm:min-h-[31rem] sm:p-7">
               <div className="flex items-start justify-between gap-3">
                 <div className="showcase-drone-brand rounded-2xl px-4 py-3 backdrop-blur-md"><p className="text-[10px] font-bold uppercase tracking-[0.24em]">PyvaOps · Field Intelligence</p><p className="mt-1 text-sm font-semibold">VisionFlow-Drone</p></div>
-                <span className="showcase-ready-pill rounded-full px-3 py-1.5 text-xs font-bold shadow-sm">● SYSTEM READY</span>
+                <span className="showcase-ready-pill whitespace-nowrap rounded-full px-2.5 py-1.5 text-[10px] font-bold shadow-sm sm:px-3 sm:text-xs">● SYSTEM READY</span>
               </div>
               <div className="showcase-drone-info rounded-3xl border p-5 shadow-xl backdrop-blur-xl sm:p-6">
                 <div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">Mission snapshot</p><h2 className="mt-1 text-xl font-black text-white sm:text-2xl">하늘에서 관제까지</h2></div><span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white">LIVE SYSTEM</span></div>
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2.5">
                   {[["03", "드론"], ["94", "영상 프레임"], ["25", "텔레메트리"], ["04", "AI 이벤트"]].map(([value, label]) => <div key={label} className="showcase-drone-stat rounded-xl border px-3 py-3"><p className="text-2xl font-black text-cyan-200">{value}</p><p className="mt-1 text-xs font-medium text-slate-200">{label}</p></div>)}
                 </div>
                 <p className="showcase-drone-pipeline mt-3 rounded-xl border px-4 py-3 text-sm font-semibold leading-6">Edge AI <span aria-hidden="true">→</span> AWS Backend <span aria-hidden="true">→</span> MySQL <span aria-hidden="true">→</span> Web Dashboard</p>

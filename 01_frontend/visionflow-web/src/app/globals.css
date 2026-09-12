@@ -3130,6 +3130,14 @@ html[data-resolved-theme] [data-showcase] .bg-gradient-to-br > .bg-slate-950\/80
   background: rgba(255, 255, 255, 0.08);
 }
 
+[data-showcase] .showcase-drone-stat .text-slate-200 {
+  color: #dbeafe !important;
+}
+
+[data-showcase] .showcase-drone-stat .text-cyan-200 {
+  color: #67e8f9 !important;
+}
+
 [data-showcase] .showcase-drone-pipeline {
   color: #e0f2fe;
   border-color: rgba(103, 232, 249, 0.3);
