@@ -40,15 +40,16 @@ export default function ShowcasePage() {
             </div>
           </div>
 
-          <div className="showcase-drone-card relative isolate overflow-hidden rounded-[1.75rem] border shadow-2xl">
-            <Image src="/showcase/drone-hero.png" alt="산과 호수 위를 비행하는 쿼드콥터 드론" fill priority sizes="(max-width: 1024px) 100vw, 42vw" className="showcase-drone-image object-cover object-[68%_center]" />
-            <div className="showcase-drone-wash absolute inset-0" />
-            <div className="showcase-drone-top absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4 sm:p-5">
-              <div className="showcase-drone-brand rounded-xl px-3 py-2 backdrop-blur-md"><p className="text-[9px] font-bold uppercase tracking-[0.2em]">PyvaOps · Field Intelligence</p><p className="mt-0.5 text-sm font-semibold">VisionFlow-Drone</p></div>
-              <span className="showcase-ready-pill whitespace-nowrap rounded-full px-2.5 py-1.5 text-[10px] font-bold shadow-sm">● SYSTEM READY</span>
+          <div className="showcase-drone-card relative flex flex-col overflow-hidden rounded-[1.75rem] border shadow-2xl">
+            <div className="showcase-drone-photo relative min-h-0 flex-1 overflow-hidden">
+              <Image src="/showcase/drone-hero.png" alt="산과 호수 위를 비행하는 쿼드콥터 드론" fill priority sizes="(max-width: 1024px) 100vw, 42vw" className="showcase-drone-image object-cover object-[68%_center]" />
+              <div className="showcase-drone-top absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4 sm:p-5">
+                <div className="showcase-drone-brand rounded-xl px-3 py-2"><p className="text-[9px] font-bold uppercase tracking-[0.2em]">PyvaOps · Field Intelligence</p><p className="mt-0.5 text-sm font-semibold">VisionFlow-Drone</p></div>
+                <span className="showcase-ready-pill whitespace-nowrap rounded-full px-2.5 py-1.5 text-[10px] font-bold shadow-sm">● SYSTEM READY</span>
+              </div>
             </div>
-            <div className="showcase-drone-info absolute inset-x-3 bottom-3 z-10 rounded-2xl border p-4 shadow-xl backdrop-blur-xl sm:inset-x-4 sm:bottom-4 sm:p-5">
-              <div className="mb-3 flex items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Mission snapshot</p><h2 className="mt-0.5 text-lg font-black text-white">하늘에서 관제까지</h2></div><span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white">LIVE SYSTEM</span></div>
+            <div className="showcase-drone-info relative z-10 shrink-0 border-t p-3 sm:p-4">
+              <div className="mb-2 flex items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Mission snapshot</p><h2 className="mt-0.5 text-base font-black text-white">하늘에서 관제까지</h2></div><span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white">LIVE SYSTEM</span></div>
               <div className="grid grid-cols-4 gap-2">
                 {[["03", "드론"], ["94", "영상 프레임"], ["25", "텔레메트리"], ["04", "AI 이벤트"]].map(([value, label]) => <div key={label} className="showcase-drone-stat rounded-lg border px-2 py-2"><p className="text-xl font-black text-cyan-200">{value}</p><p className="mt-0.5 text-[10px] font-semibold text-slate-200">{label}</p></div>)}
               </div>

@@ -3181,23 +3181,31 @@ html[data-resolved-theme] [data-showcase] .bg-gradient-to-br > .bg-slate-950\/80
 }
 
 [data-showcase] .showcase-drone-card {
-  height: clamp(19rem, 46svh, 27rem);
+  height: clamp(22rem, 53svh, 30rem);
   min-height: 0;
-  background: #dcecf5;
+  border-color: #c4d9e9;
+  background: #07182b;
+}
+
+[data-showcase] .showcase-drone-photo {
+  flex: 1 1 60%;
+  background: linear-gradient(140deg, #a8d6eb, #dbeaf2 58%, #b5cce0);
 }
 
 [data-showcase] .showcase-drone-image {
-  z-index: -2;
+  z-index: 0;
   object-position: 68% center;
 }
 
-[data-showcase] .showcase-drone-wash {
-  z-index: -1;
-  background: linear-gradient(180deg, rgba(5, 24, 45, 0.04) 0%, rgba(5, 24, 45, 0.02) 42%, rgba(5, 24, 45, 0.36) 65%, rgba(5, 24, 45, 0.86) 100%);
-}
-
 [data-showcase] .showcase-drone-info {
-  background: rgba(5, 19, 38, 0.9);
+  border-color: rgba(203, 229, 243, 0.2) !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+  background: #07182b !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 [data-showcase] .showcase-capability {
@@ -3256,6 +3264,10 @@ html[data-resolved-theme] [data-showcase] .bg-gradient-to-br > .bg-slate-950\/80
   [data-showcase] .showcase-drone-card {
     height: clamp(22rem, 58svh, 34rem);
   }
+
+  [data-showcase] .showcase-drone-photo {
+    flex-basis: 58%;
+  }
 }
 
 @media (max-width: 639px) {
@@ -3265,6 +3277,10 @@ html[data-resolved-theme] [data-showcase] .bg-gradient-to-br > .bg-slate-950\/80
 
   [data-showcase] .showcase-drone-card {
     height: 24rem;
+  }
+
+  [data-showcase] .showcase-drone-photo {
+    flex-basis: 55%;
   }
 
   [data-showcase] .showcase-drone-info {
