@@ -31,11 +31,11 @@ function save(value: string) {
   window.dispatchEvent(new Event(EVENT));
 }
 
-export function PresentationCaptions() {
+export function PresentationCaptions({ showcase = false }: { showcase?: boolean }) {
   const value = useSyncExternalStore(subscribe, snapshot, () => "off");
   const index = /^\d+$/.test(value) ? Number(value) : -1;
   const active = index >= 0 && index < captions.length;
-  if (!active) return <button className="vf-caption-launch" onClick={() => save("0")}>발표 자막 켜기</button>;
+  if (!active) return <button className={`vf-caption-launch${showcase ? " vf-caption-launch-showcase" : ""}`} onClick={() => save("0")}>발표 자막 켜기</button>;
   return (
     <section className="vf-caption-panel" aria-label="발표용 자막">
       <p className="vf-caption-text" aria-live="polite" aria-atomic="true">{captions[index][1]}</p>

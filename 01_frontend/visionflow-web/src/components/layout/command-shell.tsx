@@ -19,7 +19,7 @@ export function CommandShell({ children, header, sidebar }: CommandShellProps) {
     return (
       <>
         {children}
-        <PresentationCaptions />
+        <PresentationCaptions showcase />
       </>
     );
   }
