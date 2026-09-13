@@ -49,6 +49,13 @@ chmod 600 /home/ubuntu/visionflow-cloud/.env
 ```
 
 Replace every `replace-with-...` value with a strong secret. Never commit the real `.env`.
+Keep both `VISIONFLOW_OPERATOR_SECURITY_ENABLED` and
+`VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED` set to `true`. The AI internal key must
+be at least 32 characters and distinct from the viewer, operator, and admin keys.
+Keep `VISIONFLOW_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS` restricted to the exact HTTPS
+hostnames serving the browser app; do not use a wildcard.
+The bootstrap deploy and promotion preflight stop before changing containers if
+these runtime security settings are missing, duplicated, disabled, or placeholders.
 
 The two release fields are deployment metadata and must move together:
 

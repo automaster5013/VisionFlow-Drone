@@ -29,7 +29,9 @@ const contentSecurityPolicyReportOnly = [
   "frame-ancestors 'none'",
   "frame-src 'none'",
   "form-action 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `script-src 'self' 'unsafe-inline'${
+    process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+  }`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
   "media-src 'self' blob:",
@@ -82,6 +84,13 @@ const securityHeaders = [
   },
 ];
 
+const publicHttpsHeaders = [
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=15768000",
+  },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
@@ -92,6 +101,13 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      ...["visionflow-drone.cloud", "www.visionflow-drone.cloud"].map(
+        (host) => ({
+          source: "/:path*",
+          has: [{ type: "host" as const, value: host }],
+          headers: publicHttpsHeaders,
+        }),
+      ),
     ];
   },
 };

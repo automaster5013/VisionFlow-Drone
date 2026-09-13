@@ -6,7 +6,8 @@ services:
     container_name: visionflow-mysql
     restart: unless-stopped
     ports:
-      - "${MYSQL_HOST_PORT:-3307}:3306"
+      # Keep the development DB reachable from this machine only by default.
+      - "${MYSQL_BIND_IP:-127.0.0.1}:${MYSQL_HOST_PORT:-3307}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-visionflow}
@@ -97,6 +98,10 @@ services:
         TORCH_INDEX_URL: ${AI_TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}
     container_name: visionflow-ai
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "${AI_HOST_PORT:-8000}:8000"
     environment:
@@ -185,7 +190,6 @@ services:
       AI_STREAM_API_URL: http://ai-server:8000
       VISIONFLOW_AI_INTERNAL_KEY: ${VISIONFLOW_AI_INTERNAL_KEY:?VISIONFLOW_AI_INTERNAL_KEY is required}
 
-      VISIONFLOW_WEB_OPERATOR_KEY: ${VISIONFLOW_FRONTEND_OPERATOR_KEY:-}
       VISIONFLOW_WEB_AUTH_MODE: ${VISIONFLOW_WEB_AUTH_MODE:-session}
       VISIONFLOW_WEB_SECURE_COOKIES: ${VISIONFLOW_WEB_SECURE_COOKIES:-true}
       VISIONFLOW_MOBILE_EVIDENCE_DIRECTORY: /app/artifacts/mobile-readiness

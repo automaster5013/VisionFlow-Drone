@@ -16,6 +16,58 @@ from app.domain import FramePacket, VideoSourceType
 from app.sources.base import VideoSource
 
 
+_MAX_JPEG_DIMENSION = 8192
+_MAX_JPEG_PIXELS = 16_777_216
+_JPEG_START_OF_FRAME_MARKERS = {
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+    0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF,
+}
+
+
+def _jpeg_dimensions(payload: bytes) -> tuple[int, int] | None:
+    """Read JPEG dimensions from its marker stream without decoding pixels."""
+    if len(payload) < 4 or payload[:2] != b"\xff\xd8":
+        return None
+
+    offset = 2
+    while offset < len(payload):
+        if payload[offset] != 0xFF:
+            return None
+        while offset < len(payload) and payload[offset] == 0xFF:
+            offset += 1
+        if offset >= len(payload):
+            return None
+
+        marker = payload[offset]
+        offset += 1
+        if marker in (0xD8, 0xD9, 0x01) or 0xD0 <= marker <= 0xD7:
+            if marker == 0xD9:
+                return None
+            continue
+        if marker == 0xDA:  # Start of scan before a frame header is invalid here.
+            return None
+        if offset + 2 > len(payload):
+            return None
+
+        segment_length = int.from_bytes(payload[offset : offset + 2], "big")
+        if segment_length < 2:
+            return None
+        segment_end = offset + segment_length
+        if segment_end > len(payload):
+            return None
+        if marker in _JPEG_START_OF_FRAME_MARKERS:
+            if segment_length < 8:
+                return None
+            height = int.from_bytes(payload[offset + 3 : offset + 5], "big")
+            width = int.from_bytes(payload[offset + 5 : offset + 7], "big")
+            if width <= 0 or height <= 0:
+                return None
+            return width, height
+        offset = segment_end
+
+    return None
+
+
 @dataclass(frozen=True, slots=True)
 class BrowserSubmittedFrame:
     source_id: str
@@ -68,6 +120,17 @@ class BrowserUploadSource(VideoSource):
             raise ValueError("Unsupported browser video source type")
         if not jpeg:
             raise ValueError("JPEG 프레임 본문이 비어 있습니다.")
+
+        dimensions = _jpeg_dimensions(jpeg)
+        if dimensions is None:
+            raise ValueError("올바른 JPEG 프레임 헤더가 아닙니다.")
+        width, height = dimensions
+        if (
+            width > _MAX_JPEG_DIMENSION
+            or height > _MAX_JPEG_DIMENSION
+            or width * height > _MAX_JPEG_PIXELS
+        ):
+            raise ValueError("JPEG 프레임 해상도 제한을 초과했습니다.")
 
         encoded = np.frombuffer(jpeg, dtype=np.uint8)
         image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)

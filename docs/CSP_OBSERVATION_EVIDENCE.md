@@ -66,7 +66,8 @@ scripts\run-visionflow-csp-evidence.bat --fail-on-violation
 
 ## 계속 보류하는 범위
 
-- 최종 HTTPS·AI 주소 확정 전 강제 CSP와 HSTS
+- 강제 CSP 적용 전 실제 공개 트래픽의 Report-Only 위반 검토
+- 공개 HTTPS 도메인의 host-only HSTS는 적용 후 운영 종단점에서 재검증
 - 스마트폰 실센서 HTTPS 검증
 - HP OMEN RTX 5060 및 파인튜닝 `best.pt` 검증
 - DJI Mini 4 Pro 전용 연동

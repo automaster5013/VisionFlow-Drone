@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -134,6 +135,25 @@ public class OperatorLoginAttemptGuard {
                 ? UNKNOWN_CLIENT
                 : remoteAddress.trim();
         return "client-" + digest(source).substring(0, 16);
+    }
+
+    public String attemptFingerprint(
+            String remoteAddress,
+            String loginIdentifier
+    ) {
+        String source = remoteAddress == null || remoteAddress.isBlank()
+                ? UNKNOWN_CLIENT
+                : remoteAddress.trim();
+        String identifier = loginIdentifier == null
+                ? ""
+                : loginIdentifier.trim();
+        if (identifier.regionMatches(true, 0, "USER:", 0, 5)) {
+            identifier = "USER:"
+                    + identifier.substring(5).toLowerCase(Locale.ROOT);
+        }
+        String input = source.length() + ":" + source
+                + ":" + identifier.length() + ":" + identifier;
+        return "attempt-" + digest(input).substring(0, 16);
     }
 
     private AttemptDecision allowed(int failureCount) {

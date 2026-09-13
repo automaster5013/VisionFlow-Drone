@@ -219,7 +219,7 @@ export default async function SecurityStatusPage() {
             <ul className="vf-security-command__deferred-list mt-4 space-y-2 text-sm leading-6">
               <li>스마트폰 실센서 HTTPS 인증서 검증은 단말 수리 후 재개합니다.</li>
               <li>HP OMEN RTX 5060과 파인튜닝한 best.pt 성능 검증은 장비 이동 후 진행합니다.</li>
-              <li>강제 CSP와 HSTS는 HTTPS·AI 배치 주소가 확정된 뒤 적용합니다.</li>
+              <li>공개 HTTPS 도메인에만 HSTS를 적용하며, 강제 CSP는 Report-Only 위반 검토 후 결정합니다.</li>
               <li>DJI Mini 4 Pro 전용 연동은 3차 프로젝트 범위로 유지합니다.</li>
             </ul>
             <div className="mt-5 flex flex-wrap gap-3">

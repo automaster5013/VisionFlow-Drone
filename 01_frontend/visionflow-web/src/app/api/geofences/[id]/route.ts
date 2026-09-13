@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedTextRequest } from "@/lib/request-body-limit";
+
+const MAX_GEOFENCE_REQUEST_BYTES = 1024 * 1024;
 
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
@@ -37,9 +40,7 @@ async function forwardToBackend(
       backendUrl,
       await withBackendOperatorAuth(init),
     );
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":
@@ -92,13 +93,21 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     );
   }
 
+  const body = await readBoundedTextRequest(request, MAX_GEOFENCE_REQUEST_BYTES);
+  if (!body.ok) {
+    return NextResponse.json(
+      { message: body.reason === "too_large" ? "지오펜스 요청이 허용 크기를 초과했습니다." : "지오펜스 요청 본문을 읽을 수 없습니다." },
+      { status: body.reason === "too_large" ? 413 : 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   return forwardToBackend(backendUrl, {
     method: "PUT",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: await request.text(),
+    body: body.value,
     cache: "no-store",
   });
 }

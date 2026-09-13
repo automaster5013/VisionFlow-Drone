@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { safeReturnTo } from "@/lib/safe-return-to";
+
 type PairingRole = "VIEWER" | "OPERATOR" | "ADMIN";
 
 interface PairingCredentials {
@@ -19,12 +21,6 @@ interface PairingSnapshot {
   status: string;
   deviceName: string | null;
   expiresAt: string;
-}
-
-function safeReturnTo(value: string | null): string {
-  return value?.startsWith("/") && !value.startsWith("//")
-    ? value
-    : "/mobile-flight";
 }
 
 function bodyMessage(value: unknown, fallback: string): string {
@@ -78,7 +74,7 @@ export function OperatorPairClient() {
       );
       const pairingId = params.get("pairingId")?.trim() ?? "";
       const token = params.get("token")?.trim() ?? "";
-      const returnTo = safeReturnTo(params.get("returnTo"));
+      const returnTo = safeReturnTo(params.get("returnTo"), "/mobile-flight");
 
       if (pairingId && token) {
         setCredentials({ pairingId, token, returnTo });

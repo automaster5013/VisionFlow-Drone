@@ -242,6 +242,68 @@ prepare_smoke() {
   log "SMOKE_HEALTH=UP"
 }
 
+assert_runtime_security_config() {
+  local container="$1"
+  local env_text operator_enabled ai_enabled viewer_key operator_key admin_key ai_key
+
+  env_text="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$container")" \
+    || fail "Could not inspect security environment for $container"
+
+  read_runtime_value() {
+    local name="$1"
+    local matches count
+    matches="$(grep -E "^${name}=" <<< "$env_text" || true)"
+    count="$(grep -Ec "^${name}=" <<< "$env_text" || true)"
+    [[ "$count" == "1" ]] || return 1
+    printf '%s' "${matches#*=}"
+  }
+
+  operator_enabled="$(read_runtime_value VISIONFLOW_OPERATOR_SECURITY_ENABLED)" \
+    || fail "Missing or duplicate operator security flag in $container"
+  ai_enabled="$(read_runtime_value VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED)" \
+    || fail "Missing or duplicate AI internal security flag in $container"
+  viewer_key="$(read_runtime_value VISIONFLOW_VIEWER_KEY)" \
+    || fail "Missing or duplicate viewer credential in $container"
+  operator_key="$(read_runtime_value VISIONFLOW_OPERATOR_KEY)" \
+    || fail "Missing or duplicate operator credential in $container"
+  admin_key="$(read_runtime_value VISIONFLOW_ADMIN_KEY)" \
+    || fail "Missing or duplicate admin credential in $container"
+  ai_key="$(read_runtime_value VISIONFLOW_AI_INTERNAL_KEY)" \
+    || fail "Missing or duplicate AI internal key in $container"
+
+  [[ "${operator_enabled,,}" == "true" ]] \
+    || fail "Operator security is not enabled in $container"
+  [[ "${ai_enabled,,}" == "true" ]] \
+    || fail "AI internal security is not enabled in $container"
+
+  local name value normalized
+  for name in \
+    VISIONFLOW_VIEWER_KEY \
+    VISIONFLOW_OPERATOR_KEY \
+    VISIONFLOW_ADMIN_KEY \
+    VISIONFLOW_AI_INTERNAL_KEY; do
+    case "$name" in
+      VISIONFLOW_VIEWER_KEY) value="$viewer_key" ;;
+      VISIONFLOW_OPERATOR_KEY) value="$operator_key" ;;
+      VISIONFLOW_ADMIN_KEY) value="$admin_key" ;;
+      VISIONFLOW_AI_INTERNAL_KEY) value="$ai_key" ;;
+    esac
+    normalized="${value,,}"
+    (( ${#value} >= 32 )) || fail "$name is shorter than 32 characters in $container"
+    [[ ! "$value" =~ [[:space:]] ]] || fail "$name contains whitespace in $container"
+    case "$normalized" in
+      *replace-with*|*replace_with*|*change_me*|*changeme*|*your_secret*|*your-key*)
+        fail "$name is a placeholder in $container"
+        ;;
+    esac
+  done
+
+  [[ "$viewer_key" != "$operator_key" && "$viewer_key" != "$admin_key" \
+    && "$viewer_key" != "$ai_key" && "$operator_key" != "$admin_key" \
+    && "$operator_key" != "$ai_key" && "$admin_key" != "$ai_key" ]] \
+    || fail "Security credentials are not unique in $container"
+}
+
 preflight() {
   local current_image restart_policy smoke_logs
 
@@ -256,6 +318,8 @@ preflight() {
 
   assert_supported_current_runtime
   assert_supported_smoke_runtime
+  assert_runtime_security_config "$CURRENT_CONTAINER"
+  assert_runtime_security_config "$SMOKE_CONTAINER"
 
   wait_for_health "$CURRENT_HEALTH_URL" 60 2 \
     || fail "Current backend health did not become UP"

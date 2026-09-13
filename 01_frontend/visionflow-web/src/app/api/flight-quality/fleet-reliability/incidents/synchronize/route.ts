@@ -55,9 +55,7 @@ export async function POST(request: NextRequest) {
         signal: AbortSignal.timeout(60_000),
       }),
     );
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

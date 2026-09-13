@@ -93,9 +93,7 @@ export async function GET(request: NextRequest) {
                 signal: AbortSignal.timeout(10_000),
             }),
         );
-        const responseBody = await response.text();
-
-        return new NextResponse(responseBody, {
+        return new NextResponse(response.body, {
             status: response.status,
             headers: {
                 "Content-Type":

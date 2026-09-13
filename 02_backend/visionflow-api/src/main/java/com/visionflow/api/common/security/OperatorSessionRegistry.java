@@ -136,6 +136,21 @@ public class OperatorSessionRegistry {
                 : Optional.of(entry.principal());
     }
 
+    /** Checks session liveness without counting the check as user activity. */
+    public boolean isValid(String presentedToken) {
+        if (presentedToken == null || presentedToken.isBlank()) {
+            return false;
+        }
+
+        String tokenDigest = digest(presentedToken.trim());
+        Instant now = clock.instant();
+        SessionEntry entry = sessions.computeIfPresent(
+                tokenDigest,
+                (key, current) -> isActive(current, now) ? current : null
+        );
+        return entry != null;
+    }
+
     public Optional<OperatorSessionSummary> revoke(String presentedToken) {
         if (presentedToken == null || presentedToken.isBlank()) {
             return Optional.empty();

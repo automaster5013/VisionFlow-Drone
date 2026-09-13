@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 AWS_DIR = ROOT / "infrastructure" / "aws"
 PROMOTION_SCRIPT = AWS_DIR / "promote-backend.sh"
 PROMOTION_CORE = AWS_DIR / "promote-backend-core.sh"
+BOOTSTRAP_SCRIPT = AWS_DIR / "deploy-backend-mysql.sh"
 ENV_EXAMPLE = AWS_DIR / "cloud.env.example"
 README = AWS_DIR / "README.md"
 
@@ -20,6 +21,7 @@ class VisionFlowAwsPromotionContractTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.entrypoint = PROMOTION_SCRIPT.read_text(encoding="utf-8")
         cls.core = PROMOTION_CORE.read_text(encoding="utf-8")
+        cls.bootstrap = BOOTSTRAP_SCRIPT.read_text(encoding="utf-8")
         cls.script = cls.entrypoint + "\n" + cls.core
         cls.env = ENV_EXAMPLE.read_text(encoding="utf-8")
         cls.readme = README.read_text(encoding="utf-8")
@@ -40,6 +42,40 @@ class VisionFlowAwsPromotionContractTests(unittest.TestCase):
         self.assertIn(f"VISIONFLOW_BACKEND_EXPECTED_DIGEST={EXPECTED_DIGEST}", self.env)
         self.assertIn(EXPECTED_IMAGE, self.readme)
         self.assertIn(EXPECTED_DIGEST, self.readme)
+
+    def test_aws_env_template_and_bootstrap_require_internal_auth(self) -> None:
+        self.assertIn("VISIONFLOW_OPERATOR_SECURITY_ENABLED=true", self.env)
+        self.assertIn("VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED=true", self.env)
+        self.assertIn("VISIONFLOW_AI_INTERNAL_KEY=", self.env)
+        self.assertIn(
+            "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED_MUST_BE_TRUE",
+            self.bootstrap,
+        )
+        self.assertIn("MUST_BE_DECLARED_EXACTLY_ONCE", self.bootstrap)
+        self.assertIn("VISIONFLOW_SECURITY_KEYS_MUST_BE_UNIQUE", self.bootstrap)
+
+    def test_bootstrap_security_preflight_precedes_docker_changes(self) -> None:
+        preflight_end = self.bootstrap.index(
+            'echo "=== VISIONFLOW AWS BACKEND + MYSQL DEPLOY ==="'
+        )
+        first_docker_change = self.bootstrap.index(
+            'sudo docker network inspect "$NETWORK"'
+        )
+        self.assertLess(preflight_end, first_docker_change)
+
+    def test_promotion_fails_closed_on_insecure_runtime_env(self) -> None:
+        preflight = self._function_body(self.core, "preflight", "promote")
+        self.assertIn('assert_runtime_security_config "$CURRENT_CONTAINER"', preflight)
+        self.assertIn('assert_runtime_security_config "$SMOKE_CONTAINER"', preflight)
+        guard = self._function_body(
+            self.core,
+            "assert_runtime_security_config",
+            "preflight",
+        )
+        self.assertIn("VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED", guard)
+        self.assertIn("VISIONFLOW_OPERATOR_SECURITY_ENABLED", guard)
+        self.assertIn("VISIONFLOW_AI_INTERNAL_KEY", guard)
+        self.assertIn("Security credentials are not unique", guard)
 
     def test_candidate_requires_immutable_tag_and_registry_digest(self) -> None:
         self.assertIn(":backend-sha-[0-9a-f]{7,40}", self.script)

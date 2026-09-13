@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { withAiInternalAuth } from "@/lib/server/ai-internal-auth";
 import { requireOperatorApiAccess } from "@/lib/server/operator-api-access";
 import { isSameOriginRequest } from "@/lib/server/same-origin";
+import { readBoundedRequestBody } from "@/lib/request-body-limit";
 
 const AI_STREAM_API_URL = (
   process.env.AI_STREAM_API_URL ?? "http://localhost:8000"
@@ -74,20 +75,39 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.arrayBuffer();
+  const contentLength = request.headers.get("content-length");
+  if (contentLength !== null) {
+    if (!/^\d+$/.test(contentLength)) {
+      return badRequest("Content-Length가 올바르지 않습니다.");
+    }
+    const declaredLength = Number(contentLength);
+    if (!Number.isSafeInteger(declaredLength)) {
+      return badRequest("Content-Length가 올바르지 않습니다.");
+    }
+    if (declaredLength > MAX_FRAME_BYTES) {
+      return NextResponse.json(
+        { message: "JPEG 프레임 용량 제한을 초과했습니다." },
+        { status: 413, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+  }
+
+  let body: ArrayBuffer | null;
+  try {
+    body = await readBoundedRequestBody(request.body, MAX_FRAME_BYTES);
+  } catch {
+    return badRequest("JPEG 프레임을 읽을 수 없습니다.");
+  }
+
+  if (body === null) {
+    return NextResponse.json(
+      { message: "JPEG 프레임 용량 제한을 초과했습니다." },
+      { status: 413, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 
   if (body.byteLength === 0) {
     return badRequest("JPEG 프레임이 비어 있습니다.");
-  }
-
-  if (body.byteLength > MAX_FRAME_BYTES) {
-    return NextResponse.json(
-      { message: "JPEG 프레임 용량 제한을 초과했습니다." },
-      {
-        status: 413,
-        headers: { "Cache-Control": "no-store" },
-      },
-    );
   }
 
   const upstreamQuery = new URLSearchParams({
@@ -116,9 +136,7 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    const responseBody = await response.text();
-
-    return new NextResponse(responseBody, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

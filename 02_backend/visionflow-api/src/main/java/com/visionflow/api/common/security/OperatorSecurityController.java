@@ -108,8 +108,20 @@ public class OperatorSecurityController {
         String clientFingerprint = loginAttemptGuard.fingerprint(
                 request.getRemoteAddr()
         );
+        String presentedKey = loginRequest == null
+                ? request.getHeader(
+                        OperatorAuthenticationFilter.OPERATOR_KEY_HEADER
+                )
+                : null;
+        String loginIdentifier = loginRequest == null
+                ? "API_KEY:" + (presentedKey == null ? "" : presentedKey.trim())
+                : "USER:" + loginRequest.username();
+        String attemptFingerprint = loginAttemptGuard.attemptFingerprint(
+                request.getRemoteAddr(),
+                loginIdentifier
+        );
         OperatorLoginAttemptGuard.AttemptDecision current =
-                loginAttemptGuard.inspect(clientFingerprint);
+                loginAttemptGuard.inspect(attemptFingerprint);
         if (!current.allowed()) {
             return loginRateLimited(current);
         }
@@ -122,15 +134,12 @@ public class OperatorSecurityController {
                     loginRequest.password()
             );
         } else {
-            String presentedKey = request.getHeader(
-                    OperatorAuthenticationFilter.OPERATOR_KEY_HEADER
-            );
             resolved = credentialRegistry.resolve(presentedKey);
         }
 
         if (resolved.isEmpty()) {
             OperatorLoginAttemptGuard.AttemptDecision failed =
-                    loginAttemptGuard.recordFailure(clientFingerprint);
+                    loginAttemptGuard.recordFailure(attemptFingerprint);
             recordAuthenticationAudit(
                     failed.allowed()
                             ? AuditAction.OPERATOR_LOGIN_FAILED
@@ -165,7 +174,7 @@ public class OperatorSecurityController {
         }
 
         OperatorPrincipal principal = resolved.get();
-        loginAttemptGuard.recordSuccess(clientFingerprint);
+        loginAttemptGuard.recordSuccess(attemptFingerprint);
         OperatorSession session = sessionRegistry.issue(
                 principal,
                 clientFingerprint

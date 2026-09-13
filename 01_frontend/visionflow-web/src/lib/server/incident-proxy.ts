@@ -34,9 +34,7 @@ export async function proxyIncidentRequest(
             cache: "no-store",
             signal: AbortSignal.timeout(10_000),
         }));
-        const responseBody = await response.text();
-
-        return new NextResponse(responseBody, {
+        return new NextResponse(response.body, {
             status: response.status,
             headers: {
                 "Content-Type":

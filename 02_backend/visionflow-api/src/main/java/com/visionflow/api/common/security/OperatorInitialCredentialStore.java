@@ -9,9 +9,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -105,18 +108,33 @@ public class OperatorInitialCredentialStore {
     }
 
     private void writeAtomically(List<String> lines) {
+        Path temporary = null;
         try {
             Path parent = credentialFile.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
+            if (parent == null) {
+                throw new IOException("초기 운영자 자격증명 디렉터리가 없습니다.");
             }
-            Path temporary = credentialFile.resolveSibling(
-                    credentialFile.getFileName() + ".tmp"
-            );
+
+            Files.createDirectories(parent);
+            String prefix = credentialFile.getFileName() + ".";
+            try {
+                temporary = Files.createTempFile(
+                        parent,
+                        prefix,
+                        ".tmp",
+                        PosixFilePermissions.asFileAttribute(OWNER_ONLY)
+                );
+            } catch (UnsupportedOperationException ignored) {
+                temporary = Files.createTempFile(parent, prefix, ".tmp");
+                restrictPermissions(temporary);
+            }
             Files.write(
                     temporary,
                     lines,
-                    StandardCharsets.UTF_8
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                    LinkOption.NOFOLLOW_LINKS
             );
             restrictPermissions(temporary);
             try {
@@ -139,6 +157,14 @@ public class OperatorInitialCredentialStore {
                     "초기 운영자 자격증명 파일을 안전하게 저장할 수 없습니다.",
                     error
             );
+        } finally {
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (IOException error) {
+                    log.warn("초기 운영자 임시 자격증명 파일 삭제에 실패했습니다", error);
+                }
+            }
         }
     }
 

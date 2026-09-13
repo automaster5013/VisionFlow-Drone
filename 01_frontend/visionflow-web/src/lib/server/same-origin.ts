@@ -9,7 +9,7 @@ export function isSameOriginRequest(request: NextRequest): boolean {
 
   const origin = request.headers.get("origin");
   if (origin === null) {
-    return true;
+    return false;
   }
 
   try {

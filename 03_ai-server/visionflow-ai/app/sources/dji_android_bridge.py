@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import threading
 from collections import deque
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -33,6 +34,7 @@ class DjiAndroidBridgeSource(BrowserUploadSource):
     _JPEG_EOI = b"\xff\xd9"
     _READ_SIZE = 64 * 1024
     _MAX_JPEG_PIPE_BUFFER = 8 * 1024 * 1024
+    _MAX_DECODED_PIXELS = 16_777_216
     _SUPPORTED_CODECS = {"H264", "H265"}
     _SUPPORTED_LOG_LEVELS = {
         "quiet",
@@ -211,10 +213,8 @@ class DjiAndroidBridgeSource(BrowserUploadSource):
             stdin = process.stdin
 
         if stdin is not None:
-            try:
+            with suppress(OSError):
                 stdin.close()
-            except OSError:
-                pass
 
         try:
             return_code = process.wait(timeout=10.0)
@@ -324,10 +324,8 @@ class DjiAndroidBridgeSource(BrowserUploadSource):
             )
 
         if token is not None:
-            try:
+            with suppress(RuntimeError, ValueError):
                 self.end_stream(token)
-            except (RuntimeError, ValueError):
-                pass
 
         super().close()
 
@@ -357,6 +355,8 @@ class DjiAndroidBridgeSource(BrowserUploadSource):
             self._decoder_log_level,
             "-f",
             input_format,
+            "-max_pixels",
+            str(self._MAX_DECODED_PIXELS),
             "-i",
             "pipe:0",
             "-an",

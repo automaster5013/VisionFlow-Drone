@@ -49,7 +49,9 @@ class SystemTraceabilityManualSnapshotPersistenceTest(unittest.TestCase):
         for token in (
             "export async function PUT",
             "rejectCrossOriginOperatorMutation(request)",
-            "await request.formData()",
+            "new Request(request.url",
+            "body: boundedBody",
+            "}).formData()",
             'method: "PUT"',
             "withBackendOperatorAuth",
         ):

@@ -5,6 +5,7 @@ import {
   withBackendOperatorAuth,
 } from "@/lib/server/operator-auth";
 import type { OperatorSecurityStatus } from "@/types/operator-security";
+import { readBoundedJsonResponse } from "@/lib/request-body-limit";
 
 const BACKEND_API_URL = (
   process.env.SPRING_API_URL ??
@@ -42,7 +43,10 @@ export async function getOperatorSecurityStatus(): Promise<OperatorSecurityStatu
       return null;
     }
 
-    return (await response.json()) as OperatorSecurityStatus;
+    const parsed = await readBoundedJsonResponse(response, 32 * 1024);
+    return parsed.ok
+      ? (parsed.value as OperatorSecurityStatus)
+      : null;
   } catch {
     return null;
   }

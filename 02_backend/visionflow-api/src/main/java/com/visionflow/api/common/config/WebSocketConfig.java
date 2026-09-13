@@ -2,6 +2,11 @@ package com.visionflow.api.common.config;
 
 import java.util.Arrays;
 
+import com.visionflow.api.common.security.OperatorCredentialRegistry;
+import com.visionflow.api.common.security.OperatorSessionHandshakeInterceptor;
+import com.visionflow.api.common.security.OperatorSessionRegistry;
+import com.visionflow.api.common.security.OperatorWebSocketSessionTracker;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -15,6 +20,8 @@ public class WebSocketConfig
         implements WebSocketMessageBrokerConfigurer {
 
     private final String[] allowedOriginPatterns;
+    private final OperatorSessionHandshakeInterceptor sessionHandshakeInterceptor;
+    private final OperatorWebSocketSessionTracker sessionTracker;
 
     public WebSocketConfig(
             @Value("${visionflow.websocket.allowed-origin-patterns:"
@@ -22,12 +29,20 @@ public class WebSocketConfig
                     + "http://127.0.0.1:3000,"
                     + "https://localhost:3443,"
                     + "https://127.0.0.1:3443}")
-            String[] allowedOriginPatterns
+            String[] allowedOriginPatterns,
+            OperatorCredentialRegistry credentialRegistry,
+            OperatorSessionRegistry sessionRegistry,
+            OperatorWebSocketSessionTracker sessionTracker
     ) {
         this.allowedOriginPatterns = Arrays.stream(allowedOriginPatterns)
                 .map(String::trim)
                 .filter(pattern -> !pattern.isEmpty())
                 .toArray(String[]::new);
+        this.sessionHandshakeInterceptor = new OperatorSessionHandshakeInterceptor(
+                credentialRegistry,
+                sessionRegistry
+        );
+        this.sessionTracker = sessionTracker;
     }
 
     @Override
@@ -61,6 +76,14 @@ public class WebSocketConfig
     ) {
         registry
                 .addEndpoint("/ws")
+                .addInterceptors(sessionHandshakeInterceptor)
                 .setAllowedOriginPatterns(allowedOriginPatterns);
+    }
+
+    @Override
+    public void configureWebSocketTransport(
+            org.springframework.web.socket.config.annotation.WebSocketTransportRegistration registry
+    ) {
+        registry.addDecoratorFactory(sessionTracker);
     }
 }

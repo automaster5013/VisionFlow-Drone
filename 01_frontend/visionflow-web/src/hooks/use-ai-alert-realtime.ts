@@ -50,8 +50,7 @@ export function useAiAlertRealtime(
 
                         if (!message) {
                             console.error(
-                                "잘못된 AI 경보 실시간 메시지:",
-                                body,
+                                "잘못된 AI 경보 실시간 메시지를 수신했습니다.",
                             );
                             return;
                         }
@@ -64,12 +63,12 @@ export function useAiAlertRealtime(
                 });
             },
 
-            onStompError: (frame) => {
+            onStompError: () => {
                 if (!active) {
                     return;
                 }
 
-                console.error("AI 경보 STOMP 오류:", frame);
+                console.error("AI 경보 STOMP 연결 오류가 발생했습니다.");
                 setConnectionStatus("ERROR");
             },
 

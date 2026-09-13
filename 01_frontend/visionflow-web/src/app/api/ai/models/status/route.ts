@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { withAiInternalAuth } from "@/lib/server/ai-internal-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
+import { readBoundedJsonResponse } from "@/lib/request-body-limit";
 
 const AI_STREAM_API_URL = (
   process.env.AI_STREAM_API_URL ?? "http://localhost:8000"
@@ -88,7 +89,8 @@ export async function GET() {
         signal: AbortSignal.timeout(2_000),
       }),
     );
-    const body: unknown = await response.json().catch(() => null);
+    const parsed = await readBoundedJsonResponse(response, 64 * 1024);
+    const body: unknown = parsed.ok ? parsed.value : null;
 
     if (!response.ok) {
       return NextResponse.json(

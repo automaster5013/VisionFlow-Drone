@@ -3,13 +3,27 @@
 이 도구는 API가 존재하는지만 확인하는 계약 감사의 다음 단계입니다. 다음 원천을 자동 비교하여 실제 접근 권한 매트릭스를 만듭니다.
 
 - Spring `SecurityConfig`의 RBAC 활성·비활성 분기와 규칙 순서
-- Backend Controller 70개 operation
-- Frontend Route Handler 71개의 Backend 인증 전달과 same-origin 방어
-- AI OpenAPI 9개 operation과 FastAPI 인증 단서
+- Backend Controller 83개 operation
+- Frontend Route Handler 83개의 Backend 인증 전달과 same-origin 방어
+- AI OpenAPI 11개 operation과 FastAPI 인증 단서
 - `compose.yaml`의 비밀값이 아닌 보안 기본값
 - 실행 중인 Backend·Frontend 컨테이너의 선택된 비밀 제외 보안 모드
 
 DB 변경, 컨테이너 변경, 서비스 재시작, 자격증명 값 수집을 하지 않습니다. JSON·HTML·Markdown 보고서만 생성합니다.
+
+GitHub Actions의 API audit workflow는 별도로 Frontend 잠금 파일을 `npm audit`으로,
+테스트 환경에 실제 설치된 AI Python 패키지(고정된 PyTorch CPU 버전 포함)를 PyPA
+`pip-audit`으로 검사합니다. 이 두 단계는 알려진 의존성 취약점을 CI에서 차단하며,
+자동으로 패키지를 변경하지 않습니다. Backend Gradle 의존성은 현재 이 두 검사의
+대상이 아니므로 `.github/workflows/gradle-dependency-submission.yml`이 기본 브랜치의
+해결된 Gradle 의존성 트리를 GitHub Dependency Graph에 제출하도록 구성했습니다. 이
+제출 결과는 Dependabot의 Gradle 취약성 알림 기반이 됩니다. Dependency Review는 PR에서
+GitHub가 감지한 변경 의존성의 moderate 이상 취약성을 차단하도록 구성했지만, Gradle PR의
+전체 전이 의존성 그래프는 기본 브랜치 제출만으로 검증되지 않습니다. CodeQL은 Backend
+Java, Frontend TypeScript/JavaScript, AI Python의 코드 분석을 PR·push 및 주간 일정으로
+수행하도록 `.github/workflows/api-audit.yml`에 구성되어 있으며, 기존 필수 API 감사
+게이트가 CodeQL 결과에 의존하도록 연결했습니다. CodeQL 및 Dependabot 결과를 확인하고
+취약성 알림을 처리해야 전체 코드·의존성 점검 종료로 판정할 수 있습니다.
 
 ## 선행 조건
 
@@ -86,7 +100,9 @@ Backend 표에는 RBAC 활성 모드와 비활성 모드를 모두 표시합니�
 
 ## 현재 기준 결과
 
-현재 operation 수는 Backend 76·Frontend 78·AI 9입니다. 정상 예상 상태는 `API_SECURITY_HEALTHY`입니다.
+현재 소스 기준 operation 수는 Backend 83·Frontend 83·AI 11입니다. 최신 정적 감사는
+`API_SECURITY_HEALTHY`이며, 이 상태만으로 실행 중인 컨테이너·공개 HTTPS 종단점까지
+검증된 것은 아닙니다. 런타임 검사를 생략한 감사 결과는 별도로 표시해야 합니다.
 
 확인된 현재 상태:
 
@@ -96,7 +112,7 @@ Backend 표에는 RBAC 활성 모드와 비활성 모드를 모두 표시합니�
 - 보안 비활성 모드의 API 허용 범위: 일관성 PASS
 - 보호된 Backend·AI로 필요한 인증을 전달하지 않는 Frontend Proxy: 0건
 - Frontend 변경 요청 same-origin 방어 누락: 0건
-- AI 민감 API 8개: 내부 서비스 키 보호, `/health`만 공개
+- AI 민감 operation: 내부 서비스 키 보호, `/health`만 공개
 - Compose 기본값: 운영 권장 보안 모드 PASS
 
 ## 상태와 종료 코드
@@ -133,11 +149,18 @@ API 또는 보안 규칙 변경 후 보고서에 새 `BLOCKED`나 `ADVISORY`가 
 
 보안 결정과 완료 기준을 문서화한 뒤에만 기준선을 변경합니다.
 
-## 권장 후속 순서
+## 런타임 보안 종료 전 확인
 
-1. 현재 컨테이너가 RBAC `true`·세션 모드인지 지속 확인
-2. AI 8000번 포트의 인증 또는 내부 네트워크 경계 설계
-3. Backend 공개 GET 31개의 VIEWER·OPERATOR·ADMIN 읽기 정책 결정
-4. 관리자 세션 강제 종료 Route의 수동 same-origin 방어 유지·검증
-5. RBAC 비활성 분기에 `/api/flight-quality/**` 정책 명시
-6. Compose 기본값을 안전한 값으로 전환할 시점 결정
+정적 권한 감사가 통과해도 운영 보안 확인은 별도로 필요합니다.
+
+1. 실행 중인 Backend·Frontend·AI 컨테이너의 보안 모드와 공개 포트 경계를 확인합니다.
+   감사 스크립트는 전체 환경변수나 자격증명 값을 출력하지 않는 모드로 실행합니다.
+2. 공개 HTTPS 호스트(apex 및 www)에만 설정한 host-only HSTS를 배포 후 다시 확인하고,
+   Report-Only CSP 증적은 인증된 보안 관리자 세션으로 수집·검토합니다. 강제 CSP 전환은
+   관찰 보고서에서 실제 위반을 검토한 뒤 별도로 결정합니다. 로컬·사설 주소에는 HSTS를
+   적용하지 않습니다.
+3. 대화·운영 출력에 노출된 것으로 확인된 서비스 및 운영자 키를 운영자가 교체하고,
+   관련 서비스에 새 키를 적용한 뒤 로그인·AI 프록시 인수 테스트를 수행합니다.
+4. Docker 런타임을 사용할 수 있는 환경에서 백엔드 전체 통합 테스트와 API 런타임
+   감사를 실행합니다. 데이터베이스 및 컨테이너 접근이 없는 로컬 정적 감사 결과를
+   런타임 검증 완료로 간주하지 않습니다.

@@ -27,9 +27,7 @@ export async function proxyAuditRequest(backendPath: string) {
             cache: "no-store",
             signal: AbortSignal.timeout(10_000),
         }));
-        const responseBody = await response.text();
-
-        return new NextResponse(responseBody, {
+        return new NextResponse(response.body, {
             status: response.status,
             headers: {
                 "Content-Type":
@@ -54,7 +52,6 @@ export async function proxyAuditDownload(backendPath: string) {
             cache: "no-store",
             signal: AbortSignal.timeout(30_000),
         }));
-        const responseBody = await response.arrayBuffer();
         const headers = new Headers({
             "Content-Type":
                 response.headers.get("content-type") ??
@@ -69,7 +66,7 @@ export async function proxyAuditDownload(backendPath: string) {
             const value = response.headers.get(headerName);
             if (value) headers.set(headerName, value);
         }
-        return new NextResponse(responseBody, {
+        return new NextResponse(response.body, {
             status: response.status,
             headers,
         });
@@ -98,8 +95,7 @@ export async function proxyAuditMutationRequest(
             cache: "no-store",
             signal: AbortSignal.timeout(30_000),
         }));
-        const responseBody = await response.text();
-        return new NextResponse(responseBody, {
+        return new NextResponse(response.body, {
             status: response.status,
             headers: {
                 "Content-Type":

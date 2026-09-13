@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedTextRequest } from "@/lib/request-body-limit";
 
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
@@ -78,9 +79,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       }),
     );
 
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":
@@ -113,17 +112,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return badRequest("잘못된 드론 ID입니다.");
   }
 
-  const body = await request.text();
-
-  if (body.length > 2_000) {
+  const parsedBody = await readBoundedTextRequest(request, 2_000);
+  if (!parsedBody.ok) {
     return NextResponse.json(
-      { message: "비행 세션 시작 요청이 너무 큽니다." },
       {
-        status: 413,
+        message:
+          parsedBody.reason === "too_large"
+            ? "비행 세션 시작 요청이 너무 큽니다."
+            : "비행 세션 시작 요청 형식이 올바르지 않습니다.",
+      },
+      {
+        status: parsedBody.reason === "too_large" ? 413 : 400,
         headers: { "Cache-Control": "no-store" },
       },
     );
   }
+  const body = parsedBody.value;
 
   try {
     const response = await fetch(
@@ -141,9 +145,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       }),
     );
 
-    const responseBody = await response.text();
-
-    return new NextResponse(responseBody, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

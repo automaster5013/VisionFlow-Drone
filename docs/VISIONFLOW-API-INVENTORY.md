@@ -65,7 +65,8 @@ Spring Backend :8080          FastAPI AI :8000
 - Backend session header: `X-VisionFlow-Operator-Session`
 - 브라우저는 Next.js가 HttpOnly 세션 쿠키를 읽어 Backend session header로 변환한다.
 - 변경 요청은 원칙적으로 Next.js same-origin 검사와 Backend RBAC를 모두 통과해야 한다.
-- 예외적으로 카메라 ingest, 드론 telemetry, AI event·snapshot은 장치 입력을 위해 Public 쓰기로 열려 있다.
+- 보안이 활성화되면 `/ws` 핸드셰이크는 허용된 Origin과 유효한 `visionflow_operator_session` 쿠키를 요구한다. 쿠키는 HttpOnly이며 브라우저 코드에 세션 토큰을 노출하지 않는다. 열린 연결도 30초 주기로 세션을 재검증해 로그아웃·폐기 후 닫는다.
+- 카메라 ingest와 AI event는 장치 입력 경로로 Public 쓰기를 허용한다. 드론 텔레메트리 변경은 OPERATOR+ 권한이 필요하며, 향후 장치 직접 입력은 별도 장치 자격 증명을 도입해야 한다.
 - 로그인은 동일 클라이언트 기준 10분 동안 5회 실패하면 15분 잠긴다. 응답은 HTTP 429와 `Retry-After`를 제공한다.
 
 ## 4. Spring Backend API — 70 operations
@@ -124,7 +125,7 @@ Spring Backend :8080          FastAPI AI :8000
 | GET | `/api/drones/{id}` | 드론 상세 | Public |
 | PUT | `/api/drones/{id}` | 드론 정보 수정 | OPERATOR+ |
 | PATCH | `/api/drones/{id}/status` | 드론 상태 변경 | OPERATOR+ |
-| PATCH | `/api/drones/{id}/telemetry` | 실시간 텔레메트리 입력 | Device ingress |
+| PATCH | `/api/drones/{id}/telemetry` | 실시간 텔레메트리 입력 | OPERATOR+ |
 | DELETE | `/api/drones/{id}` | 드론 삭제 | ADMIN |
 | GET | `/api/drones/{id}/telemetry/history` | 텔레메트리·과거 경로 조회 | Public |
 

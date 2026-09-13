@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import threading
 import time
-from secrets import compare_digest
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
+from secrets import compare_digest
 from typing import Annotated, Literal
 
 import cv2
@@ -24,6 +24,23 @@ from app.sources.dji_android_bridge import DjiAndroidBridgeSource
 MJPEG_BOUNDARY = "visionflow-frame"
 AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
 DJI_BRIDGE_KEY_HEADER = "X-VisionFlow-DJI-Key"
+
+
+async def _read_request_body_limited(
+    request: Request,
+    maximum_bytes: int,
+) -> bytes:
+    chunks: list[bytes] = []
+    total_bytes = 0
+    async for chunk in request.stream():
+        total_bytes += len(chunk)
+        if total_bytes > maximum_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail="요청 본문 용량 제한을 초과했습니다.",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,7 +177,14 @@ def create_stream_app(
     internal_security_enabled: bool = True,
     internal_api_key: str = "",
     dji_bridge_api_key: str = "",
+    dji_bridge_max_stream_bytes: int = 8 * 1024 * 1024 * 1024,
+    dji_bridge_max_stream_duration_seconds: float = 2 * 60 * 60,
 ) -> FastAPI:
+    if dji_bridge_max_stream_bytes <= 0:
+        raise ValueError("DJI bridge stream byte limit must be positive")
+    if dji_bridge_max_stream_duration_seconds <= 0:
+        raise ValueError("DJI bridge stream duration limit must be positive")
+
     app = FastAPI(
         title="VisionFlow AI Analysis Stream",
         version="0.6.0",
@@ -381,19 +405,22 @@ def create_stream_app(
                         detail="Content-Length가 올바르지 않습니다.",
                     ) from error
 
+                if declared_length < 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Content-Length가 올바르지 않습니다.",
+                    )
+
                 if declared_length > ingest_max_payload_bytes:
                     raise HTTPException(
                         status_code=413,
                         detail="JPEG 프레임 용량 제한을 초과했습니다.",
                     )
 
-            jpeg = await request.body()
-
-            if len(jpeg) > ingest_max_payload_bytes:
-                raise HTTPException(
-                    status_code=413,
-                    detail="JPEG 프레임 용량 제한을 초과했습니다.",
-                )
+            jpeg = await _read_request_body_limited(
+                request,
+                ingest_max_payload_bytes,
+            )
 
             try:
                 return ingest_source.submit_jpeg(
@@ -444,6 +471,26 @@ def create_stream_app(
                 Query(alias="codec", min_length=4, max_length=4),
             ] = "H264",
         ) -> dict[str, object]:
+            content_length = request.headers.get("content-length")
+            if content_length is not None:
+                try:
+                    declared_length = int(content_length)
+                except ValueError as error:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Content-Length 값이 올바르지 않습니다.",
+                    ) from error
+                if declared_length < 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Content-Length 값이 올바르지 않습니다.",
+                    )
+                if declared_length > dji_bridge_max_stream_bytes:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="DJI 스트림 용량 제한을 초과했습니다.",
+                    )
+
             try:
                 normalized_codec = ingest_source.normalize_codec(codec)
             except ValueError as error:
@@ -492,16 +539,31 @@ def create_stream_app(
                 ) from error
 
             result: dict[str, object] | None = None
+            received_bytes = 0
 
             try:
-                async for chunk in request.stream():
-                    if not chunk:
-                        continue
-                    await asyncio.to_thread(
-                        ingest_source.submit_encoded,
-                        token,
-                        chunk,
-                    )
+                async with asyncio.timeout(
+                    dji_bridge_max_stream_duration_seconds
+                ):
+                    async for chunk in request.stream():
+                        if not chunk:
+                            continue
+                        received_bytes += len(chunk)
+                        if received_bytes > dji_bridge_max_stream_bytes:
+                            raise HTTPException(
+                                status_code=413,
+                                detail="DJI 스트림 용량 제한을 초과했습니다.",
+                            )
+                        await asyncio.to_thread(
+                            ingest_source.submit_encoded,
+                            token,
+                            chunk,
+                        )
+            except TimeoutError as error:
+                raise HTTPException(
+                    status_code=408,
+                    detail="DJI 스트림 전송 시간 제한을 초과했습니다.",
+                ) from error
             except RuntimeError as error:
                 raise HTTPException(
                     status_code=503,
@@ -562,6 +624,8 @@ class AnalysisStreamServer:
         internal_security_enabled: bool = True,
         internal_api_key: str = "",
         dji_bridge_api_key: str = "",
+        dji_bridge_max_stream_bytes: int = 8 * 1024 * 1024 * 1024,
+        dji_bridge_max_stream_duration_seconds: float = 2 * 60 * 60,
     ) -> None:
         self._hub = hub
         self._host = host
@@ -578,6 +642,10 @@ class AnalysisStreamServer:
                     internal_security_enabled=internal_security_enabled,
                     internal_api_key=internal_api_key,
                     dji_bridge_api_key=dji_bridge_api_key,
+                    dji_bridge_max_stream_bytes=dji_bridge_max_stream_bytes,
+                    dji_bridge_max_stream_duration_seconds=(
+                        dji_bridge_max_stream_duration_seconds
+                    ),
                 ),
                 host=host,
                 port=port,
