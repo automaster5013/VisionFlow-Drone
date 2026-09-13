@@ -157,7 +157,23 @@ jobs:
           languages: ${{ matrix.language }}
           queries: security-and-quality
 
-      - name: Autobuild
+      - name: Set up Java 21 for CodeQL
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build backend for CodeQL
+        if: matrix.language == 'java-kotlin'
+        working-directory: 02_backend/visionflow-api
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew classes --no-daemon
+
+      - name: Autobuild non-Java languages
+        if: matrix.language != 'java-kotlin'
         uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL analysis
