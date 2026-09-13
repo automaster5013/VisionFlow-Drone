@@ -48,11 +48,7 @@ export async function GET(
             cache: "no-store",
         }));
 
-        const body = await response.text();
-
-        return new NextResponse(
-            body.length > 0 ? body : null,
-            {
+        return new NextResponse(response.body, {
                 status: response.status,
                 headers: {
                     "Content-Type":
@@ -60,8 +56,7 @@ export async function GET(
                             "content-type",
                         ) ?? "application/json",
                 },
-            },
-        );
+            });
     } catch (error) {
         console.error(
             "과거 텔레메트리 프록시 오류:",

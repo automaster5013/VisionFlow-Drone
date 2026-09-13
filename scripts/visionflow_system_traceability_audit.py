@@ -1333,15 +1333,19 @@ def github_actions_node24_runtime_policy_drift(root: Path) -> list[str]:
     drift: list[str] = []
     required_versions = {
         "actions/checkout": "v6",
+        "actions/dependency-review-action": "v4",
         "actions/setup-python": "v6",
         "actions/upload-artifact": "v7",
+        "github/codeql-action/analyze": "v4",
+        "github/codeql-action/autobuild": "v4",
+        "github/codeql-action/init": "v4",
     }
     for action, expected in required_versions.items():
         versions = re.findall(
             rf"uses:\s*{re.escape(action)}@([^\s#]+)",
             source,
         )
-        if versions != [expected]:
+        if not versions or set(versions) != {expected}:
             actual = ",".join(versions) if versions else "missing"
             drift.append(
                 f"version:github-actions:{action}:"

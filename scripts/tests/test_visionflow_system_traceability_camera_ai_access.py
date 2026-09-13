@@ -39,7 +39,8 @@ class SystemTraceabilityCameraAiAccessTest(unittest.TestCase):
             "isSameOriginRequest(request)",
             '"CROSS_ORIGIN_AI_FRAME_INGEST_DENIED"',
             'requireOperatorApiAccess("OPERATOR")',
-            "request.arrayBuffer()",
+            'request.headers.get("content-length")',
+            "readBoundedRequestBody(request.body, MAX_FRAME_BYTES)",
         ):
             self.assertIn(contract, source)
 
@@ -49,7 +50,7 @@ class SystemTraceabilityCameraAiAccessTest(unittest.TestCase):
         )
         self.assertLess(
             source.index('requireOperatorApiAccess("OPERATOR")'),
-            source.index("request.arrayBuffer()"),
+            source.index("readBoundedRequestBody(request.body, MAX_FRAME_BYTES)"),
         )
 
     def test_ai_read_proxies_require_authenticated_operator(self) -> None:
@@ -71,6 +72,60 @@ class SystemTraceabilityCameraAiAccessTest(unittest.TestCase):
                     source.index('requireOperatorApiAccess("AUTHENTICATED")'),
                     source.index("withAiInternalAuth("),
                 )
+
+    def test_snapshot_upload_and_download_are_stream_size_bounded(self) -> None:
+        source = read_text(
+            "01_frontend/visionflow-web/src/app/api/ai/events/[id]/snapshot/route.ts"
+        )
+
+        for contract in (
+            "MAX_SNAPSHOT_REQUEST_BYTES",
+            "MAX_MULTIPART_OVERHEAD_BYTES = 128 * 1024",
+            "readBoundedRequestBody(",
+            "MAX_SNAPSHOT_REQUEST_BYTES,",
+            "new Request(request.url",
+            "request.body",
+            "response.body",
+            "MAX_SNAPSHOT_API_RESPONSE_BYTES",
+            "status: 413",
+        ):
+            self.assertIn(contract, source)
+
+        self.assertNotIn("request.formData()", source)
+        self.assertNotIn("response.arrayBuffer()", source)
+
+        application = read_text(
+            "02_backend/visionflow-api/src/main/resources/application.yml"
+        )
+        self.assertRegex(application, r"(?m)^\s+max-file-size: 10MB$")
+        self.assertRegex(application, r"(?m)^\s+max-request-size: 11MB$")
+
+    def test_geofence_and_flight_session_mutations_bound_request_streams(self) -> None:
+        cases = {
+            "01_frontend/visionflow-web/src/app/api/geofences/route.ts": (
+                "readBoundedTextRequest(request, MAX_GEOFENCE_REQUEST_BYTES)",
+                "MAX_GEOFENCE_REQUEST_BYTES = 1024 * 1024",
+            ),
+            "01_frontend/visionflow-web/src/app/api/geofences/[id]/route.ts": (
+                "readBoundedTextRequest(request, MAX_GEOFENCE_REQUEST_BYTES)",
+                "MAX_GEOFENCE_REQUEST_BYTES = 1024 * 1024",
+            ),
+            "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-sessions/route.ts": (
+                "readBoundedTextRequest(request, 2_000)",
+                'status: parsedBody.reason === "too_large" ? 413 : 400',
+            ),
+            "01_frontend/visionflow-web/src/app/api/drones/[id]/flight-sessions/[sessionId]/route.ts": (
+                "readBoundedTextRequest(request, 4_000)",
+                'status: parsedBody.reason === "too_large" ? 413 : 400',
+            ),
+        }
+
+        for path, contracts in cases.items():
+            with self.subTest(path=path):
+                source = read_text(path)
+                for contract in contracts:
+                    self.assertIn(contract, source)
+                self.assertNotIn("request.text()", source)
 
     def test_camera_and_preview_pages_have_server_access_guards(self) -> None:
         pages = {

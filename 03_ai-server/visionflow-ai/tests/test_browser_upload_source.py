@@ -83,6 +83,26 @@ def test_browser_upload_source_rejects_invalid_jpeg() -> None:
         )
 
 
+def test_browser_upload_source_rejects_jpeg_with_oversized_dimensions() -> None:
+    source = BrowserUploadSource(fps=5.0, queue_capacity=1)
+    # SOI + baseline SOF declaring a 9000x9000 image; no pixel decode should run.
+    oversized = (
+        b"\xff\xd8\xff\xc0\x00\x11\x08"
+        + (9000).to_bytes(2, "big")
+        + (9000).to_bytes(2, "big")
+        + b"\x03\x01\x11\x00\x02\x11\x00\x03\x11\x00\xff\xd9"
+    )
+
+    with pytest.raises(ValueError, match="해상도 제한"):
+        source.submit_jpeg(
+            oversized,
+            source_id="browser-camera-001",
+            session_id="test-session",
+            drone_id=1,
+            captured_at=None,
+        )
+
+
 def test_ingest_api_accepts_jpeg_and_exposes_status() -> None:
     source = BrowserUploadSource(fps=5.0, queue_capacity=2)
     source.open()
@@ -145,6 +165,32 @@ def test_ingest_api_rejects_payload_over_limit() -> None:
         )
 
     assert response.status_code == 413
+
+
+def test_ingest_api_streams_and_rejects_chunked_body_over_limit() -> None:
+    source = BrowserUploadSource(fps=5.0, queue_capacity=1)
+    app = create_stream_app(
+        AnnotatedFrameHub(jpeg_quality=80),
+        allowed_origins=("http://localhost:3000",),
+        internal_security_enabled=False,
+        ingest_source=source,
+        ingest_max_payload_bytes=10,
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/ingest/frame",
+            params={
+                "droneId": 1,
+                "sourceId": "browser-camera-001",
+                "sessionId": "api-test-session",
+            },
+            content=iter((b"123456", b"78901")),
+            headers={"Content-Type": "image/jpeg"},
+        )
+
+    assert response.status_code == 413
+    assert source.status()["acceptedFrames"] == 0
 
 @pytest.mark.parametrize('source_type', ['DUMMY_VIDEO', 'SMARTPHONE_LIVE'])
 def test_ingest_preserves_explicit_source_type(source_type):

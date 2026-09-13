@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedTextRequest } from "@/lib/request-body-limit";
 
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
@@ -51,9 +52,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       }),
     );
 
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":
@@ -91,20 +90,25 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return badRequest("비행 세션 ID는 1~36자여야 합니다.");
   }
 
-  const body = await request.text();
-
-  if (body.length === 0) {
-    return badRequest("수정할 비행 세션 정보를 입력해 주세요.");
-  }
-
-  if (body.length > 4_000) {
+  const parsedBody = await readBoundedTextRequest(request, 4_000);
+  if (!parsedBody.ok) {
     return NextResponse.json(
-      { message: "비행 세션 수정 요청이 너무 큽니다." },
       {
-        status: 413,
+        message:
+          parsedBody.reason === "too_large"
+            ? "비행 세션 수정 요청이 너무 큽니다."
+            : "비행 세션 수정 요청 형식이 올바르지 않습니다.",
+      },
+      {
+        status: parsedBody.reason === "too_large" ? 413 : 400,
         headers: { "Cache-Control": "no-store" },
       },
     );
+  }
+  const body = parsedBody.value;
+
+  if (body.length === 0) {
+    return badRequest("수정할 비행 세션 정보를 입력해 주세요.");
   }
 
   try {
@@ -123,9 +127,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }),
     );
 
-    const responseBody = await response.text();
-
-    return new NextResponse(responseBody, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

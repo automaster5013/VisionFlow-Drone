@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { withAiInternalAuth } from "@/lib/server/ai-internal-auth";
 import { requireOperatorApiAccess } from "@/lib/server/operator-api-access";
+import { readBoundedRequestBody } from "@/lib/request-body-limit";
 
 const AI_STREAM_API_URL = (
   process.env.AI_STREAM_API_URL ?? "http://localhost:8000"
@@ -26,7 +27,14 @@ export async function GET() {
     );
 
     if (!response.ok || response.body === null) {
-      const body = await response.text();
+      const bytes = await readBoundedRequestBody(response.body, 64 * 1024);
+      if (bytes === null) {
+        return NextResponse.json(
+          { message: "AI 분석 영상 서버가 너무 큰 오류 응답을 반환했습니다." },
+          { status: 502, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      const body = new TextDecoder().decode(bytes);
 
       return new NextResponse(body, {
         status: response.status,

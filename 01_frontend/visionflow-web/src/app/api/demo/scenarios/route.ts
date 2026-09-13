@@ -5,6 +5,7 @@ import {
     proxyDemoScenarioRequest,
 } from "@/lib/server/demo-scenario-proxy";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedMutationJson } from "@/lib/server/bounded-request-body";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
@@ -16,12 +17,9 @@ export async function POST(request: NextRequest) {
         return rejected;
     }
 
-    let body: unknown;
-    try {
-        body = await request.json();
-    } catch {
-        return badDemoRequest("요청 본문은 올바른 JSON이어야 합니다.");
-    }
+    const parsedBody = await readBoundedMutationJson(request, 4 * 1024, "시연 시나리오 시작");
+    if (!parsedBody.ok) return parsedBody.response;
+    const body = parsedBody.body;
 
     if (!isRecord(body)) {
         return badDemoRequest("시연 시작 요청 형식이 올바르지 않습니다.");

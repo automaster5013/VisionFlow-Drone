@@ -6,6 +6,7 @@ import {
   OPERATOR_SESSION_HEADER,
 } from "@/lib/server/operator-auth";
 import { isSameOriginRequest } from "@/lib/server/same-origin";
+import { readBoundedJsonRequest } from "@/lib/request-body-limit";
 
 const BACKEND_API_URL = (
   process.env.SPRING_API_URL ??
@@ -52,7 +53,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body: unknown = await request.json().catch(() => null);
+  const parsedBody = await readBoundedJsonRequest(request, 4 * 1024);
+  if (!parsedBody.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        code:
+          parsedBody.reason === "too_large"
+            ? "OPERATOR_PASSWORD_REQUEST_TOO_LARGE"
+            : "INVALID_OPERATOR_PASSWORD_REQUEST",
+        message:
+          parsedBody.reason === "too_large"
+            ? "비밀번호 변경 요청이 허용 크기를 초과했습니다."
+            : "비밀번호 변경 요청 형식을 확인하세요.",
+      },
+      {
+        status: parsedBody.reason === "too_large" ? 413 : 400,
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
+  }
+  const body = parsedBody.value;
   const newPassword =
     typeof body === "object" &&
     body !== null &&

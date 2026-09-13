@@ -143,11 +143,6 @@ public class SecurityConfig {
                             .hasAnyRole("VIEWER", "OPERATOR", "ADMIN")
                             .requestMatchers(HttpMethod.GET, "/api/**")
                             .permitAll()
-                            .requestMatchers(
-                                    HttpMethod.PATCH,
-                                    "/api/drones/*/telemetry"
-                            )
-                            .permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/ai/events")
                             .hasRole("AI_INTERNAL")
                             .requestMatchers(

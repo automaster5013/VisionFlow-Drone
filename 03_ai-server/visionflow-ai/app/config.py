@@ -103,6 +103,8 @@ class Settings:
     stream_port: int
     stream_jpeg_quality: int
     stream_allowed_origins: tuple[str, ...]
+    dji_bridge_max_stream_bytes: int
+    dji_bridge_max_stream_duration_seconds: float
     ai_internal_security_enabled: bool
     ai_internal_key: str
     dji_bridge_key: str
@@ -291,6 +293,14 @@ class Settings:
             stream_allowed_origins=_read_csv(
                 "AI_STREAM_ALLOWED_ORIGINS",
                 ("http://localhost:3000", "http://127.0.0.1:3000"),
+            ),
+            dji_bridge_max_stream_bytes=_read_int(
+                "AI_DJI_BRIDGE_MAX_STREAM_BYTES",
+                8 * 1024 * 1024 * 1024,
+            ),
+            dji_bridge_max_stream_duration_seconds=_read_float(
+                "AI_DJI_BRIDGE_MAX_STREAM_DURATION_SECONDS",
+                2 * 60 * 60,
             ),
             ai_internal_security_enabled=_read_bool(
                 "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED",
@@ -508,6 +518,16 @@ class Settings:
 
         if self.stream_enabled and not self.stream_allowed_origins:
             raise ValueError("AI_STREAM_ALLOWED_ORIGINS에는 하나 이상의 주소가 필요합니다.")
+
+        if self.dji_bridge_max_stream_bytes <= 0:
+            raise ValueError(
+                "AI_DJI_BRIDGE_MAX_STREAM_BYTES는 양수여야 합니다."
+            )
+
+        if self.dji_bridge_max_stream_duration_seconds <= 0:
+            raise ValueError(
+                "AI_DJI_BRIDGE_MAX_STREAM_DURATION_SECONDS는 양수여야 합니다."
+            )
 
         if self.ai_internal_security_enabled and len(self.ai_internal_key) < 32:
             raise ValueError(

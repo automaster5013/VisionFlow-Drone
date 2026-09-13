@@ -80,6 +80,44 @@ class OperatorLoginAttemptGuardTests {
         assertThat(guard.fingerprint("192.168.10.106")).isEqualTo(fingerprint);
     }
 
+    @Test
+    void loginAttemptsFromOneProxyAreIsolatedByCaseInsensitiveUsername() {
+        OperatorLoginAttemptGuard guard = guard(
+                new MutableClock(Instant.parse("2026-07-23T00:00:00Z"))
+        );
+        String firstUser = guard.attemptFingerprint(
+                "172.18.0.4",
+                "USER:operator"
+        );
+        String sameUserDifferentCase = guard.attemptFingerprint(
+                "172.18.0.4",
+                "USER:Operator"
+        );
+        String secondUser = guard.attemptFingerprint(
+                "172.18.0.4",
+                "USER:admin"
+        );
+        String differentlyCasedApiKey = guard.attemptFingerprint(
+                "172.18.0.4",
+                "API_KEY:AbC123"
+        );
+        String apiKey = guard.attemptFingerprint(
+                "172.18.0.4",
+                "API_KEY:abc123"
+        );
+
+        assertThat(firstUser).isEqualTo(sameUserDifferentCase);
+        assertThat(firstUser).isNotEqualTo(secondUser);
+        assertThat(differentlyCasedApiKey).isNotEqualTo(apiKey);
+
+        guard.recordFailure(firstUser);
+        guard.recordFailure(firstUser);
+        guard.recordFailure(firstUser);
+
+        assertThat(guard.inspect(firstUser).allowed()).isFalse();
+        assertThat(guard.inspect(secondUser).allowed()).isTrue();
+    }
+
     private OperatorLoginAttemptGuard guard(Clock clock) {
         return new OperatorLoginAttemptGuard(
                 3,

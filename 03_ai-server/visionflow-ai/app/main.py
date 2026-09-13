@@ -341,6 +341,10 @@ def main() -> None:
             internal_security_enabled=settings.ai_internal_security_enabled,
             internal_api_key=settings.ai_internal_key,
             dji_bridge_api_key=settings.dji_bridge_key,
+            dji_bridge_max_stream_bytes=settings.dji_bridge_max_stream_bytes,
+            dji_bridge_max_stream_duration_seconds=(
+                settings.dji_bridge_max_stream_duration_seconds
+            ),
         )
         if frame_hub is not None
         else None

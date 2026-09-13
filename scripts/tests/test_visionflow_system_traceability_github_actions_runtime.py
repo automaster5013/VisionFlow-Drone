@@ -38,7 +38,7 @@ class SystemTraceabilityGithubActionsRuntimeTest(unittest.TestCase):
 
         self.assertIn(
             "version:github-actions:actions/checkout:"
-            "expected-v6:actual-v4",
+            "expected-v6:actual-v4,v4",
             drift,
         )
 
@@ -62,6 +62,52 @@ class SystemTraceabilityGithubActionsRuntimeTest(unittest.TestCase):
         self.assertIn(
             "version:github-actions:actions/upload-artifact:"
             "expected-v7:actual-v4",
+            drift,
+        )
+
+    def test_codeql_older_runtime_major_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workflow = self.copy_workflow(root)
+            source = workflow.read_text(encoding="utf-8")
+            workflow.write_text(
+                source.replace(
+                    "github/codeql-action/init@v4",
+                    "github/codeql-action/init@v3",
+                ),
+                encoding="utf-8",
+            )
+
+            drift = (
+                traceability.github_actions_node24_runtime_policy_drift(root)
+            )
+
+        self.assertIn(
+            "version:github-actions:github/codeql-action/init:"
+            "expected-v4:actual-v3",
+            drift,
+        )
+
+    def test_dependency_review_older_runtime_major_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workflow = self.copy_workflow(root)
+            source = workflow.read_text(encoding="utf-8")
+            workflow.write_text(
+                source.replace(
+                    "actions/dependency-review-action@v4",
+                    "actions/dependency-review-action@v3",
+                ),
+                encoding="utf-8",
+            )
+
+            drift = (
+                traceability.github_actions_node24_runtime_policy_drift(root)
+            )
+
+        self.assertIn(
+            "version:github-actions:actions/dependency-review-action:"
+            "expected-v4:actual-v3",
             drift,
         )
 

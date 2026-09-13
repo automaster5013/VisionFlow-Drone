@@ -31,7 +31,7 @@ class SystemTraceabilityRegistryCdTest(unittest.TestCase):
         ):
             self.assertGreaterEqual(source.count(path), 2)
 
-        self.assertEqual(source.count("actions/checkout@v6"), 1)
+        self.assertGreaterEqual(source.count("actions/checkout@v6"), 1)
         self.assertEqual(source.count("actions/setup-python@v6"), 1)
         self.assertIn("actions/setup-java@v5", source)
         self.assertIn("actions/setup-node@v6", source)

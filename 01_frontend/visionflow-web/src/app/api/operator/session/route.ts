@@ -9,6 +9,10 @@ import {
 } from "@/lib/server/operator-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
 import { isSameOriginRequest } from "@/lib/server/same-origin";
+import {
+  readBoundedJsonRequest,
+  readBoundedJsonResponse,
+} from "@/lib/request-body-limit";
 
 const BACKEND_API_URL = (
   process.env.SPRING_API_URL ??
@@ -45,7 +49,8 @@ function isBackendOperatorSession(
 }
 
 async function readBody(response: Response): Promise<unknown> {
-  return response.json().catch(() => null);
+  const result = await readBoundedJsonResponse(response, 16 * 1024);
+  return result.ok ? result.value : null;
 }
 
 function relayError(
@@ -105,7 +110,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body: unknown = await request.json().catch(() => null);
+  const parsedBody = await readBoundedJsonRequest(request, 12 * 1024);
+  if (!parsedBody.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        code:
+          parsedBody.reason === "too_large"
+            ? "OPERATOR_LOGIN_REQUEST_TOO_LARGE"
+            : "INVALID_OPERATOR_LOGIN_REQUEST",
+        message:
+          parsedBody.reason === "too_large"
+            ? "로그인 요청이 허용 크기를 초과했습니다."
+            : "로그인 요청 형식을 확인하세요.",
+      },
+      {
+        status: parsedBody.reason === "too_large" ? 413 : 400,
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
+  }
+  const body = parsedBody.value;
   const username =
     typeof body === "object" &&
     body !== null &&

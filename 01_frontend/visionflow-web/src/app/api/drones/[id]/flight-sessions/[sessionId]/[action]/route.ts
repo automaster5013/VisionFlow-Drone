@@ -67,9 +67,7 @@ export async function POST(
       }),
     );
 
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

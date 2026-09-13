@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { requireOperatorApiAccess } from "@/lib/server/operator-api-access";
+import { readBoundedRequestBody } from "@/lib/request-body-limit";
 
 export const runtime = "nodejs";
 
@@ -177,8 +178,23 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const declaredLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_REPORT_BYTES) {
+  const contentLength = request.headers.get("content-length");
+  if (contentLength !== null && !/^\d+$/.test(contentLength)) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: "INVALID_CONTENT_LENGTH",
+        message: "Content-Length 헤더 형식이 올바르지 않습니다.",
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  const declaredLength = contentLength === null ? null : Number(contentLength);
+  if (
+    declaredLength !== null &&
+    (!Number.isSafeInteger(declaredLength) || declaredLength > MAX_REPORT_BYTES)
+  ) {
     return NextResponse.json(
       {
         success: false,
@@ -189,8 +205,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const text = await request.text();
-  if (Buffer.byteLength(text, "utf8") > MAX_REPORT_BYTES) {
+  let boundedBody: ArrayBuffer | null;
+  try {
+    boundedBody = await readBoundedRequestBody(request.body, MAX_REPORT_BYTES);
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        code: "INVALID_CSP_REPORT",
+        message: "CSP 위반 보고서를 읽을 수 없습니다.",
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+  if (boundedBody === null) {
     return NextResponse.json(
       {
         success: false,
@@ -203,7 +231,7 @@ export async function POST(request: NextRequest) {
 
   let body: unknown;
   try {
-    body = JSON.parse(text);
+    body = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(boundedBody));
   } catch {
     return NextResponse.json(
       {

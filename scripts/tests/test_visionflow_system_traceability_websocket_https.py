@@ -9,6 +9,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class SystemTraceabilityWebSocketHttpsTest(unittest.TestCase):
+    def test_hsts_is_restricted_to_verified_public_https_hosts(self) -> None:
+        config = self.read("01_frontend/visionflow-web/next.config.ts")
+
+        self.assertIn('value: "max-age=15768000"', config)
+        self.assertIn('"visionflow-drone.cloud", "www.visionflow-drone.cloud"', config)
+        self.assertIn('type: "host" as const', config)
+        self.assertNotIn("includeSubDomains", config)
+        self.assertNotIn("preload", config)
+
     def test_https_uses_same_origin_secure_websocket(self) -> None:
         resolver = self.read(
             "01_frontend/visionflow-web/src/lib/websocket-url.ts"
@@ -121,6 +130,43 @@ class SystemTraceabilityWebSocketHttpsTest(unittest.TestCase):
         self.assertIsNone(
             re.search(r'setAllowedOriginPatterns\s*\(\s*"\*"', config)
         )
+
+    def test_operator_security_requires_cookie_session_for_websocket(self) -> None:
+        config = self.read(
+            "02_backend/visionflow-api/src/main/java/com/visionflow/api/"
+            "common/config/WebSocketConfig.java"
+        )
+        interceptor = self.read(
+            "02_backend/visionflow-api/src/main/java/com/visionflow/api/"
+            "common/security/OperatorSessionHandshakeInterceptor.java"
+        )
+
+        self.assertIn(".addInterceptors(sessionHandshakeInterceptor)", config)
+        self.assertIn('"visionflow_operator_session"', interceptor)
+        self.assertIn("HttpHeaders.ORIGIN", interceptor)
+        self.assertIn("sessionRegistry.resolve(token)", interceptor)
+        self.assertIn("principal.get().passwordChangeRequired()", interceptor)
+        self.assertIn("if (!credentialRegistry.isEnabled())", interceptor)
+        self.assertIn("return false;", interceptor)
+
+        tracker = self.read(
+            "02_backend/visionflow-api/src/main/java/com/visionflow/api/"
+            "common/security/OperatorWebSocketSessionTracker.java"
+        )
+        self.assertIn("WebSocketHandlerDecoratorFactory", tracker)
+        self.assertIn("@Scheduled(fixedDelayString", tracker)
+        self.assertIn("!sessionRegistry.isValid(token)", tracker)
+        self.assertIn("session.close(CloseStatus.POLICY_VIOLATION)", tracker)
+
+        registry = self.read(
+            "02_backend/visionflow-api/src/main/java/com/visionflow/api/"
+            "common/security/OperatorSessionRegistry.java"
+        )
+        validity_check = registry.split(
+            "public boolean isValid(String presentedToken)", 1
+        )[1].split("public Optional<OperatorSessionSummary> revoke(", 1)[0]
+        self.assertIn("isActive(current, now) ? current : null", validity_check)
+        self.assertNotIn("seenAt(", validity_check)
 
     @staticmethod
     def read(relative_path: str) -> str:

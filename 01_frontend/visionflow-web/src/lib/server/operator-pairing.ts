@@ -6,6 +6,7 @@ import {
   OPERATOR_SESSION_COOKIE,
   withBackendOperatorAuth,
 } from "@/lib/server/operator-auth";
+import { readBoundedRequestBody } from "@/lib/request-body-limit";
 
 const BACKEND_API_URL = (
   process.env.SPRING_API_URL ??
@@ -16,6 +17,8 @@ const BACKEND_API_URL = (
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_PAIRING_REQUEST_BYTES = 8 * 1024;
+const MAX_PAIRING_RESPONSE_BYTES = 16 * 1024;
 
 interface BackendOperatorSession {
   token: string;
@@ -58,7 +61,72 @@ export async function proxyOperatorPairingRequest(
   options: ProxyOptions,
 ): Promise<NextResponse> {
   try {
-    const body = method === "POST" ? await request.text() : "";
+    let body = "";
+    if (method === "POST") {
+      const contentLength = request.headers.get("content-length");
+      if (
+        contentLength !== null &&
+        (!/^\d+$/.test(contentLength) || !Number.isSafeInteger(Number(contentLength)))
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "INVALID_CONTENT_LENGTH",
+            message: "Content-Length 헤더 형식이 올바르지 않습니다.",
+          },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      if (Number(contentLength) > MAX_PAIRING_REQUEST_BYTES) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "OPERATOR_PAIRING_REQUEST_TOO_LARGE",
+            message: "QR 페어링 요청이 허용 크기를 초과했습니다.",
+          },
+          { status: 413, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+
+      let boundedBody: ArrayBuffer | null;
+      try {
+        boundedBody = await readBoundedRequestBody(
+          request.body,
+          MAX_PAIRING_REQUEST_BYTES,
+        );
+      } catch {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "INVALID_OPERATOR_PAIRING_REQUEST",
+            message: "QR 페어링 요청 본문을 읽을 수 없습니다.",
+          },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      if (boundedBody === null) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "OPERATOR_PAIRING_REQUEST_TOO_LARGE",
+            message: "QR 페어링 요청이 허용 크기를 초과했습니다.",
+          },
+          { status: 413, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      try {
+        body = new TextDecoder("utf-8", { fatal: true }).decode(boundedBody);
+      } catch {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "INVALID_OPERATOR_PAIRING_REQUEST",
+            message: "QR 페어링 요청의 문자 인코딩이 올바르지 않습니다.",
+          },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+    }
     const init: RequestInit = {
       method,
       headers: {
@@ -76,7 +144,21 @@ export async function proxyOperatorPairingRequest(
       `${BACKEND_API_URL}${backendPath}`,
       backendInit,
     );
-    const responseText = await response.text();
+    const boundedResponse = await readBoundedRequestBody(
+      response.body,
+      MAX_PAIRING_RESPONSE_BYTES,
+    );
+    if (boundedResponse === null) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "OPERATOR_PAIRING_RESPONSE_TOO_LARGE",
+          message: "QR 페어링 서비스 응답 크기가 허용 범위를 초과했습니다.",
+        },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const responseText = new TextDecoder("utf-8").decode(boundedResponse);
 
     if (options.issueBrowserSession && response.ok) {
       let parsed: unknown = null;

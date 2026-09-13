@@ -66,9 +66,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         signal: AbortSignal.timeout(10_000),
       }),
     );
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

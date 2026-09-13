@@ -421,11 +421,6 @@
       "method": "DELETE",
       "path": "/api/security/sessions/current",
       "reason": "제시된 세션 토큰을 Controller에서 검증하는 로그아웃 진입점"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/drones/{}/telemetry",
-      "reason": "장치 텔레메트리 수집 진입점"
     }
   ],
   "sensitiveBackendPublicReads": [
@@ -494,16 +489,6 @@
     }
   ],
   "expectedFrontendUnguardedMutations": [
-    {
-      "method": "POST",
-      "path": "/api/ai/ingest/frame",
-      "reason": "카메라 장치 프레임 수집"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/drones/{}/telemetry",
-      "reason": "센서 장치 텔레메트리 수집"
-    },
     {
       "method": "POST",
       "path": "/api/security/csp-report",

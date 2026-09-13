@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { OperatorPasswordChangeForm } from "@/components/security/operator-password-change-form";
 import { getOperatorAuthMode } from "@/lib/server/operator-auth";
 import { getOperatorSecurityStatus } from "@/lib/server/operator-security";
+import { safeReturnTo } from "@/lib/safe-return-to";
 
 export const metadata: Metadata = {
   title: "초기 비밀번호 변경",
@@ -11,13 +12,6 @@ export const metadata: Metadata = {
 
 interface OperatorPasswordChangePageProps {
   searchParams: Promise<{ returnTo?: string | string[] }>;
-}
-
-function safeReturnTo(value: string | string[] | undefined): string {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  return candidate?.startsWith("/") && !candidate.startsWith("//")
-    ? candidate
-    : "/dashboard";
 }
 
 export default async function OperatorPasswordChangePage({

@@ -647,8 +647,6 @@ export function useDroneFleetTelemetry(
         setConnectionStatus("CONNECTED");
 
         client.subscribe("/topic/drones/telemetry", (message: IMessage) => {
-          console.log("[STOMP] 전체 드론 메시지 수신:", message.body);
-
           try {
             const incomingDrone = JSON.parse(message.body) as Drone;
 
@@ -656,7 +654,7 @@ export function useDroneFleetTelemetry(
               typeof incomingDrone.id !== "number" ||
               !Number.isFinite(incomingDrone.id)
             ) {
-              console.error("잘못된 드론 텔레메트리:", incomingDrone);
+              console.error("잘못된 드론 텔레메트리를 수신했습니다.");
               return;
             }
 
@@ -724,7 +722,7 @@ export function useDroneFleetTelemetry(
             const incomingEvent: unknown = JSON.parse(message.body);
 
             if (!isGeofenceEvent(incomingEvent)) {
-              console.error("잘못된 지오펜스 이벤트:", incomingEvent);
+              console.error("잘못된 지오펜스 이벤트를 수신했습니다.");
               return;
             }
 
@@ -741,7 +739,7 @@ export function useDroneFleetTelemetry(
             const incomingEvent: unknown = JSON.parse(message.body);
 
             if (!isAiInferenceEvent(incomingEvent)) {
-              console.error("잘못된 AI 추론 이벤트:", incomingEvent);
+              console.error("잘못된 AI 추론 이벤트를 수신했습니다.");
               return;
             }
 
@@ -754,12 +752,12 @@ export function useDroneFleetTelemetry(
         });
       },
 
-      onStompError: (frame) => {
+      onStompError: () => {
         if (!active) {
           return;
         }
 
-        console.error("STOMP 오류:", frame);
+        console.error("드론 텔레메트리 STOMP 연결 오류가 발생했습니다.");
         setConnectionStatus("ERROR");
       },
 
@@ -803,15 +801,6 @@ export function useDroneFleetTelemetry(
     Object.values(realtimeById).forEach(({ drone }) => {
       mergedById.set(drone.id, drone);
     });
-
-    console.table(
-      Array.from(mergedById.values()).map((drone) => ({
-        id: drone.id,
-        name: drone.name,
-        status: drone.status,
-        realtimeReceivedAt: realtimeById[drone.id]?.receivedAt ?? null,
-      })),
-    );
 
     return Array.from(mergedById.values())
       .map((drone) => {

@@ -3,6 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
+import { readBoundedJsonResponse } from "@/lib/request-body-limit";
 import {
   parseOperatorSessions,
   type OperatorManagedSession,
@@ -34,7 +35,8 @@ export async function getOperatorSessions(): Promise<OperatorManagedSession[]> {
       signal: AbortSignal.timeout(5_000),
     }),
   );
-  const body: unknown = await response.json().catch(() => null);
+  const parsed = await readBoundedJsonResponse(response, 128 * 1024);
+  const body: unknown = parsed.ok ? parsed.value : null;
   if (!response.ok) {
     throw new Error(errorMessage(body, "활성 운영자 세션을 조회할 수 없습니다."));
   }
@@ -59,8 +61,7 @@ export async function proxyOperatorSessionRequest(
         signal: AbortSignal.timeout(5_000),
       }),
     );
-    const body = await response.text();
-    return new NextResponse(body || null, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

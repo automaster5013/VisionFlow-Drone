@@ -129,6 +129,20 @@ class SystemTraceabilityConfigurationFailFastTest(unittest.TestCase):
         )
         self.assertEqual(3, compose.count(ai_contract))
 
+    def test_ai_container_drops_capabilities_and_blocks_privilege_gain(self) -> None:
+        compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+        ai_service = compose.split("  ai-server:\n", 1)[1].split(
+            "  frontend-web:\n", 1
+        )[0]
+
+        self.assertIn("security_opt:\n      - no-new-privileges:true", ai_service)
+        self.assertIn("cap_drop:\n      - ALL", ai_service)
+
+        dockerfile = (
+            ROOT / "03_ai-server" / "visionflow-ai" / "Dockerfile"
+        ).read_text(encoding="utf-8")
+        self.assertIn("USER visionflow", dockerfile)
+
     def test_example_documents_required_security_variables(self) -> None:
         example = (ROOT / ".env.example").read_text(encoding="utf-8")
 

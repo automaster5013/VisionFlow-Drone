@@ -5,6 +5,7 @@ import {
     proxyAiAlertRequest,
 } from "@/lib/server/ai-alert-proxy";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedMutationText } from "@/lib/server/bounded-request-body";
 
 interface RouteContext {
     params: Promise<{
@@ -27,6 +28,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         );
     }
 
+    const parsedBody = await readBoundedMutationText(request, 16 * 1024, "AI 경보 해결 처리");
+    if (!parsedBody.ok) return parsedBody.response;
+
     return proxyAiAlertRequest(
         `/api/ai/alerts/${encodeURIComponent(id)}/resolve`,
         {
@@ -35,7 +39,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: await request.text(),
+            body: parsedBody.body,
         },
         "AI 경보 해결 처리",
     );

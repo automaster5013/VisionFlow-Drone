@@ -24,9 +24,35 @@ read_env_value() {
   printf '%s' "${line#*=}"
 }
 
+require_unique_env_key() {
+  local key="$1"
+  local count
+  count="$(grep -Ec "^${key}=" "$ENV_FILE" || true)"
+  if [[ "$count" != "1" ]]; then
+    echo "${key}_MUST_BE_DECLARED_EXACTLY_ONCE=YES" >&2
+    exit 2
+  fi
+}
+
+for key in \
+  VISIONFLOW_OPERATOR_SECURITY_ENABLED \
+  VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED \
+  VISIONFLOW_VIEWER_KEY \
+  VISIONFLOW_OPERATOR_KEY \
+  VISIONFLOW_ADMIN_KEY \
+  VISIONFLOW_AI_INTERNAL_KEY; do
+  require_unique_env_key "$key"
+done
+
 BACKEND_IMAGE="$(read_env_value VISIONFLOW_BACKEND_IMAGE)"
 EXPECTED_DIGEST="$(read_env_value VISIONFLOW_BACKEND_EXPECTED_DIGEST)"
 MYSQL_DATABASE="$(read_env_value MYSQL_DATABASE)"
+OPERATOR_SECURITY_ENABLED="$(read_env_value VISIONFLOW_OPERATOR_SECURITY_ENABLED)"
+AI_INTERNAL_SECURITY_ENABLED="$(read_env_value VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED)"
+VIEWER_KEY="$(read_env_value VISIONFLOW_VIEWER_KEY)"
+OPERATOR_KEY="$(read_env_value VISIONFLOW_OPERATOR_KEY)"
+ADMIN_KEY="$(read_env_value VISIONFLOW_ADMIN_KEY)"
+AI_INTERNAL_KEY="$(read_env_value VISIONFLOW_AI_INTERNAL_KEY)"
 
 if [[ -z "$BACKEND_IMAGE" ]]; then
   echo "VISIONFLOW_BACKEND_IMAGE_MISSING=YES" >&2
@@ -38,6 +64,47 @@ if [[ -z "$EXPECTED_DIGEST" ]]; then
 fi
 if [[ "${MYSQL_DATABASE:-}" != "visionflow" ]]; then
   echo "MYSQL_DATABASE_MUST_BE_VISIONFLOW=YES" >&2
+  exit 2
+fi
+if [[ "${OPERATOR_SECURITY_ENABLED,,}" != "true" ]]; then
+  echo "VISIONFLOW_OPERATOR_SECURITY_ENABLED_MUST_BE_TRUE=YES" >&2
+  exit 2
+fi
+if [[ "${AI_INTERNAL_SECURITY_ENABLED,,}" != "true" ]]; then
+  echo "VISIONFLOW_AI_INTERNAL_SECURITY_ENABLED_MUST_BE_TRUE=YES" >&2
+  exit 2
+fi
+
+validate_secret() {
+  local name="$1"
+  local value="$2"
+  local normalized="${value,,}"
+
+  if (( ${#value} < 32 )); then
+    echo "${name}_MUST_BE_AT_LEAST_32_CHARS=YES" >&2
+    exit 2
+  fi
+  if [[ "$value" =~ [[:space:]] ]]; then
+    echo "${name}_MUST_NOT_CONTAIN_WHITESPACE=YES" >&2
+    exit 2
+  fi
+  case "$normalized" in
+    *replace-with*|*replace_with*|*change_me*|*changeme*|*your_secret*|*your-key*)
+      echo "${name}_MUST_NOT_BE_A_PLACEHOLDER=YES" >&2
+      exit 2
+      ;;
+  esac
+}
+
+validate_secret VISIONFLOW_VIEWER_KEY "$VIEWER_KEY"
+validate_secret VISIONFLOW_OPERATOR_KEY "$OPERATOR_KEY"
+validate_secret VISIONFLOW_ADMIN_KEY "$ADMIN_KEY"
+validate_secret VISIONFLOW_AI_INTERNAL_KEY "$AI_INTERNAL_KEY"
+
+if [[ "$VIEWER_KEY" == "$OPERATOR_KEY" || "$VIEWER_KEY" == "$ADMIN_KEY" \
+   || "$VIEWER_KEY" == "$AI_INTERNAL_KEY" || "$OPERATOR_KEY" == "$ADMIN_KEY" \
+   || "$OPERATOR_KEY" == "$AI_INTERNAL_KEY" || "$ADMIN_KEY" == "$AI_INTERNAL_KEY" ]]; then
+  echo "VISIONFLOW_SECURITY_KEYS_MUST_BE_UNIQUE=YES" >&2
   exit 2
 fi
 

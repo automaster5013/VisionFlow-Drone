@@ -6,6 +6,7 @@ import {
     proxyIncidentRequest,
 } from "@/lib/server/incident-proxy";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedMutationText } from "@/lib/server/bounded-request-body";
 
 interface RouteContext {
     params: Promise<{ id: string }>;
@@ -22,6 +23,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         return badIncidentRequest("잘못된 Incident ID입니다.");
     }
 
+    const parsedBody = await readBoundedMutationText(request, 16 * 1024, "Incident 우선순위 변경");
+    if (!parsedBody.ok) return parsedBody.response;
+
     return proxyIncidentRequest(
         `/api/incidents/${encodeURIComponent(id)}/priority`,
         {
@@ -30,7 +34,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: await request.text(),
+            body: parsedBody.body,
         },
         "Incident 우선순위 변경",
     );

@@ -25,13 +25,12 @@ export async function GET(request: NextRequest) {
       }),
     );
 
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":
           response.headers.get("content-type") ?? "application/json",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

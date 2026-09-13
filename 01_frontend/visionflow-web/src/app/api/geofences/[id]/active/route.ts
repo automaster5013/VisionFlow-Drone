@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedMutationText } from "@/lib/server/bounded-request-body";
 
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
@@ -31,6 +32,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
+  const parsedBody = await readBoundedMutationText(request, 8 * 1024, "지오펜스 활성 상태 변경");
+  if (!parsedBody.ok) return parsedBody.response;
+
   try {
     const response = await fetch(
       `${BACKEND_API_URL}/api/geofences/` + `${encodeURIComponent(id)}/active`,
@@ -40,14 +44,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: await request.text(),
+        body: parsedBody.body,
         cache: "no-store",
       }),
     );
 
-    const body = await response.text();
-
-    return new NextResponse(body, {
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type":

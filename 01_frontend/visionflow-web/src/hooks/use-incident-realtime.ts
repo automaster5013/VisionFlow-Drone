@@ -47,8 +47,7 @@ export function useIncidentRealtime(
 
                         if (!message) {
                             console.error(
-                                "잘못된 Incident 실시간 메시지:",
-                                body,
+                                "잘못된 Incident 실시간 메시지를 수신했습니다.",
                             );
                             return;
                         }
@@ -64,9 +63,9 @@ export function useIncidentRealtime(
                 });
             },
 
-            onStompError: (frame) => {
+            onStompError: () => {
                 if (!active) return;
-                console.error("Incident STOMP 오류:", frame);
+                console.error("Incident STOMP 연결 오류가 발생했습니다.");
                 setConnectionStatus("ERROR");
             },
 

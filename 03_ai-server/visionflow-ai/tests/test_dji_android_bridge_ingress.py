@@ -12,7 +12,6 @@ from app.domain import VideoSourceType
 from app.sources.dji_android_bridge import DjiAndroidBridgeSource
 from app.streaming import AnnotatedFrameHub, create_stream_app
 
-
 AI_INTERNAL_KEY_HEADER = "X-VisionFlow-AI-Key"
 DJI_BRIDGE_KEY_HEADER = "X-VisionFlow-DJI-Key"
 AI_INTERNAL_KEY = "ai-internal-test-key-0123456789abcdef"
@@ -70,8 +69,7 @@ def _build_h264_fixture() -> bytes:
             "pipe:1",
         ],
         input=b"".join(frame.tobytes() for frame in frames),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
     )
 
@@ -94,6 +92,23 @@ def _source() -> DjiAndroidBridgeSource:
 def test_android_bridge_normalizes_h265_aliases() -> None:
     assert DjiAndroidBridgeSource.normalize_codec("h265") == "H265"
     assert DjiAndroidBridgeSource.normalize_codec("hevc") == "H265"
+
+
+def test_android_bridge_decoder_caps_input_frame_pixels() -> None:
+    source = DjiAndroidBridgeSource(
+        fps=10.0,
+        queue_capacity=3,
+    )
+
+    command = source._decoder_command(
+        executable="ffmpeg",
+        codec="H264",
+    )
+
+    max_pixels_index = command.index("-max_pixels")
+    input_index = command.index("-i")
+    assert command[max_pixels_index + 1] == "16777216"
+    assert max_pixels_index < input_index
 
 
 def test_android_bridge_requires_distinct_dedicated_key() -> None:
@@ -199,6 +214,107 @@ def test_android_bridge_rejects_wrong_stream_content_type() -> None:
         )
 
     assert response.status_code == 415
+
+
+def _ingress_app(source: DjiAndroidBridgeSource, **limits: object):
+    return create_stream_app(
+        AnnotatedFrameHub(jpeg_quality=80),
+        allowed_origins=("http://localhost:3000",),
+        ingest_source=source,
+        internal_security_enabled=False,
+        dji_bridge_api_key=DJI_BRIDGE_KEY,
+        **limits,
+    )
+
+
+def _mock_ingest_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[DjiAndroidBridgeSource, list[bytes], list[str], list[str]]:
+    source = DjiAndroidBridgeSource(
+        fps=10.0,
+        queue_capacity=3,
+        ffmpeg_executable="visionflow-ffmpeg-not-required-for-this-test",
+    )
+    submitted: list[bytes] = []
+    ended: list[str] = []
+    begun: list[str] = []
+    monkeypatch.setattr(
+        source,
+        "begin_stream",
+        lambda **_kwargs: begun.append("test-token") or "test-token",
+    )
+    monkeypatch.setattr(
+        source,
+        "submit_encoded",
+        lambda _token, payload: submitted.append(payload),
+    )
+    monkeypatch.setattr(
+        source,
+        "end_stream",
+        lambda token: ended.append(token) or {"decodedFrames": 0},
+    )
+    return source, submitted, ended, begun
+
+
+def _stream_request(client: TestClient, *, content: object, **kwargs: object):
+    headers = {
+        "Content-Type": "video/h264",
+        DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY,
+        **kwargs.pop("headers", {}),
+    }
+    return client.post(
+        "/api/ingest/dji/stream",
+        params={
+            "droneId": 1,
+            "sourceId": "android-bridge-test",
+            "sessionId": "session-test",
+            "codec": "H264",
+        },
+        headers=headers,
+        content=content,
+        **kwargs,
+    )
+
+
+def test_android_bridge_rejects_declared_stream_over_limit_before_start(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, submitted, ended, begun = _mock_ingest_source(monkeypatch)
+    app = _ingress_app(source, dji_bridge_max_stream_bytes=4)
+
+    with TestClient(app) as client:
+        response = _stream_request(
+            client,
+            content=b"12345",
+            headers={
+                "Content-Type": "video/h264",
+                DJI_BRIDGE_KEY_HEADER: DJI_BRIDGE_KEY,
+                "Content-Length": "5",
+            },
+        )
+
+    assert response.status_code == 413
+    assert begun == []
+    assert submitted == []
+    assert ended == []
+
+
+def test_android_bridge_caps_stream_without_content_length_and_closes_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, submitted, ended, begun = _mock_ingest_source(monkeypatch)
+    app = _ingress_app(source, dji_bridge_max_stream_bytes=5)
+
+    with TestClient(app) as client:
+        response = _stream_request(
+            client,
+            content=iter((b"1234", b"5678")),
+        )
+
+    assert response.status_code == 413
+    assert begun == ["test-token"]
+    assert submitted == []
+    assert ended == ["test-token"]
 
 
 def test_android_bridge_h264_http_ingress_emits_dji_live_packet() -> None:

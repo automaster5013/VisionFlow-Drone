@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { withBackendOperatorAuth } from "@/lib/server/operator-auth";
 import { rejectCrossOriginOperatorMutation } from "@/lib/server/operator-mutation-guard";
+import { readBoundedRequestBody } from "@/lib/request-body-limit";
 
 const BACKEND_API_URL = (
   process.env.BACKEND_API_URL ??
@@ -11,6 +12,10 @@ const BACKEND_API_URL = (
 ).replace(/\/$/, "");
 
 const MAX_SNAPSHOT_BYTES = 10 * 1024 * 1024;
+const MAX_MULTIPART_OVERHEAD_BYTES = 128 * 1024;
+const MAX_SNAPSHOT_REQUEST_BYTES =
+  MAX_SNAPSHOT_BYTES + MAX_MULTIPART_OVERHEAD_BYTES;
+const MAX_SNAPSHOT_API_RESPONSE_BYTES = 64 * 1024;
 
 interface RouteContext {
   params: Promise<{
@@ -40,7 +45,16 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       }),
     );
 
-    const body = await response.arrayBuffer();
+    const body = await readBoundedRequestBody(
+      response.body,
+      MAX_SNAPSHOT_BYTES,
+    );
+    if (body === null) {
+      return NextResponse.json(
+        { message: "스냅샷 응답이 허용 크기를 초과했습니다." },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
+    }
 
     return new NextResponse(body, {
       status: response.status,
@@ -88,7 +102,39 @@ export async function PUT(
 
   let incoming: FormData;
   try {
-    incoming = await request.formData();
+    const contentLength = request.headers.get("content-length");
+    if (contentLength !== null) {
+      if (!/^\d+$/.test(contentLength) || !Number.isSafeInteger(Number(contentLength))) {
+        return NextResponse.json(
+          { message: "스냅샷 업로드 요청 크기 정보가 올바르지 않습니다." },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      if (Number(contentLength) > MAX_SNAPSHOT_REQUEST_BYTES) {
+        return NextResponse.json(
+          { message: "스냅샷 업로드 요청이 허용 크기를 초과했습니다." },
+          { status: 413, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+    }
+
+    const boundedBody = await readBoundedRequestBody(
+      request.body,
+      MAX_SNAPSHOT_REQUEST_BYTES,
+    );
+    if (boundedBody === null) {
+      return NextResponse.json(
+        { message: "스냅샷 업로드 요청이 허용 크기를 초과했습니다." },
+        { status: 413, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const replayHeaders = new Headers(request.headers);
+    replayHeaders.delete("content-length");
+    incoming = await new Request(request.url, {
+      method: "PUT",
+      headers: replayHeaders,
+      body: boundedBody,
+    }).formData();
   } catch {
     return NextResponse.json(
       { message: "스냅샷 업로드 요청 형식이 올바르지 않습니다." },
@@ -138,7 +184,17 @@ export async function PUT(
         cache: "no-store",
       }),
     );
-    const body = await response.text();
+    const responseBody = await readBoundedRequestBody(
+      response.body,
+      MAX_SNAPSHOT_API_RESPONSE_BYTES,
+    );
+    if (responseBody === null) {
+      return NextResponse.json(
+        { message: "스냅샷 API 응답이 허용 크기를 초과했습니다." },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const body = new TextDecoder().decode(responseBody);
 
     return new NextResponse(body || null, {
       status: response.status,
@@ -199,7 +255,17 @@ export async function DELETE(
       });
     }
 
-    const body = await response.text();
+    const responseBody = await readBoundedRequestBody(
+      response.body,
+      MAX_SNAPSHOT_API_RESPONSE_BYTES,
+    );
+    if (responseBody === null) {
+      return NextResponse.json(
+        { message: "스냅샷 API 응답이 허용 크기를 초과했습니다." },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const body = new TextDecoder().decode(responseBody);
 
     return new NextResponse(body, {
       status: response.status,
