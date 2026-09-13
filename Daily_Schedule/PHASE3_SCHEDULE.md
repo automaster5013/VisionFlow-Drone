@@ -169,7 +169,7 @@ VisionFlow Dashboard / MySQL
 | **09.04 ~ 09.06** | **PPE Batch 0001 Data Fast-track** | - curated annotation pool 512건 구축<br>- 64건 계약 캘리브레이션·disposition 승인<br>- 유효 focus 38건을 재주석 34·격리 HOLD 4로 확정<br>- provenance·exact/near-duplicate·MNS audit<br>- AI-assisted proposal v1r1 생성과 smoke 입력 9장·87 boxes 조립 | - 원본 curated tree 변경 0<br>- proposal-only·assembly-only PASS<br>- final group·split·GT·학습 자동 승격 0 | 🟢 **잠정 입력 준비 완료** |
 | **09.07** | **기존 학습·발표 기준선 정리** | S1 canonical weight 및 PPE provisional 입력 준비 기록 정리 | GPU smoke·본 학습·정식 승격은 미완료 | 🧪 **기준선 / 잠정** |
 | **09.08** | **발표 시연 기능 보완** | 더미영상·가상 텔레메트리 재생, 사람·보호구 표시 순서와 미착용 경고, 관제·보고서 흐름 보완 | 통합 결과는 09.09 세션 기록으로 확인; 실기체 시험과 구분 | 🟡 **09.09 검증으로 연결** |
-| **09.09** | **검증·개발 동결·발표 산출물 완성** | 세션 기록·일시정지·저장 재조회 확인; 원거리 후보·PPE 데이터 검토 후 개발 동결; PPT 17장·10분 노트 프롬프트·통합 MP4 제작 | MP4 약 3분 56초, 전체 디코딩 검사 완료; Gamma 실제 노트 저장·제출·발표는 확인 대기 | 🟢 **자료 준비 완료** |
+| **09.09** | **검증·개발 동결·최종 발표** | 세션 기록·일시정지·저장 재조회 확인; 원거리 후보·PPE 데이터 검토 후 개발 동결; PPT 17장·10분 노트·통합 MP4 확정 및 최종 발표 | MP4 약 3분 56초, 전체 디코딩 검사, 발표 완료; 공개 운영 링크는 README에 등록 | 🟢 **발표 완료** |
 
 ---
 
